@@ -41,8 +41,7 @@ or additional dependencies, and degrade gracefully without them:
 
 - **Tabs** (`TabsExtension`) - requires carve-js tab component
 - **Code groups** (`CodeGroupExtension`) - requires carve-js
-- **Math blocks** (`MathBlockExtension`) - requires KaTeX or MathJax
-- **Mermaid / chart** - requires Mermaid.js
+- **Mermaid / chart** - requires Mermaid.js / Chart.js loaded on the storefront
 - **Spoiler** (`SpoilerExtension`) - requires carve-js reveal component
 
 Smart quotes (`SmartQuotesExtension`) remain config-driven and are added only when
