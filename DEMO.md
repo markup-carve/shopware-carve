@@ -213,3 +213,17 @@ These were genuine 6.7 defects found via browser verification and fixed in the p
 - **CMS live preview:** the config used `<sw-textarea-field v-model:value>`; 6.7 maps this onto
   Meteor's `mt-textarea`, whose v-model prop is `modelValue`. Switched to
   `<mt-textarea :model-value @update:model-value>` so the live preview recomputes on every keystroke.
+
+## 9. Troubleshooting: composer path repo does not re-mirror
+
+With `{ "type": "path", "options": { "symlink": false } }` and a frozen package version,
+`ddev composer update markup-carve/shopware-carve` may NOT re-copy edited source into
+`vendor/`. Since `theme:compile` and the storefront/admin builds read from `vendor/`, a stale
+copy silently ships old SCSS/JS. Force a clean re-mirror after editing the plugin source:
+
+``` bash
+rm -rf vendor/markup-carve/shopware-carve && ddev composer install --no-interaction
+```
+
+Then rebuild (`bin/build-administration.sh`, `bin/build-storefront.sh`, `theme:compile`,
+`cache:clear`). The same applies to the local `markup-carve/carve-php` clone.
