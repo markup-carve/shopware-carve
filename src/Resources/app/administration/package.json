@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@markup-carve/carve": "file:/media/mark/data/work/git/carve-js"
+    "@markup-carve/carve": "^0.1.0"
   }
 }
