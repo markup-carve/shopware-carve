@@ -14,5 +14,14 @@
             <argument type="service" id="Carve\Shopware\Service\CarveRenderer"/>
             <tag name="shopware.cms.data_resolver"/>
         </service>
+
+        <service id="Carve\Shopware\Service\CarveContextRenderer">
+            <argument type="service" id="product.repository"/>
+        </service>
+
+        <service id="Carve\Shopware\Twig\CarveContextExtension">
+            <argument type="service" id="Carve\Shopware\Service\CarveContextRenderer"/>
+            <tag name="twig.extension"/>
+        </service>
     </services>
 </container>

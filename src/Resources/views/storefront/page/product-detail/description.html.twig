@@ -1,6 +1,6 @@
 {% sw_extends '@Storefront/storefront/page/product-detail/description.html.twig' %}
 
-{# Render the carve_body product custom field as safe HTML via the |carve filter. #}
+{# Render the carve_body product custom field as safe HTML via the |carve_ctx filter (context-aware: resolves :product[SKU] references). #}
 {% block page_product_detail_description %}
     {{ parent() }}
 
@@ -8,7 +8,7 @@
         ?? product.customFields.carve_body ?? null %}
     {% if carveSource %}
         <div class="carve-content carve-product-description">
-            {{ carveSource|carve }}
+            {{ carveSource|carve_ctx(context) }}
         </div>
     {% endif %}
 {% endblock %}
