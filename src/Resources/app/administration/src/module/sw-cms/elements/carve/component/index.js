@@ -1,4 +1,5 @@
 import template from './sw-cms-el-carve.html.twig';
+import { carveToHtml } from '@markup-carve/carve';
 
 Shopware.Component.register('sw-cms-el-carve', {
     template,
@@ -7,8 +8,13 @@ Shopware.Component.register('sw-cms-el-carve', {
         this.initElementConfig('carve');
     },
     computed: {
-        source() {
-            return this.element?.config?.content?.value ?? '';
+        html() {
+            const src = this.element?.config?.content?.value ?? '';
+            try {
+                return carveToHtml(src);
+            } catch (e) {
+                return '';
+            }
         },
     },
 });
