@@ -1,10 +1,175 @@
 .carve-content {
     line-height: 1.6;
 
+    // -------------------------------------------------------------------------
+    // Tables (pipe-table and list-table both render as <table>)
+    // -------------------------------------------------------------------------
     table { width: 100%; border-collapse: collapse; }
     th, td { border: 1px solid #ddd; padding: .4rem .6rem; }
+    thead th { background: #f0f0f0; font-weight: 600; }
 
-    .admonition { border-left: 4px solid #ccc; padding: .6rem 1rem; margin: 1rem 0; background: #f7f7f7; }
-    .admonition.warning { border-color: #e0a800; background: #fff8e1; }
-    .admonition.note { border-color: #2b6cb0; background: #ebf4ff; }
+    // -------------------------------------------------------------------------
+    // Admonitions (AdmonitionExtension)
+    // Emits: <div class="admonition {type}" role="note|alert">
+    //          <p class="admonition-title">...</p>
+    //          ...
+    //        </div>
+    // -------------------------------------------------------------------------
+    .admonition {
+        border-left: 4px solid #ccc;
+        padding: .6rem 1rem;
+        margin: 1rem 0;
+        background: #f7f7f7;
+        border-radius: 0 .25rem .25rem 0;
+
+        .admonition-title {
+            font-weight: 700;
+            margin: 0 0 .35rem 0;
+        }
+
+        p:last-child { margin-bottom: 0; }
+    }
+
+    .admonition.note    { border-color: #2b6cb0; background: #ebf4ff; }
+    .admonition.tip     { border-color: #276749; background: #e6fffa; }
+    .admonition.warning { border-color: #c05621; background: #fffaf0; }
+    .admonition.danger  { border-color: #c53030; background: #fff5f5; }
+    .admonition.info    { border-color: #2c7a7b; background: #e6fffa; }
+    .admonition.success { border-color: #276749; background: #f0fff4; }
+
+    // -------------------------------------------------------------------------
+    // Details/summary (DetailsExtension)
+    // Emits: <details><summary>...</summary>...</details>
+    // -------------------------------------------------------------------------
+    details {
+        margin: 1rem 0;
+        border: 1px solid #ddd;
+        border-radius: .25rem;
+        padding: .5rem .75rem;
+
+        summary {
+            cursor: pointer;
+            font-weight: 600;
+            user-select: none;
+            padding: .25rem 0;
+        }
+
+        &[open] summary { margin-bottom: .5rem; }
+
+        p:last-child { margin-bottom: 0; }
+    }
+
+    // -------------------------------------------------------------------------
+    // Footnotes (core HtmlRenderer + InlineFootnotesExtension)
+    // Emits: <section role="doc-endnotes"><hr><ol>
+    //          <li id="fnN">...<a href="#fnrefN">...</a></li>
+    //        </ol></section>
+    // References: <a id="fnrefN" href="#fnN" role="doc-noteref"><sup>N</sup></a>
+    // -------------------------------------------------------------------------
+    section[role="doc-endnotes"] {
+        margin-top: 2rem;
+        font-size: .875em;
+        color: #555;
+
+        hr { border: none; border-top: 1px solid #ddd; margin-bottom: 1rem; }
+
+        ol { padding-left: 1.5em; margin: 0; }
+
+        li { margin-bottom: .4rem; }
+
+        a[role="doc-backlink"],
+        a[href^="#fnref"] {
+            text-decoration: none;
+            opacity: .6;
+            font-size: .8em;
+            &:hover { opacity: 1; }
+        }
+    }
+
+    a[role="doc-noteref"] sup {
+        font-size: .75em;
+        vertical-align: super;
+        line-height: 1;
+    }
+
+    // -------------------------------------------------------------------------
+    // Definition lists (core - no extension needed)
+    // -------------------------------------------------------------------------
+    dl { margin: 1rem 0; }
+    dt { font-weight: 700; margin-top: .5rem; }
+    dd { margin-left: 1.5rem; margin-bottom: .25rem; }
+
+    // -------------------------------------------------------------------------
+    // Keyboard input <kbd> (core)
+    // -------------------------------------------------------------------------
+    kbd {
+        display: inline-block;
+        font-family: monospace;
+        font-size: .85em;
+        padding: .1em .4em;
+        border: 1px solid #aaa;
+        border-bottom-width: 2px;
+        border-radius: .2em;
+        background: #f5f5f5;
+        color: #333;
+        white-space: nowrap;
+    }
+
+    // -------------------------------------------------------------------------
+    // Highlighted text <mark> (core)
+    // -------------------------------------------------------------------------
+    mark {
+        background: #fff59d;
+        color: inherit;
+        padding: 0 .15em;
+        border-radius: .15em;
+    }
+
+    // -------------------------------------------------------------------------
+    // Editorial markup (core): <ins> and <del>
+    // -------------------------------------------------------------------------
+    ins {
+        text-decoration: underline;
+        color: #276749;
+    }
+
+    del {
+        text-decoration: line-through;
+        color: #888;
+    }
+
+    // -------------------------------------------------------------------------
+    // Captions (core): <figcaption>, <caption>, blockquote attribution
+    // -------------------------------------------------------------------------
+    figcaption,
+    caption,
+    blockquote footer,
+    blockquote cite {
+        font-size: .875em;
+        color: #666;
+        text-align: center;
+        margin-top: .4rem;
+        font-style: italic;
+    }
+
+    figure { margin: 1rem 0; text-align: center; }
+
+    // -------------------------------------------------------------------------
+    // Table of contents (TableOfContentsExtension)
+    // Emits: <ul class="toc">...</ul> or inline at position 'top'/'bottom'
+    // -------------------------------------------------------------------------
+    .toc {
+        background: #f9f9f9;
+        border: 1px solid #e0e0e0;
+        border-radius: .25rem;
+        padding: .75rem 1rem .75rem 2rem;
+        margin: 1rem 0;
+        display: inline-block;
+        min-width: 12rem;
+
+        li { margin: .2rem 0; }
+
+        a { text-decoration: none; color: inherit; }
+        a:hover { text-decoration: underline; }
+    }
 }

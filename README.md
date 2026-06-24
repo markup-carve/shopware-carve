@@ -21,6 +21,35 @@ filter is `is_safe => html` because carve-php's URL/attribute hardening is uncon
 
 ---
 
+## Enabled extensions
+
+The following carve-php extensions are registered unconditionally on every HTML converter (both
+`CarveRenderer` and `CarveContextRenderer`). They are pure-PHP and require no extra JavaScript.
+
+| Extension | What it does |
+|---|---|
+| `AdmonitionExtension` | Converts `::: note`, `::: tip`, `::: warning`, `::: danger`, `::: info`, `::: success` divs to `<div class="admonition {type}">` with a `<p class="admonition-title">` header and an appropriate ARIA role. |
+| `DetailsExtension` | Converts `::: details "Title"` to a native `<details><summary>Title</summary>...</details>` disclosure widget. |
+| `ListTableExtension` | Converts `::: list-table` blocks (nested lists) to real `<table>` markup with `<thead>`/`<tbody>`/`<th>`/`<td>` and rowspan/colspan support. |
+| `InlineFootnotesExtension` | Allows inline footnote syntax `[content]{.fn}` to generate numbered footnote references and an end-of-document footnotes section, sharing the numbering sequence with regular footnotes. |
+| `AutolinkExtension` | Detects bare `https://`, `http://`, and `mailto:` URLs in text and turns them into clickable `<a>` links. |
+| `ExternalLinksExtension` | Adds `rel="nofollow noopener"` and `target="_blank"` to all external HTTP/HTTPS links, including those produced by `AutolinkExtension`. |
+| `TableOfContentsExtension` | Collects headings and makes a `<ul class="toc">` available via `getTocHtml()` (or auto-inserts at `position: 'top'`/`'bottom'` when configured). Not auto-inserted by default - use `position` option or call `getTocHtml()` manually. |
+
+The following extension categories are **not** enabled because they require client-side JavaScript
+or additional dependencies, and degrade gracefully without them:
+
+- **Tabs** (`TabsExtension`) - requires carve-js tab component
+- **Code groups** (`CodeGroupExtension`) - requires carve-js
+- **Math blocks** (`MathBlockExtension`) - requires KaTeX or MathJax
+- **Mermaid / chart** - requires Mermaid.js
+- **Spoiler** (`SpoilerExtension`) - requires carve-js reveal component
+
+Smart quotes (`SmartQuotesExtension`) remain config-driven and are added only when
+`ShopwareCarve.config.smartQuotes` is enabled in the plugin settings.
+
+---
+
 ## Surfaces
 
 ### 1 - Twig filters `|carve`, `|carve_text`, `|carve_md`

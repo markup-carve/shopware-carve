@@ -94,6 +94,39 @@ class CarveRendererTest extends TestCase
         self::assertStringNotContainsString("\u{201E}", $html);
     }
 
+    public function testAdmonitionRendersWithCorrectClasses(): void
+    {
+        // AdmonitionExtension emits <div class="admonition warning" role="alert">
+        // with a <p class="admonition-title"> child when defaultTitle is true (the default).
+        $html = $this->renderer->toHtml("::: warning\nWatch out!\n:::");
+
+        self::assertStringContainsString('class="admonition warning"', $html);
+        self::assertStringContainsString('role="alert"', $html);
+        self::assertStringContainsString('class="admonition-title"', $html);
+    }
+
+    public function testListTableRendersAsTable(): void
+    {
+        // ListTableExtension converts ::: list-table blocks to real <table> markup.
+        $source = implode("\n", [
+            '{header-rows=1}',
+            '::: list-table',
+            '- - Product',
+            '  - Price',
+            '- - Widget',
+            '  - 9.99',
+            ':::',
+        ]);
+
+        $html = $this->renderer->toHtml($source);
+
+        self::assertStringContainsString('<table', $html);
+        self::assertStringContainsString('<th>', $html);
+        self::assertStringContainsString('<td>', $html);
+        // Must not fall back to a plain div wrapper.
+        self::assertStringNotContainsString('class="list-table"', $html);
+    }
+
     /**
      * @return SystemConfigService&MockObject
      */

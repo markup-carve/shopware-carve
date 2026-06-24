@@ -3,7 +3,14 @@
 namespace Carve\Shopware\Service;
 
 use Carve\CarveConverter;
+use Carve\Extension\AdmonitionExtension;
+use Carve\Extension\AutolinkExtension;
+use Carve\Extension\DetailsExtension;
+use Carve\Extension\ExternalLinksExtension;
+use Carve\Extension\InlineFootnotesExtension;
+use Carve\Extension\ListTableExtension;
 use Carve\Extension\SmartQuotesExtension;
+use Carve\Extension\TableOfContentsExtension;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
@@ -66,6 +73,8 @@ class CarveRenderer
 
         $converter = new CarveConverter(safeMode: $safe);
 
+        $converter->addExtensions($this->shopwareExtensions());
+
         $sq = $this->systemConfig->get('ShopwareCarve.config.smartQuotes');
         if ($sq === true || $sq === '1' || $sq === 1) {
             $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
@@ -73,6 +82,27 @@ class CarveRenderer
         }
 
         return $converter;
+    }
+
+    /**
+     * Returns the set of unconditionally-enabled HTML extensions for Shopware storefront use.
+     *
+     * These are pure-PHP, no-extra-JS extensions that add useful rich-content features
+     * without requiring any client-side dependencies.
+     *
+     * @return list<\Carve\Extension\ExtensionInterface>
+     */
+    private function shopwareExtensions(): array
+    {
+        return [
+            new AdmonitionExtension(),
+            new DetailsExtension(),
+            new ListTableExtension(),
+            new InlineFootnotesExtension(),
+            new AutolinkExtension(),
+            new ExternalLinksExtension(rel: 'nofollow noopener', target: '_blank'),
+            new TableOfContentsExtension(),
+        ];
     }
 
     private function render(CarveConverter $converter, ?string $source): string

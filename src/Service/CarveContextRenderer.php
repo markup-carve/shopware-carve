@@ -3,7 +3,14 @@
 namespace Carve\Shopware\Service;
 
 use Carve\CarveConverter;
+use Carve\Extension\AdmonitionExtension;
+use Carve\Extension\AutolinkExtension;
+use Carve\Extension\DetailsExtension;
+use Carve\Extension\ExternalLinksExtension;
+use Carve\Extension\InlineFootnotesExtension;
+use Carve\Extension\ListTableExtension;
 use Carve\Extension\SmartQuotesExtension;
+use Carve\Extension\TableOfContentsExtension;
 use Carve\Shopware\Inline\ProductInlineMatcher;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -49,6 +56,16 @@ class CarveContextRenderer
         $safe = $allow === true ? false : true;
 
         $converter = new CarveConverter(safeMode: $safe);
+
+        $converter->addExtensions([
+            new AdmonitionExtension(),
+            new DetailsExtension(),
+            new ListTableExtension(),
+            new InlineFootnotesExtension(),
+            new AutolinkExtension(),
+            new ExternalLinksExtension(rel: 'nofollow noopener', target: '_blank'),
+            new TableOfContentsExtension(),
+        ]);
 
         $sq = $this->systemConfig->get('ShopwareCarve.config.smartQuotes');
         if ($sq === true || $sq === '1' || $sq === 1) {
