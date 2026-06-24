@@ -11,6 +11,7 @@ use Carve\Extension\FencedRenderExtension;
 use Carve\Extension\InlineFootnotesExtension;
 use Carve\Extension\ListTableExtension;
 use Carve\Extension\SmartQuotesExtension;
+use Carve\Extension\SpoilerExtension;
 use Carve\Extension\TableOfContentsExtension;
 use Carve\Shopware\Inline\ProductInlineMatcher;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -61,6 +62,7 @@ class CarveContextRenderer
         $converter->addExtensions([
             new AdmonitionExtension(),
             new DetailsExtension(),
+            new SpoilerExtension(),
             new ListTableExtension(),
             new InlineFootnotesExtension(),
             new AutolinkExtension(),

@@ -11,6 +11,7 @@ use Carve\Extension\FencedRenderExtension;
 use Carve\Extension\InlineFootnotesExtension;
 use Carve\Extension\ListTableExtension;
 use Carve\Extension\SmartQuotesExtension;
+use Carve\Extension\SpoilerExtension;
 use Carve\Extension\TableOfContentsExtension;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
@@ -105,6 +106,7 @@ class CarveRenderer
         return [
             new AdmonitionExtension(),
             new DetailsExtension(),
+            new SpoilerExtension(),
             new ListTableExtension(),
             new InlineFootnotesExtension(),
             new AutolinkExtension(),

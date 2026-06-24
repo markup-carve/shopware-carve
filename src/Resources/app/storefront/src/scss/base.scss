@@ -283,11 +283,27 @@
 
     // -------------------------------------------------------------------------
     // Spoiler (SpoilerExtension)
-    // Inline: <span class="ext-spoiler">
-    //   CSS-only baseline: blurred until hover/focus; clears without JS.
-    // Block:  <div class="spoiler">
+    //
+    // Block:  <details class="spoiler"><summary>Title</summary>...</details>
+    //   Natively collapsed by the browser - no JS needed. Styled like details
+    //   but with a teal left-border accent.
+    //
+    // Inline: <span class="spoiler">text</span>
+    //   CSS-only blur until hover/focus - no JS needed.
+    //
+    // Fallback (extension off): <span class="ext-spoiler"> / <div class="spoiler">
+    //   .ext-spoiler keeps its blur; block .spoiler inside details is already
+    //   handled above, plain div fallback gets a neutral border box.
     // -------------------------------------------------------------------------
-    .ext-spoiler {
+
+    // Block spoiler - native <details> disclosure (collapsed by default)
+    details.spoiler {
+        border-left-color: #2c7a7b;
+        background: #f0fffe;
+    }
+
+    // Inline spoiler - CSS blur reveal on hover/focus
+    span.spoiler {
         filter: blur(4px);
         cursor: pointer;
         user-select: none;
@@ -299,16 +315,16 @@
         }
     }
 
-    .spoiler {
-        border: 1px solid #ccc;
-        border-radius: .25rem;
-        padding: 1rem;
-        margin: 1rem 0;
+    // Fallback for inline when extension is off (<span class="ext-spoiler">)
+    .ext-spoiler {
+        filter: blur(4px);
+        cursor: pointer;
+        user-select: none;
+        transition: filter .15s ease;
 
-        .admonition-title,
-        > p:first-child {
-            font-weight: 700;
-            cursor: pointer;
+        &:hover,
+        &:focus {
+            filter: none;
         }
     }
 }

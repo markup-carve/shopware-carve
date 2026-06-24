@@ -184,6 +184,29 @@ class CarveRendererTest extends TestCase
         self::assertStringContainsString('<code', $html);
     }
 
+    public function testSpoilerBlockRendersAsNativeDetails(): void
+    {
+        // SpoilerExtension converts ::: spoiler "Title" to a native <details> disclosure
+        // widget that is collapsed by default - no JS required.
+        $html = $this->renderer->toHtml("::: spoiler \"My Secret\"\nHidden content.\n:::");
+
+        self::assertStringContainsString('<details class="spoiler">', $html);
+        self::assertStringContainsString('<summary>My Secret</summary>', $html);
+        self::assertStringContainsString('Hidden content.', $html);
+        // Must not fall back to a plain div wrapper.
+        self::assertStringNotContainsString('<div class="spoiler">', $html);
+    }
+
+    public function testSpoilerInlineRendersAsSpan(): void
+    {
+        // SpoilerExtension converts :spoiler[text] to <span class="spoiler"> (CSS blur reveal,
+        // no JS). Must not fall back to the generic ext-spoiler class.
+        $html = $this->renderer->toHtml('Before :spoiler[secret text] after.');
+
+        self::assertStringContainsString('<span class="spoiler">secret text</span>', $html);
+        self::assertStringNotContainsString('ext-spoiler', $html);
+    }
+
     /**
      * @return SystemConfigService&MockObject
      */

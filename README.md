@@ -35,13 +35,13 @@ The following carve-php extensions are registered unconditionally on every HTML 
 | `AutolinkExtension` | Detects bare `https://`, `http://`, and `mailto:` URLs in text and turns them into clickable `<a>` links. |
 | `ExternalLinksExtension` | Adds `rel="nofollow noopener"` and `target="_blank"` to all external HTTP/HTTPS links, including those produced by `AutolinkExtension`. |
 | `TableOfContentsExtension` | Collects headings and makes a `<ul class="toc">` available via `getTocHtml()` (or auto-inserts at `position: 'top'`/`'bottom'` when configured). Not auto-inserted by default - use `position` option or call `getTocHtml()` manually. |
+| `SpoilerExtension` | Block `::: spoiler "Title"` becomes a native `<details class="spoiler"><summary>Title</summary>...</details>` (collapsed by default - no JS). Inline `:spoiler[text]` becomes `<span class="spoiler">text</span>` (CSS blur-until-hover, no JS). |
 
 The following extension categories are **not** enabled because they require client-side JavaScript
 or additional dependencies, and degrade gracefully without them:
 
 - **Tabs** (`TabsExtension`) - requires carve-js tab component
 - **Code groups** (`CodeGroupExtension`) - requires carve-js
-- **Spoiler** (`SpoilerExtension`) - requires carve-js reveal component
 
 Config-driven extensions (added only when enabled in the plugin settings): smart quotes
 (`ShopwareCarve.config.smartQuotes`), Mermaid diagrams (`ShopwareCarve.config.enableMermaid`)
