@@ -53,8 +53,8 @@ class CarveContextRenderer
             return '';
         }
 
-        $allow = $this->systemConfig->get('ShopwareCarve.config.allowRawHtml');
-        $safe = $allow === true ? false : true;
+        $allow = $this->configBool($this->systemConfig->get('ShopwareCarve.config.allowRawHtml'), false);
+        $safe = $allow ? false : true;
 
         $converter = new CarveConverter(safeMode: $safe);
 
@@ -68,19 +68,16 @@ class CarveContextRenderer
             new TableOfContentsExtension(),
         ]);
 
-        $sq = $this->systemConfig->get('ShopwareCarve.config.smartQuotes');
-        if ($sq === true || $sq === '1' || $sq === 1) {
+        if ($this->configBool($this->systemConfig->get('ShopwareCarve.config.smartQuotes'))) {
             $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
             $converter->addExtension(new SmartQuotesExtension(locale: is_string($loc) && $loc !== '' ? $loc : 'en'));
         }
 
-        $mermaid = $this->systemConfig->get('ShopwareCarve.config.enableMermaid');
-        if ($mermaid === true || $mermaid === '1' || $mermaid === 1) {
+        if ($this->configBool($this->systemConfig->get('ShopwareCarve.config.enableMermaid'))) {
             $converter->addExtension(FencedRenderExtension::mermaid());
         }
 
-        $charts = $this->systemConfig->get('ShopwareCarve.config.enableCharts');
-        if ($charts === true || $charts === '1' || $charts === 1) {
+        if ($this->configBool($this->systemConfig->get('ShopwareCarve.config.enableCharts'))) {
             $converter->addExtension(FencedRenderExtension::chart());
         }
 
@@ -103,5 +100,14 @@ class CarveContextRenderer
         }))->register($converter);
 
         return $converter->convert($source);
+    }
+
+    private function configBool(mixed $value, bool $default = false): bool
+    {
+        if ($value === null) {
+            return $default;
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 }

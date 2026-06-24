@@ -94,6 +94,21 @@ class CarveRendererTest extends TestCase
         self::assertStringNotContainsString("\u{201E}", $html);
     }
 
+    public function testSmartQuotesAcceptsStringTrueFromCliConfig(): void
+    {
+        // Shopware's system:config:set and config imports store booleans as strings.
+        // The configBool() helper must accept string "true" just as it does real bool true.
+        // When smartQuotes is the string "true" with locale "de", the German low quote (U+201E)
+        // must appear, proving the SmartQuotesExtension was added with the configured locale.
+        $renderer = new CarveRenderer($this->makeConfigMock(null, 'true', 'de'));
+
+        $html = $renderer->toHtml('"x"');
+
+        // String "true" must enable the extension, producing German low-9 quote.
+        self::assertStringContainsString("\u{201E}", $html);
+        self::assertStringNotContainsString('"', $html);
+    }
+
     public function testAdmonitionRendersWithCorrectClasses(): void
     {
         // AdmonitionExtension emits <div class="admonition warning" role="alert">
@@ -174,7 +189,7 @@ class CarveRendererTest extends TestCase
      */
     private function makeConfigMock(
         bool|null $allowRawHtmlValue,
-        bool|null $smartQuotesValue = null,
+        bool|string|null $smartQuotesValue = null,
         string|null $smartQuotesLocale = null,
         bool|null $enableMermaid = null,
         bool|null $enableCharts = null,
