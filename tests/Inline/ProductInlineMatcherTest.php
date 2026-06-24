@@ -11,12 +11,7 @@ class ProductInlineMatcherTest extends TestCase
     private function convert(string $src, callable $lookup): string
     {
         $converter = new CarveConverter(safeMode: true);
-        $matcher = new ProductInlineMatcher($lookup);
-        $converter->getParser()->getInlineParser()->addInlineMatcher(
-            $matcher->toClosure(),
-            priority: 10,
-            triggerChars: ':'
-        );
+        (new ProductInlineMatcher($lookup))->register($converter);
 
         return $converter->convert($src);
     }
@@ -25,6 +20,7 @@ class ProductInlineMatcherTest extends TestCase
     {
         $html = $this->convert(':product[ABC-1]', static fn (string $sku): ?array =>
             $sku === 'ABC-1' ? ['name' => 'Steel Rope', 'url' => '/p/abc-1'] : null);
+        self::assertStringContainsString('<a', $html);
         self::assertStringContainsString('/p/abc-1', $html);
         self::assertStringContainsString('Steel Rope', $html);
     }

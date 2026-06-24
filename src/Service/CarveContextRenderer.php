@@ -3,9 +3,7 @@
 namespace Carve\Shopware\Service;
 
 use Carve\CarveConverter;
-use Carve\Node\Inline\InlineExtension;
-use Carve\Node\Inline\Link;
-use Carve\Node\Inline\Text;
+use Carve\Shopware\Inline\ProductInlineMatcher;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -40,15 +38,7 @@ class CarveContextRenderer
 
         $converter = new CarveConverter(safeMode: true);
 
-        $converter->on('render.inline_extension', function (\Carve\Event\RenderEvent $event) use ($context): void {
-            /** @var InlineExtension $node */
-            $node = $event->getNode();
-            if (!$node instanceof InlineExtension || $node->getExtensionType() !== 'product') {
-                return;
-            }
-
-            $sku = trim($event->getChildrenHtml());
-
+        (new ProductInlineMatcher(function (string $sku) use ($context): ?array {
             $criteria = new Criteria();
             $criteria->addFilter(new EqualsFilter('productNumber', $sku));
             $criteria->setLimit(1);
@@ -57,17 +47,14 @@ class CarveContextRenderer
             $product = $this->productRepository->search($criteria, $context->getContext())->first();
 
             if ($product === null) {
-                $event->setHtml(htmlspecialchars($sku, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
-
-                return;
+                return null;
             }
 
             $name = (string) ($product->getTranslation('name') ?? $product->getName() ?? $sku);
             $url = '/detail/' . $product->getId();
-            $escapedUrl = htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $escapedName = htmlspecialchars($name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $event->setHtml('<a href="' . $escapedUrl . '">' . $escapedName . '</a>');
-        });
+
+            return ['name' => $name, 'url' => $url];
+        }))->register($converter);
 
         return $converter->convert($source);
     }

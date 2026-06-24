@@ -2,47 +2,67 @@
 
 namespace Carve\Shopware\Inline;
 
-use Carve\Node\Inline\Link;
-use Carve\Node\Inline\Text;
-use Carve\Parser\MatcherContext;
+use Carve\CarveConverter;
+use Carve\Event\RenderEvent;
+use Carve\Node\Inline\InlineExtension;
+use Carve\Renderer\HtmlRenderer;
 
 /**
- * Parses `:product[SKU]` inline syntax. On a known SKU it emits a Link to the
- * product detail page with the product name as text; on an unknown SKU it emits
- * the literal SKU as inert text (no broken link). Resolution is delegated to a
- * lookup closure so the parser stays free of Shopware coupling (and testable).
+ * Resolves the Carve inline extension `:product[SKU]` to a storefront product link.
+ *
+ * carve-php parses `:type[content]` into an InlineExtension node during parsing
+ * (before any custom inline matcher runs), so resolution happens at RENDER time
+ * via the `render.inline_extension` event - the same hook pattern the bundled
+ * AdmonitionExtension uses for `render.div`. A known SKU becomes an <a> to the
+ * product page; an unknown SKU degrades to its inert text (no broken link).
+ *
+ * The SKU lookup is injected as a closure so this class stays free of Shopware
+ * coupling and is unit-testable in isolation.
  */
 class ProductInlineMatcher
 {
     /** @var \Closure(string): (array{name: string, url: string}|null) */
     private \Closure $lookup;
 
-    /**
-     * @param callable(string): (array{name: string, url: string}|null) $lookup
-     */
+    /** @param callable(string): (array{name: string, url: string}|null) $lookup */
     public function __construct(callable $lookup)
     {
         $this->lookup = \Closure::fromCallable($lookup);
     }
 
-    public function toClosure(): \Closure
+    public function register(CarveConverter $converter): void
     {
-        return function (string $text, int $pos, MatcherContext $ctx): ?array {
-            if (!preg_match('/\G:product\[([^\]]+)\]/', $text, $m, 0, $pos)) {
-                return null;
+        $renderer = $converter->getRenderer();
+        if (!$renderer instanceof HtmlRenderer) {
+            return;
+        }
+
+        $converter->on('render.inline_extension', function (RenderEvent $event): void {
+            $node = $event->getNode();
+            if (!$node instanceof InlineExtension || $node->getExtensionType() !== 'product') {
+                return;
             }
-            $sku = trim($m[1]);
+
+            $sku = trim(html_entity_decode(strip_tags((string) $event->getChildrenHtml())));
+            if ($sku === '') {
+                return;
+            }
+
             $product = ($this->lookup)($sku);
-            $end = $pos + strlen($m[0]);
-
             if ($product === null) {
-                return ['node' => new Text($sku), 'end' => $end];
+                $event->setHtml($this->escape($sku));
+
+                return;
             }
 
-            $link = new Link($product['url']);
-            $link->appendChild(new Text($product['name']));
+            $event->setHtml(
+                '<a href="' . $this->escape($product['url']) . '">' . $this->escape($product['name']) . '</a>'
+            );
+        });
+    }
 
-            return ['node' => $link, 'end' => $end];
-        };
+    private function escape(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     }
 }
