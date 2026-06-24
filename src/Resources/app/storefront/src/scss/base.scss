@@ -172,4 +172,121 @@
         a { text-decoration: none; color: inherit; }
         a:hover { text-decoration: underline; }
     }
+
+    // -------------------------------------------------------------------------
+    // Superscript / subscript (core)
+    // -------------------------------------------------------------------------
+    sup {
+        vertical-align: super;
+        font-size: .75em;
+        line-height: 1;
+    }
+
+    sub {
+        vertical-align: sub;
+        font-size: .75em;
+        line-height: 1;
+    }
+
+    // -------------------------------------------------------------------------
+    // Inline code - scoped so pre code is NOT double-styled
+    // -------------------------------------------------------------------------
+    :not(pre) > code {
+        background: rgba(0, 0, 0, .06);
+        padding: .15em .35em;
+        border-radius: 3px;
+        font-family: monospace;
+        font-size: .875em;
+    }
+
+    // -------------------------------------------------------------------------
+    // Code blocks <pre> (fenced code, raw blocks)
+    // -------------------------------------------------------------------------
+    pre {
+        background: #1e1e2e;
+        color: #cdd6f4;
+        padding: 1rem;
+        border-radius: .375rem;
+        overflow-x: auto;
+        margin: 1rem 0;
+
+        code {
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+            font-size: .875em;
+            color: inherit;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Blockquote (core)
+    // -------------------------------------------------------------------------
+    blockquote {
+        border-left: 4px solid #ccc;
+        padding-left: 1rem;
+        margin: 1rem 0;
+        color: #555;
+        font-style: italic;
+    }
+
+    // -------------------------------------------------------------------------
+    // Editorial note span (critic markup `{# note #}`)
+    // Emits: <span class="critic-comment">
+    // -------------------------------------------------------------------------
+    .critic-comment {
+        background: #fff3cd;
+        color: #856404;
+        font-style: italic;
+        border-radius: .15em;
+        padding: 0 .2em;
+    }
+
+    // -------------------------------------------------------------------------
+    // Mentions / tags (MentionsExtension)
+    // Emits: <span class="mention"><strong>@name</strong></span>
+    //        <span class="tag"><strong>#tag</strong></span>
+    //   or:  <a class="mention" href="..."> / <a class="tag" href="...">
+    // -------------------------------------------------------------------------
+    .mention {
+        color: #0366d6;
+    }
+
+    .tag {
+        color: #28a745;
+        background: rgba(40, 167, 69, .1);
+        border-radius: 3px;
+        padding: 0 .25em;
+    }
+
+    // -------------------------------------------------------------------------
+    // Spoiler (SpoilerExtension)
+    // Inline: <span class="ext-spoiler">
+    //   CSS-only baseline: blurred until hover/focus; clears without JS.
+    // Block:  <div class="spoiler">
+    // -------------------------------------------------------------------------
+    .ext-spoiler {
+        filter: blur(4px);
+        cursor: pointer;
+        user-select: none;
+        transition: filter .15s ease;
+
+        &:hover,
+        &:focus {
+            filter: none;
+        }
+    }
+
+    .spoiler {
+        border: 1px solid #ccc;
+        border-radius: .25rem;
+        padding: 1rem;
+        margin: 1rem 0;
+
+        .admonition-title,
+        > p:first-child {
+            font-weight: 700;
+            cursor: pointer;
+        }
+    }
 }

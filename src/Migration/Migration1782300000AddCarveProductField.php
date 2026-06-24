@@ -63,7 +63,7 @@ class Migration1782300000AddCarveProductField extends MigrationStep
             'config' => json_encode([
                 'label' => ['en-GB' => 'Carve body', 'de-DE' => 'Carve-Inhalt'],
                 'componentName' => 'sw-field',
-                'customFieldType' => 'textEditor',
+                'customFieldType' => 'textarea',
                 'customFieldPosition' => 1,
                 'helpText' => [
                     'en-GB' => 'Carve markup. Rendered to safe HTML on the storefront.',
