@@ -1,0 +1,14 @@
+{% sw_extends '@Storefront/storefront/page/product-detail/description.html.twig' %}
+
+{# Render the carve_body product custom field as safe HTML via the |carve filter. #}
+{% block page_product_detail_description %}
+    {{ parent() }}
+
+    {% set carveSource = product.translated.customFields.carve_body
+        ?? product.customFields.carve_body ?? null %}
+    {% if carveSource %}
+        <div class="carve-content carve-product-description">
+            {{ carveSource|carve }}
+        </div>
+    {% endif %}
+{% endblock %}
