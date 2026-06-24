@@ -4,10 +4,10 @@ Render [Carve](https://github.com/markup-carve/carve) markup to safe, semantic H
 One source - eight surfaces: Twig filters, CMS elements, product/category fields, admin live
 preview, transactional mail, inline product references, and a CLI renderer.
 
-**Safe by default.** Raw HTML is off. `javascript:`, `data:`, `vbscript:`, `file:` URL schemes are
-neutralized. `on*`, `srcdoc`, and `formaction` attributes are stripped. No separate sanitizer needed.
-The `|carve` filter is `is_safe => html` only because carve-php's safe mode is always on - never
-disable it.
+**Safe by default.** Raw HTML passthrough is off. `javascript:`, `data:`, `vbscript:`, `file:` URL
+schemes are neutralized. `on*`, `srcdoc`, and `formaction` attributes are stripped. These protections
+are always-on baselines independent of any plugin setting. No separate sanitizer needed. The `|carve`
+filter is `is_safe => html` because carve-php's URL/attribute hardening is unconditional.
 
 - Composer: `markup-carve/shopware-carve`
 - License: MIT
@@ -253,22 +253,25 @@ Access the plugin settings via Admin - Extensions - My extensions - Carve - Conf
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `ShopwareCarve.config.safeMode` | `true` | Harden HTML output (see Security note below). |
+| `ShopwareCarve.config.allowRawHtml` | `false` | Allow raw HTML passthrough (see Security note below). |
 | `ShopwareCarve.config.livePreview` | `true` | Show instant preview while editing a Carve CMS element in the admin. |
 | `ShopwareCarve.config.smartQuotes` | `false` | Smart quotes (typographic): Converts straight quotes to locale-correct typographic quotes. |
 | `ShopwareCarve.config.smartQuotesLocale` | `en` | Smart-quote language: Sets the locale for typographic quotes. Only applies when `smartQuotes` is enabled. Supported locales: en, de, de-CH, fr, es, it, pt, nl, pl, ru, uk, cs, hu, sv, da, fi, nb, nn, ja, zh. |
 
-### safeMode
+### allowRawHtml
 
-Controls whether carve-php's HTML hardening is active. When `true` (the default):
+Controls whether authored raw HTML (fenced ` ```=html ` blocks and inline `` `...`{=html} `` spans)
+is passed through to the output or escaped. Default: `false` (raw HTML is escaped).
 
-- Raw HTML in Carve source is escaped, not passed through.
+Note that the following protections are **always on** regardless of this setting - they are a
+baseline provided by carve-php and are not governed by `allowRawHtml`:
+
 - `javascript:`, `data:`, `vbscript:`, and `file:` URL schemes are neutralized.
 - `on*` event attributes, `srcdoc`, and `formaction` are stripped.
 
-**Keep `safeMode` ON** unless every content author is fully trusted. Disabling it while the
+**Enable `allowRawHtml` only if every content author is fully trusted.** Enabling it while the
 `|carve` filter is registered as `is_safe => html` creates a stored XSS vector - any author can
-inject arbitrary HTML into the storefront.
+inject arbitrary HTML (including `<script>` tags) into the storefront.
 
 ### livePreview
 
@@ -323,16 +326,20 @@ Note: future versions may auto-derive the locale from the Shopware sales channel
 ## Security note
 
 The `|carve` and `|carve_ctx` filters are marked `is_safe => html` - meaning Twig will not
-double-escape their output. This is only safe because `CarveRenderer` runs with safe mode on
-(controlled by the `ShopwareCarve.config.safeMode` system config setting, default `true`):
+double-escape their output. This is safe because carve-php provides always-on hardening that
+cannot be disabled by any plugin setting:
 
-- Raw HTML in source is escaped, not passed through.
 - `javascript:`, `data:`, `vbscript:`, and `file:` URL schemes are neutralized.
 - `on*` event attributes, `srcdoc`, and `formaction` are stripped.
 - Parse depth and input size are bounded against DoS.
 
-**Never disable safe mode** unless all content authors are fully trusted. Disabling it while
-leaving `is_safe => html` in the Twig filter registration creates a stored XSS vector.
+The only thing the `ShopwareCarve.config.allowRawHtml` setting controls is whether authored raw
+HTML (fenced ` ```=html ` blocks and inline `` `...`{=html} `` spans) is passed through or
+escaped. By default (`allowRawHtml = false`) raw HTML is escaped and cannot reach the output.
+
+**Enable `allowRawHtml` only if all content authors are fully trusted.** Enabling it while
+`is_safe => html` is in the Twig filter registration creates a stored XSS vector - authors can
+inject arbitrary HTML including `<script>` tags into the storefront.
 
 ---
 

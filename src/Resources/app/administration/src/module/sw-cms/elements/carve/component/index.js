@@ -7,6 +7,7 @@ Shopware.Component.register('sw-cms-el-carve', {
     data() {
         return {
             livePreviewEnabled: true,
+            allowRawHtml: false,
         };
     },
     created() {
@@ -14,15 +15,17 @@ Shopware.Component.register('sw-cms-el-carve', {
         Shopware.Service('systemConfigApiService')
             .getValues('ShopwareCarve.config')
             .then((values) => {
-                const val = values['ShopwareCarve.config.livePreview'];
-                this.livePreviewEnabled = val === undefined ? true : Boolean(val);
+                const lp = values['ShopwareCarve.config.livePreview'];
+                this.livePreviewEnabled = lp === undefined ? true : Boolean(lp);
+                const raw = values['ShopwareCarve.config.allowRawHtml'];
+                this.allowRawHtml = raw === undefined ? false : Boolean(raw);
             });
     },
     computed: {
         html() {
             const src = this.element?.config?.content?.value ?? '';
             try {
-                return carveToHtml(src, { allowRawHtml: false });
+                return carveToHtml(src, { allowRawHtml: this.allowRawHtml });
             } catch (e) {
                 return '';
             }

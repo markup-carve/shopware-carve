@@ -9,6 +9,7 @@ Component.register('sw-cms-el-config-carve', {
     data() {
         return {
             livePreviewEnabled: true,
+            allowRawHtml: false,
         };
     },
     created() {
@@ -16,8 +17,10 @@ Component.register('sw-cms-el-config-carve', {
         Shopware.Service('systemConfigApiService')
             .getValues('ShopwareCarve.config')
             .then((values) => {
-                const val = values['ShopwareCarve.config.livePreview'];
-                this.livePreviewEnabled = val === undefined ? true : Boolean(val);
+                const lp = values['ShopwareCarve.config.livePreview'];
+                this.livePreviewEnabled = lp === undefined ? true : Boolean(lp);
+                const raw = values['ShopwareCarve.config.allowRawHtml'];
+                this.allowRawHtml = raw === undefined ? false : Boolean(raw);
             });
     },
     computed: {
@@ -32,7 +35,7 @@ Component.register('sw-cms-el-config-carve', {
         },
         previewHtml() {
             try {
-                return carveToHtml(this.content, { allowRawHtml: false });
+                return carveToHtml(this.content, { allowRawHtml: this.allowRawHtml });
             } catch (e) {
                 return '';
             }

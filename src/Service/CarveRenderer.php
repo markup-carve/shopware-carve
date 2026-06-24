@@ -9,15 +9,17 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 /**
  * Thin wrapper around markup-carve/carve-php.
  *
- * HTML rendering runs with safe mode controlled by the `ShopwareCarve.config.safeMode` system
- * config setting (default: ON). When safe mode is ON, authored raw HTML is escaped, dangerous
- * URL schemes (javascript:, data:, vbscript:, file:) are neutralized, and
- * on-event/srcdoc/formaction attribute values are stripped. Output is therefore safe to emit
- * into the storefront without further sanitizing - the reason the Twig `carve`
- * filter may mark it is_safe => html.
+ * HTML rendering respects the `ShopwareCarve.config.allowRawHtml` system config setting
+ * (default: false). When allowRawHtml is false (the default), authored raw HTML
+ * (fenced ```=html blocks and inline `...`{=html} spans) is escaped rather than passed through.
+ * Dangerous URL schemes (javascript:, data:, vbscript:, file:) and on-event/srcdoc/formaction
+ * attributes are ALWAYS stripped regardless of this setting - they are a baseline provided by
+ * carve-php's safeMode and are never toggled off by allowRawHtml. Output is therefore safe to
+ * emit into the storefront without further sanitizing, which is why the Twig `carve` filter is
+ * marked is_safe => html.
  *
  * The HTML converter is built per call in toHtml() because it depends on runtime config
- * (safe mode / smart quotes) that can change in the Shopware admin without a cache:clear.
+ * (allowRawHtml / smart quotes) that can change in the Shopware admin without a cache:clear.
  * The text and markdown converters have no config-dependent state and are constructed once
  * as stateless singletons.
  */
@@ -54,13 +56,13 @@ class CarveRenderer
     /**
      * Builds a fresh HTML converter from current system config.
      *
-     * Called on every toHtml() invocation so that safe-mode / smart-quotes changes
+     * Called on every toHtml() invocation so that allowRawHtml / smart-quotes changes
      * made in the Shopware admin take effect immediately without requiring cache:clear.
      */
     private function buildHtmlConverter(): CarveConverter
     {
-        $value = $this->systemConfig->get('ShopwareCarve.config.safeMode');
-        $safe = $value === null ? true : (bool) $value;
+        $allow = $this->systemConfig->get('ShopwareCarve.config.allowRawHtml');
+        $safe = $allow === true ? false : true;
 
         $converter = new CarveConverter(safeMode: $safe);
 

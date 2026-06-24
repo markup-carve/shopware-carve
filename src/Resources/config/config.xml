@@ -6,22 +6,24 @@
         <title lang="de-DE">Carve-Rendering</title>
 
         <input-field type="bool">
-            <name>safeMode</name>
-            <label>Safe mode (hardened HTML)</label>
-            <label lang="de-DE">Sicherer Modus (gehärtetes HTML)</label>
-            <defaultValue>true</defaultValue>
+            <name>allowRawHtml</name>
+            <label>Allow raw HTML</label>
+            <label lang="de-DE">Rohes HTML erlauben</label>
+            <defaultValue>false</defaultValue>
             <helpText>
-                When enabled, raw HTML in Carve source is escaped, dangerous URL schemes
-                (javascript:, data:, vbscript:, file:) are neutralized, and on-event / srcdoc /
-                formaction attributes are stripped. Keep this ON unless every content author is
-                fully trusted - disabling it allows raw HTML pass-through and removes XSS protection.
+                By default, authored raw HTML (e.g. fenced ```=html blocks and inline `...`{=html}
+                spans) is escaped and not passed through. Dangerous URL schemes (javascript:,
+                vbscript:, data:, file:) and event-handler (on*), srcdoc, and formaction attributes
+                are ALWAYS stripped regardless of this setting. Enable only if every content author
+                is fully trusted, because raw HTML can contain executable &lt;script&gt; tags.
             </helpText>
             <helpText lang="de-DE">
-                Wenn aktiviert, wird rohes HTML im Carve-Quelltext escaped, gefährliche URL-Schemata
-                (javascript:, data:, vbscript:, file:) werden neutralisiert und on-Event- / srcdoc- /
-                formaction-Attribute werden entfernt. Diese Option sollte NUR deaktiviert werden, wenn
-                allen Inhaltsautoren vollständig vertraut wird - das Deaktivieren erlaubt Raw-HTML
-                und entfernt den XSS-Schutz.
+                Standardmäßig wird rohes HTML (z.B. ```=html-Blöcke und inline `...`{=html}-Spans)
+                escapt und nicht durchgeleitet. Gefährliche URL-Schemata (javascript:, vbscript:,
+                data:, file:) sowie on-Event-, srcdoc- und formaction-Attribute werden IMMER
+                entfernt, unabhängig von dieser Einstellung. Nur aktivieren, wenn allen
+                Inhaltsautoren vollständig vertraut wird, da rohes HTML ausführbare
+                &lt;script&gt;-Tags enthalten kann.
             </helpText>
         </input-field>
 

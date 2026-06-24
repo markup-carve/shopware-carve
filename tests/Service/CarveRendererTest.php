@@ -53,11 +53,11 @@ class CarveRendererTest extends TestCase
         self::assertStringContainsString('bold', $md);
     }
 
-    public function testSafeModeCanBeDisabledViaConfig(): void
+    public function testRawHtmlAllowedViaConfig(): void
     {
-        $renderer = new CarveRenderer($this->makeConfigMock(false));
+        $renderer = new CarveRenderer($this->makeConfigMock(true));
 
-        // Raw HTML block (``` =html fence) passes through unescaped when safe mode is off.
+        // Raw HTML block (``` =html fence) passes through unescaped when allowRawHtml is true.
         $rawHtmlSource = "``` =html\n<script>alert(2)</script>\n```";
         $html = $renderer->toHtml($rawHtmlSource);
 
@@ -98,14 +98,14 @@ class CarveRendererTest extends TestCase
      * @return SystemConfigService&MockObject
      */
     private function makeConfigMock(
-        bool|null $safeModeValue,
+        bool|null $allowRawHtmlValue,
         bool|null $smartQuotesValue = null,
         string|null $smartQuotesLocale = null,
     ): SystemConfigService {
         $mock = $this->createMock(SystemConfigService::class);
 
         $configMap = [
-            'ShopwareCarve.config.safeMode' => $safeModeValue,
+            'ShopwareCarve.config.allowRawHtml' => $allowRawHtmlValue,
             'ShopwareCarve.config.smartQuotes' => $smartQuotesValue,
             'ShopwareCarve.config.smartQuotesLocale' => $smartQuotesLocale,
         ];

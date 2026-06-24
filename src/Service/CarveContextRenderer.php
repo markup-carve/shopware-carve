@@ -12,10 +12,14 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
- * Context-aware Carve rendering. Builds a per-call converter with safe mode controlled by the
- * `ShopwareCarve.config.safeMode` system config setting (default: ON), and with the
- * :product[SKU] inline extension bound to the active sales channel, so authored product
- * references resolve to storefront links for the current channel.
+ * Context-aware Carve rendering. Builds a per-call converter with raw HTML passthrough
+ * controlled by the `ShopwareCarve.config.allowRawHtml` system config setting (default: false),
+ * and with the :product[SKU] inline extension bound to the active sales channel, so authored
+ * product references resolve to storefront links for the current channel.
+ *
+ * Dangerous URL schemes (javascript:, data:, vbscript:, file:) and on-event/srcdoc/formaction
+ * attributes are ALWAYS stripped regardless of allowRawHtml - they are a baseline provided by
+ * carve-php's safeMode and are never toggled off.
  *
  * `:product[SKU]` is parsed by carve-php as a generic InlineExtension node (type
  * "product"). A render.inline_extension event listener intercepts those nodes and
@@ -41,8 +45,8 @@ class CarveContextRenderer
             return '';
         }
 
-        $value = $this->systemConfig->get('ShopwareCarve.config.safeMode');
-        $safe = $value === null ? true : (bool) $value;
+        $allow = $this->systemConfig->get('ShopwareCarve.config.allowRawHtml');
+        $safe = $allow === true ? false : true;
 
         $converter = new CarveConverter(safeMode: $safe);
 
