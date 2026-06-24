@@ -1,0 +1,9 @@
+{# Reference: author a Carve source once, emit both mail parts.
+   In a Shopware mail template (Admin > Settings > Email templates) you can use: #}
+{% set body = order.customFields.carve_body ?? '' %}
+
+{# HTML part #}
+{{ body|carve }}
+
+{# Plain-text part (separate mail template field) #}
+{{ body|carve_text }}
