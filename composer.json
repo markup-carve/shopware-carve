@@ -1,0 +1,39 @@
+{
+    "name": "markup-carve/shopware-carve",
+    "description": "Render Carve markup to safe HTML in Shopware: Twig filters, CMS element, product/category fields, live preview, mail, inline product references.",
+    "version": "0.1.0",
+    "type": "shopware-platform-plugin",
+    "license": "MIT",
+    "authors": [{ "name": "Mark Scherer" }],
+    "require": {
+        "php": "^8.2",
+        "shopware/core": "~6.6.0 || ~6.7.0",
+        "markup-carve/carve-php": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0 || ^11.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "repositories": [
+        { "type": "path", "url": "../carve-php", "options": { "symlink": false } }
+    ],
+    "autoload": { "psr-4": { "Carve\\Shopware\\": "src/" } },
+    "autoload-dev": { "psr-4": { "Carve\\Shopware\\Tests\\": "tests/" } },
+    "extra": {
+        "shopware-plugin-class": "Carve\\Shopware\\ShopwareCarve",
+        "label": {
+            "en-GB": "Carve for Shopware",
+            "de-DE": "Carve fuer Shopware"
+        },
+        "description": {
+            "en-GB": "Safe rich text via the Carve markup language: Twig filters, CMS element, product/category fields, mail, inline product refs.",
+            "de-DE": "Sicherer Rich-Text mit der Carve-Markup-Sprache: Twig-Filter, CMS-Element, Produkt-/Kategoriefelder, Mail, Inline-Produktrefs."
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true
+        }
+    }
+}
