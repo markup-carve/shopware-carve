@@ -9,7 +9,7 @@
  */
 
 const MERMAID_CDN = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-const CHARTJS_CDN = 'https://cdn.jsdelivr.net/npm/chart.js@4/+esm';
+const CHARTJS_CDN = 'https://cdn.jsdelivr.net/npm/chart.js@4/auto/+esm';
 
 async function initMermaid(markers) {
     try {
@@ -24,7 +24,9 @@ async function initMermaid(markers) {
 
 async function initCharts(markers) {
     try {
-        const { default: Chart } = await import(/* webpackIgnore: true */ CHARTJS_CDN);
+        // chart.js@4 +esm exposes Chart as a named export; .default is the module namespace object.
+        const mod = await import(/* webpackIgnore: true */ CHARTJS_CDN);
+        const Chart = mod.Chart ?? mod.default;
         for (const marker of markers) {
             const scriptEl = marker.querySelector('script[type="application/json"]');
             if (!scriptEl) continue;
