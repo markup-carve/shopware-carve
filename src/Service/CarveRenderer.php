@@ -16,35 +16,29 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  * into the storefront without further sanitizing - the reason the Twig `carve`
  * filter may mark it is_safe => html.
  *
- * One converter per target is reused across calls; convert() is a full parse+render
- * with no per-document state leak.
+ * The HTML converter is built per call in toHtml() because it depends on runtime config
+ * (safe mode / smart quotes) that can change in the Shopware admin without a cache:clear.
+ * The text and markdown converters have no config-dependent state and are constructed once
+ * as stateless singletons.
  */
 class CarveRenderer
 {
-    private CarveConverter $html;
     private CarveConverter $text;
     private CarveConverter $markdown;
 
     public function __construct(private readonly SystemConfigService $systemConfig)
     {
-        $value = $this->systemConfig->get('ShopwareCarve.config.safeMode');
-        $safe = $value === null ? true : (bool) $value;
-
-        $this->html = new CarveConverter(safeMode: $safe);
-
-        $sq = $this->systemConfig->get('ShopwareCarve.config.smartQuotes');
-        if ($sq === true || $sq === '1' || $sq === 1) {
-            $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
-            $this->html->addExtension(new SmartQuotesExtension(locale: is_string($loc) && $loc !== '' ? $loc : 'en'));
-        }
-
         $this->text = CarveConverter::plainText();
         $this->markdown = CarveConverter::markdown();
     }
 
     public function toHtml(?string $source): string
     {
-        return $this->render($this->html, $source);
+        if ($source === null || trim($source) === '') {
+            return '';
+        }
+
+        return $this->buildHtmlConverter()->convert($source);
     }
 
     public function toText(?string $source): string
@@ -55,6 +49,28 @@ class CarveRenderer
     public function toMarkdown(?string $source): string
     {
         return $this->render($this->markdown, $source);
+    }
+
+    /**
+     * Builds a fresh HTML converter from current system config.
+     *
+     * Called on every toHtml() invocation so that safe-mode / smart-quotes changes
+     * made in the Shopware admin take effect immediately without requiring cache:clear.
+     */
+    private function buildHtmlConverter(): CarveConverter
+    {
+        $value = $this->systemConfig->get('ShopwareCarve.config.safeMode');
+        $safe = $value === null ? true : (bool) $value;
+
+        $converter = new CarveConverter(safeMode: $safe);
+
+        $sq = $this->systemConfig->get('ShopwareCarve.config.smartQuotes');
+        if ($sq === true || $sq === '1' || $sq === 1) {
+            $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
+            $converter->addExtension(new SmartQuotesExtension(locale: is_string($loc) && $loc !== '' ? $loc : 'en'));
+        }
+
+        return $converter;
     }
 
     private function render(CarveConverter $converter, ?string $source): string
