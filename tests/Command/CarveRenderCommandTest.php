@@ -4,6 +4,7 @@ namespace Carve\Shopware\Tests\Command;
 
 use Carve\Shopware\Command\CarveRenderCommand;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
 class CarveRenderCommandTest extends TestCase
@@ -23,5 +24,26 @@ class CarveRenderCommandTest extends TestCase
         $tester = new CommandTester($cmd);
         $tester->execute(['source' => '-', '--text-input' => '*x*', '--plain' => true]);
         self::assertStringNotContainsString('<strong>', $tester->getDisplay());
+    }
+
+    /**
+     * The ANSI target uses --term, not --ansi: Symfony reserves --ansi/--no-ansi
+     * globally, so registering an --ansi option collides once the command is added
+     * to an Application. Running through a real Application here guards that
+     * regression (a bare CommandTester would not surface the collision) and proves
+     * --term emits ANSI escape sequences.
+     */
+    public function testRendersAnsiViaTermThroughApplication(): void
+    {
+        $application = new Application();
+        $application->add(new CarveRenderCommand());
+
+        $tester = new CommandTester($application->find('carve:render'));
+        $tester->execute(
+            ['source' => '-', '--text-input' => '*x*', '--term' => true],
+            ['decorated' => true],
+        );
+
+        self::assertStringContainsString("\033[", $tester->getDisplay());
     }
 }
