@@ -143,5 +143,23 @@
                 </option>
             </options>
         </input-field>
+
+        <input-field type="bool">
+            <name>enableMermaid</name>
+            <label>Enable Mermaid diagrams</label>
+            <label lang="de-DE">Mermaid-Diagramme aktivieren</label>
+            <defaultValue>false</defaultValue>
+            <helpText>Renders ```mermaid code blocks as diagrams by lazy-loading Mermaid.js from jsDelivr CDN only when a diagram is present on the page. Off by default. The CDN must be allowed by the storefront CSP (add https://cdn.jsdelivr.net to script-src and connect-src).</helpText>
+            <helpText lang="de-DE">Rendert ```mermaid-Codeblöcke als Diagramme, indem Mermaid.js vom jsDelivr-CDN nur bei Bedarf nachgeladen wird. Standardmäßig deaktiviert. Das CDN muss in der Storefront-CSP erlaubt sein (https://cdn.jsdelivr.net zu script-src und connect-src hinzufügen).</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>enableCharts</name>
+            <label>Enable charts (Chart.js)</label>
+            <label lang="de-DE">Diagramme aktivieren (Chart.js)</label>
+            <defaultValue>false</defaultValue>
+            <helpText>Renders ```chart code blocks as charts by lazy-loading Chart.js from jsDelivr CDN only when a chart is present on the page. Off by default. The CDN must be allowed by the storefront CSP (add https://cdn.jsdelivr.net to script-src and connect-src).</helpText>
+            <helpText lang="de-DE">Rendert ```chart-Codeblöcke als Diagramme, indem Chart.js vom jsDelivr-CDN nur bei Bedarf nachgeladen wird. Standardmäßig deaktiviert. Das CDN muss in der Storefront-CSP erlaubt sein (https://cdn.jsdelivr.net zu script-src und connect-src hinzufügen).</helpText>
+        </input-field>
     </card>
 </config>

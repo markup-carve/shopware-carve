@@ -7,6 +7,7 @@ use Carve\Extension\AdmonitionExtension;
 use Carve\Extension\AutolinkExtension;
 use Carve\Extension\DetailsExtension;
 use Carve\Extension\ExternalLinksExtension;
+use Carve\Extension\FencedRenderExtension;
 use Carve\Extension\InlineFootnotesExtension;
 use Carve\Extension\ListTableExtension;
 use Carve\Extension\SmartQuotesExtension;
@@ -71,6 +72,16 @@ class CarveContextRenderer
         if ($sq === true || $sq === '1' || $sq === 1) {
             $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
             $converter->addExtension(new SmartQuotesExtension(locale: is_string($loc) && $loc !== '' ? $loc : 'en'));
+        }
+
+        $mermaid = $this->systemConfig->get('ShopwareCarve.config.enableMermaid');
+        if ($mermaid === true || $mermaid === '1' || $mermaid === 1) {
+            $converter->addExtension(FencedRenderExtension::mermaid());
+        }
+
+        $charts = $this->systemConfig->get('ShopwareCarve.config.enableCharts');
+        if ($charts === true || $charts === '1' || $charts === 1) {
+            $converter->addExtension(FencedRenderExtension::chart());
         }
 
         (new ProductInlineMatcher(function (string $sku) use ($context): ?array {

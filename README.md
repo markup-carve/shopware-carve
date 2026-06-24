@@ -285,6 +285,8 @@ Access the plugin settings via Admin - Extensions - My extensions - Carve - Conf
 | `ShopwareCarve.config.livePreview` | `true` | Show instant preview while editing a Carve CMS element in the admin. |
 | `ShopwareCarve.config.smartQuotes` | `false` | Smart quotes (typographic): Converts straight quotes to locale-correct typographic quotes. |
 | `ShopwareCarve.config.smartQuotesLocale` | `en` | Smart-quote language: Sets the locale for typographic quotes. Only applies when `smartQuotes` is enabled. Supported locales: en, de, de-CH, fr, es, it, pt, nl, pl, ru, uk, cs, hu, sv, da, fi, nb, nn, ja, zh. |
+| `ShopwareCarve.config.enableMermaid` | `false` | Lazy-load Mermaid.js from CDN and render ` ```mermaid ` blocks as diagrams. CDN must be in CSP. |
+| `ShopwareCarve.config.enableCharts` | `false` | Lazy-load Chart.js from CDN and render ` ```chart ` blocks as charts. CDN must be in CSP. |
 
 ### allowRawHtml
 
@@ -348,6 +350,28 @@ Supported locales:
 | `zh` | Chinese |
 
 Note: future versions may auto-derive the locale from the Shopware sales channel language.
+
+### enableMermaid
+
+When `true`, ` ```mermaid ` fenced code blocks are rendered as interactive Mermaid diagrams.
+The Mermaid.js library is lazy-loaded from jsDelivr CDN (`https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs`)
+only when at least one `<pre class="mermaid">` element is present on the page.
+
+Default: `false`.
+
+### enableCharts
+
+When `true`, ` ```chart ` fenced code blocks (containing a Chart.js config as JSON) are rendered
+as charts. The Chart.js library is lazy-loaded from jsDelivr CDN (`https://cdn.jsdelivr.net/npm/chart.js@4/+esm`)
+only when at least one `<div class="chart">` element is present on the page.
+
+Default: `false`.
+
+### CDN and CSP
+
+When either `enableMermaid` or `enableCharts` is turned on, the storefront loads the
+corresponding library from `https://cdn.jsdelivr.net`. If your shop enforces a Content Security
+Policy, add `https://cdn.jsdelivr.net` to both `script-src` and `connect-src`.
 
 ---
 

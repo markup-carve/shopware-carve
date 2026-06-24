@@ -127,6 +127,48 @@ class CarveRendererTest extends TestCase
         self::assertStringNotContainsString('class="list-table"', $html);
     }
 
+    public function testMermaidEnabledEmitsHydrationMarkup(): void
+    {
+        $renderer = new CarveRenderer($this->makeConfigMock(null, null, null, true, null));
+
+        $html = $renderer->toHtml("``` mermaid\ngraph LR\nA --> B\n```");
+
+        // FencedRenderExtension::mermaid() emits <pre class="mermaid">...</pre>
+        self::assertStringContainsString('<pre class="mermaid">', $html);
+        // Must NOT fall back to a plain code block
+        self::assertStringNotContainsString('<code class="language-mermaid">', $html);
+    }
+
+    public function testMermaidDisabledByDefaultYieldsCodeBlock(): void
+    {
+        // Default renderer (enableMermaid = null/false) must not emit the hydration markup
+        $html = $this->renderer->toHtml("``` mermaid\ngraph LR\nA --> B\n```");
+
+        self::assertStringNotContainsString('<pre class="mermaid">', $html);
+        self::assertStringContainsString('<code', $html);
+    }
+
+    public function testChartEnabledEmitsHydrationMarkup(): void
+    {
+        $renderer = new CarveRenderer($this->makeConfigMock(null, null, null, null, true));
+
+        $json = '{"type":"bar","data":{"labels":["A"],"datasets":[{"data":[1]}]}}';
+        $html = $renderer->toHtml("``` chart\n{$json}\n```");
+
+        // FencedRenderExtension::chart() emits <div class="chart"><script type="application/json">...</script></div>
+        self::assertStringContainsString('<div class="chart">', $html);
+        self::assertStringContainsString('<script type="application/json">', $html);
+        self::assertStringNotContainsString('<code class="language-chart">', $html);
+    }
+
+    public function testChartsDisabledByDefaultYieldsCodeBlock(): void
+    {
+        $html = $this->renderer->toHtml("``` chart\n{\"type\":\"bar\"}\n```");
+
+        self::assertStringNotContainsString('<div class="chart">', $html);
+        self::assertStringContainsString('<code', $html);
+    }
+
     /**
      * @return SystemConfigService&MockObject
      */
@@ -134,6 +176,8 @@ class CarveRendererTest extends TestCase
         bool|null $allowRawHtmlValue,
         bool|null $smartQuotesValue = null,
         string|null $smartQuotesLocale = null,
+        bool|null $enableMermaid = null,
+        bool|null $enableCharts = null,
     ): SystemConfigService {
         $mock = $this->createMock(SystemConfigService::class);
 
@@ -141,6 +185,8 @@ class CarveRendererTest extends TestCase
             'ShopwareCarve.config.allowRawHtml' => $allowRawHtmlValue,
             'ShopwareCarve.config.smartQuotes' => $smartQuotesValue,
             'ShopwareCarve.config.smartQuotesLocale' => $smartQuotesLocale,
+            'ShopwareCarve.config.enableMermaid' => $enableMermaid,
+            'ShopwareCarve.config.enableCharts' => $enableCharts,
         ];
 
         $mock->method('get')
