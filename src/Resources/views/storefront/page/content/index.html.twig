@@ -1,0 +1,14 @@
+{% sw_extends '@Storefront/storefront/page/content/index.html.twig' %}
+
+{# Render category carve_category_body above the CMS content, if present. #}
+{% block base_content_inner %}
+    {% set carveSource = page.header.navigation.active.translated.customFields.carve_category_body
+        ?? page.header.navigation.active.customFields.carve_category_body ?? null %}
+    {% if carveSource %}
+        <div class="carve-content carve-category-description">
+            {{ carveSource|carve }}
+        </div>
+    {% endif %}
+
+    {{ parent() }}
+{% endblock %}
