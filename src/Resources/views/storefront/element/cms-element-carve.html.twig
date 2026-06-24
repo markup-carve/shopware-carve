@@ -1,0 +1,9 @@
+{% block element_carve %}
+    <div class="cms-element-carve carve-content">
+        {% if element.data.html is defined and element.data.html %}
+            {{ element.data.html|raw }}
+        {% else %}
+            {{ element.config.content.value|carve }}
+        {% endif %}
+    </div>
+{% endblock %}

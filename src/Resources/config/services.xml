@@ -9,5 +9,10 @@
             <argument type="service" id="Carve\Shopware\Service\CarveRenderer"/>
             <tag name="twig.extension"/>
         </service>
+
+        <service id="Carve\Shopware\Core\Content\Cms\CarveCmsElementResolver">
+            <argument type="service" id="Carve\Shopware\Service\CarveRenderer"/>
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
     </services>
 </container>
