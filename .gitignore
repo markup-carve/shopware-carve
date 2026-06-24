@@ -1,0 +1,7 @@
+/vendor/
+/composer.lock
+node_modules/
+/docs/superpowers/
+*.log
+.DS_Store
+src/Resources/app/administration/node_modules/
