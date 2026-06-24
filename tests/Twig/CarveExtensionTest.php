@@ -5,6 +5,7 @@ namespace Carve\Shopware\Tests\Twig;
 use Carve\Shopware\Service\CarveRenderer;
 use Carve\Shopware\Twig\CarveExtension;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Twig\TwigFilter;
 
 class CarveExtensionTest extends TestCase
@@ -13,7 +14,10 @@ class CarveExtensionTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->ext = new CarveExtension(new CarveRenderer());
+        $config = $this->createMock(SystemConfigService::class);
+        $config->method('get')->willReturn(null);
+
+        $this->ext = new CarveExtension(new CarveRenderer($config));
     }
 
     public function testRegistersThreeFilters(): void

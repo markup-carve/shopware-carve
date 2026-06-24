@@ -3,7 +3,9 @@
 namespace Carve\Shopware\Tests\Service;
 
 use Carve\Shopware\Service\CarveRenderer;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class CarveRendererTest extends TestCase
 {
@@ -11,7 +13,7 @@ class CarveRendererTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->renderer = new CarveRenderer();
+        $this->renderer = new CarveRenderer($this->makeConfigMock(null));
     }
 
     public function testBlankReturnsEmpty(): void
@@ -49,5 +51,29 @@ class CarveRendererTest extends TestCase
     {
         $md = $this->renderer->toMarkdown('*bold*');
         self::assertStringContainsString('bold', $md);
+    }
+
+    public function testSafeModeCanBeDisabledViaConfig(): void
+    {
+        $renderer = new CarveRenderer($this->makeConfigMock(false));
+
+        // Raw HTML block (``` =html fence) passes through unescaped when safe mode is off.
+        $rawHtmlSource = "``` =html\n<script>alert(2)</script>\n```";
+        $html = $renderer->toHtml($rawHtmlSource);
+
+        self::assertStringContainsString('<script>', $html);
+    }
+
+    /**
+     * @return SystemConfigService&MockObject
+     */
+    private function makeConfigMock(bool|null $safeModeValue): SystemConfigService
+    {
+        $mock = $this->createMock(SystemConfigService::class);
+        $mock->method('get')
+            ->with('ShopwareCarve.config.safeMode')
+            ->willReturn($safeModeValue);
+
+        return $mock;
     }
 }

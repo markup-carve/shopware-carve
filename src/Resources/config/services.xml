@@ -3,7 +3,9 @@
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="Carve\Shopware\Service\CarveRenderer"/>
+        <service id="Carve\Shopware\Service\CarveRenderer">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+        </service>
 
         <service id="Carve\Shopware\Twig\CarveExtension">
             <argument type="service" id="Carve\Shopware\Service\CarveRenderer"/>
@@ -17,6 +19,7 @@
 
         <service id="Carve\Shopware\Service\CarveContextRenderer">
             <argument type="service" id="product.repository"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
         </service>
 
         <service id="Carve\Shopware\Twig\CarveContextExtension">

@@ -6,8 +6,19 @@ const { Component, Mixin } = Shopware;
 Component.register('sw-cms-el-config-carve', {
     template,
     mixins: [Mixin.getByName('cms-element')],
+    data() {
+        return {
+            livePreviewEnabled: true,
+        };
+    },
     created() {
         this.initElementConfig('carve');
+        Shopware.Service('systemConfigApiService')
+            .getValues('ShopwareCarve.config')
+            .then((values) => {
+                const val = values['ShopwareCarve.config.livePreview'];
+                this.livePreviewEnabled = val === undefined ? true : Boolean(val);
+            });
     },
     computed: {
         content: {

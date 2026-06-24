@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>Carve rendering</title>
+        <title lang="de-DE">Carve-Rendering</title>
+
+        <input-field type="bool">
+            <name>safeMode</name>
+            <label>Safe mode (hardened HTML)</label>
+            <label lang="de-DE">Sicherer Modus (gehärtetes HTML)</label>
+            <defaultValue>true</defaultValue>
+            <helpText>
+                When enabled, raw HTML in Carve source is escaped, dangerous URL schemes
+                (javascript:, data:, vbscript:, file:) are neutralized, and on-event / srcdoc /
+                formaction attributes are stripped. Keep this ON unless every content author is
+                fully trusted - disabling it allows raw HTML pass-through and removes XSS protection.
+            </helpText>
+            <helpText lang="de-DE">
+                Wenn aktiviert, wird rohes HTML im Carve-Quelltext escaped, gefährliche URL-Schemata
+                (javascript:, data:, vbscript:, file:) werden neutralisiert und on-Event- / srcdoc- /
+                formaction-Attribute werden entfernt. Diese Option sollte NUR deaktiviert werden, wenn
+                allen Inhaltsautoren vollständig vertraut wird - das Deaktivieren erlaubt Raw-HTML
+                und entfernt den XSS-Schutz.
+            </helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>livePreview</name>
+            <label>Admin live preview</label>
+            <label lang="de-DE">Live-Vorschau im Admin</label>
+            <defaultValue>true</defaultValue>
+            <helpText>
+                Shows an instant storefront-identical preview while editing a Carve CMS element in
+                the admin. The preview is rendered by carve-js in the browser and produces
+                byte-identical output to the PHP storefront renderer.
+            </helpText>
+            <helpText lang="de-DE">
+                Zeigt eine sofortige, storefront-identische Vorschau beim Bearbeiten eines
+                Carve-CMS-Elements im Admin. Die Vorschau wird im Browser von carve-js gerendert
+                und liefert byte-identische Ausgabe wie der PHP-Storefront-Renderer.
+            </helpText>
+        </input-field>
+    </card>
+</config>

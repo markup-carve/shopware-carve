@@ -3,11 +3,13 @@
 namespace Carve\Shopware\Service;
 
 use Carve\CarveConverter;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
  * Thin wrapper around markup-carve/carve-php.
  *
- * HTML rendering runs with safe mode ON: authored raw HTML is escaped, dangerous
+ * HTML rendering runs with safe mode controlled by the `ShopwareCarve.config.safeMode` system
+ * config setting (default: ON). When safe mode is ON, authored raw HTML is escaped, dangerous
  * URL schemes (javascript:, data:, vbscript:, file:) are neutralized, and
  * on-event/srcdoc/formaction attribute values are stripped. Output is therefore safe to emit
  * into the storefront without further sanitizing - the reason the Twig `carve`
@@ -22,9 +24,12 @@ class CarveRenderer
     private CarveConverter $text;
     private CarveConverter $markdown;
 
-    public function __construct()
+    public function __construct(private readonly SystemConfigService $systemConfig)
     {
-        $this->html = new CarveConverter(safeMode: true);
+        $value = $this->systemConfig->get('ShopwareCarve.config.safeMode');
+        $safe = $value === null ? true : (bool) $value;
+
+        $this->html = new CarveConverter(safeMode: $safe);
         $this->text = CarveConverter::plainText();
         $this->markdown = CarveConverter::markdown();
     }

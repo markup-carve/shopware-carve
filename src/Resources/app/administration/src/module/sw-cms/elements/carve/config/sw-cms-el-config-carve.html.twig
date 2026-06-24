@@ -9,7 +9,9 @@
             label="Carve source"
             placeholder="## Heading&#10;&#10;*bold* text">
         </mt-textarea>
-        <label class="sw-field__label">Live preview (byte-identical to storefront)</label>
-        <div class="sw-cms-el-config-carve__preview carve-content" v-html="previewHtml"></div>
+        <template v-if="livePreviewEnabled">
+            <label class="sw-field__label">Live preview (byte-identical to storefront)</label>
+            <div class="sw-cms-el-config-carve__preview carve-content" v-html="previewHtml"></div>
+        </template>
     </div>
 {% endblock %}

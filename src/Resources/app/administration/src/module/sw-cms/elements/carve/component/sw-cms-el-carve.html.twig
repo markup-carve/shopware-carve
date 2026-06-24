@@ -1,3 +1,10 @@
 {% block sw_cms_el_carve %}
-    <div class="sw-cms-el-carve carve-content" v-html="html"></div>
+    <div class="sw-cms-el-carve">
+        <template v-if="livePreviewEnabled">
+            <div class="carve-content" v-html="html"></div>
+        </template>
+        <template v-else>
+            <pre class="sw-cms-el-carve__source">{{ element.config.content.value }}</pre>
+        </template>
+    </div>
 {% endblock %}

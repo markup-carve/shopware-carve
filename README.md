@@ -247,19 +247,48 @@ bin/console cache:clear
 
 ---
 
+## Configuration
+
+Access the plugin settings via Admin - Extensions - My extensions - Carve - Configure.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `ShopwareCarve.config.safeMode` | `true` | Harden HTML output (see Security note below). |
+| `ShopwareCarve.config.livePreview` | `true` | Show instant preview while editing a Carve CMS element in the admin. |
+
+### safeMode
+
+Controls whether carve-php's HTML hardening is active. When `true` (the default):
+
+- Raw HTML in Carve source is escaped, not passed through.
+- `javascript:`, `data:`, `vbscript:`, and `file:` URL schemes are neutralized.
+- `on*` event attributes, `srcdoc`, and `formaction` are stripped.
+
+**Keep `safeMode` ON** unless every content author is fully trusted. Disabling it while the
+`|carve` filter is registered as `is_safe => html` creates a stored XSS vector - any author can
+inject arbitrary HTML into the storefront.
+
+### livePreview
+
+When `true` (the default), the CMS element config panel renders an instant storefront-identical
+preview powered by carve-js. Set to `false` to disable the preview (e.g. for performance or
+when carve-js is not installed).
+
+---
+
 ## Security note
 
 The `|carve` and `|carve_ctx` filters are marked `is_safe => html` - meaning Twig will not
-double-escape their output. This is only safe because `CarveRenderer` always enables carve-php's
-safe mode:
+double-escape their output. This is only safe because `CarveRenderer` runs with safe mode on
+(controlled by the `ShopwareCarve.config.safeMode` system config setting, default `true`):
 
 - Raw HTML in source is escaped, not passed through.
 - `javascript:`, `data:`, `vbscript:`, and `file:` URL schemes are neutralized.
 - `on*` event attributes, `srcdoc`, and `formaction` are stripped.
 - Parse depth and input size are bounded against DoS.
 
-**Never disable safe mode.** If you fork or patch `CarveRenderer`, keep `safeMode: true`. Disabling
-it while leaving `is_safe => html` in the Twig filter registration creates a stored XSS vector.
+**Never disable safe mode** unless all content authors are fully trusted. Disabling it while
+leaving `is_safe => html` in the Twig filter registration creates a stored XSS vector.
 
 ---
 
