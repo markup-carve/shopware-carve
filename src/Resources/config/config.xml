@@ -41,5 +41,105 @@
                 und liefert byte-identische Ausgabe wie der PHP-Storefront-Renderer.
             </helpText>
         </input-field>
+
+        <input-field type="bool">
+            <name>smartQuotes</name>
+            <defaultValue>false</defaultValue>
+            <label>Smart quotes (typographic)</label>
+            <label lang="de-DE">Typografische Anführungszeichen</label>
+            <helpText>Converts straight quotes to locale-correct typographic quotes.</helpText>
+            <helpText lang="de-DE">Wandelt gerade Anführungszeichen in typografisch korrekte um.</helpText>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>smartQuotesLocale</name>
+            <defaultValue>en</defaultValue>
+            <label>Smart-quote language</label>
+            <label lang="de-DE">Sprache der Anführungszeichen</label>
+            <helpText>Sets the locale for typographic quotes. Only applies when smart quotes is enabled.</helpText>
+            <helpText lang="de-DE">Legt das Gebietsschema für typografische Anführungszeichen fest. Gilt nur, wenn typografische Anführungszeichen aktiviert sind.</helpText>
+            <options>
+                <option>
+                    <id>en</id>
+                    <name>English</name>
+                </option>
+                <option>
+                    <id>de</id>
+                    <name>German (de)</name>
+                </option>
+                <option>
+                    <id>de-CH</id>
+                    <name>German (Switzerland)</name>
+                </option>
+                <option>
+                    <id>fr</id>
+                    <name>French</name>
+                </option>
+                <option>
+                    <id>es</id>
+                    <name>Spanish</name>
+                </option>
+                <option>
+                    <id>it</id>
+                    <name>Italian</name>
+                </option>
+                <option>
+                    <id>pt</id>
+                    <name>Portuguese</name>
+                </option>
+                <option>
+                    <id>nl</id>
+                    <name>Dutch</name>
+                </option>
+                <option>
+                    <id>pl</id>
+                    <name>Polish</name>
+                </option>
+                <option>
+                    <id>ru</id>
+                    <name>Russian</name>
+                </option>
+                <option>
+                    <id>uk</id>
+                    <name>Ukrainian</name>
+                </option>
+                <option>
+                    <id>cs</id>
+                    <name>Czech</name>
+                </option>
+                <option>
+                    <id>hu</id>
+                    <name>Hungarian</name>
+                </option>
+                <option>
+                    <id>sv</id>
+                    <name>Swedish</name>
+                </option>
+                <option>
+                    <id>da</id>
+                    <name>Danish</name>
+                </option>
+                <option>
+                    <id>fi</id>
+                    <name>Finnish</name>
+                </option>
+                <option>
+                    <id>nb</id>
+                    <name>Norwegian Bokmål</name>
+                </option>
+                <option>
+                    <id>nn</id>
+                    <name>Norwegian Nynorsk</name>
+                </option>
+                <option>
+                    <id>ja</id>
+                    <name>Japanese</name>
+                </option>
+                <option>
+                    <id>zh</id>
+                    <name>Chinese</name>
+                </option>
+            </options>
+        </input-field>
     </card>
 </config>

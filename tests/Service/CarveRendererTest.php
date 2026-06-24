@@ -64,15 +64,56 @@ class CarveRendererTest extends TestCase
         self::assertStringContainsString('<script>', $html);
     }
 
+    public function testSmartQuotesUsesConfiguredLocale(): void
+    {
+        // carve-php emits English-style typographic quotes by default, so an "en" locale
+        // would look identical whether or not the extension is wired. Use "de" instead:
+        // German opens with U+201E (low double quote), which only appears when the
+        // SmartQuotesExtension is actually added with the configured locale.
+        $renderer = new CarveRenderer($this->makeConfigMock(null, true, 'de'));
+
+        $html = $renderer->toHtml('"hi"');
+
+        // U+201E DOUBLE LOW-9 QUOTATION MARK (German opening quote) proves the extension
+        // was added with locale "de".
+        self::assertStringContainsString("\u{201E}", $html);
+        // The plain ASCII double quote must not survive.
+        self::assertStringNotContainsString('"', $html);
+    }
+
+    public function testSmartQuotesDisabledKeepsDefaultStyle(): void
+    {
+        // With smart quotes off, no locale extension is added, so the default
+        // English-style opening quote (U+201C) is used and the German low quote
+        // (U+201E) must not appear.
+        $renderer = new CarveRenderer($this->makeConfigMock(null, false, 'de'));
+
+        $html = $renderer->toHtml('"hi"');
+
+        self::assertStringContainsString("\u{201C}", $html);
+        self::assertStringNotContainsString("\u{201E}", $html);
+    }
+
     /**
      * @return SystemConfigService&MockObject
      */
-    private function makeConfigMock(bool|null $safeModeValue): SystemConfigService
-    {
+    private function makeConfigMock(
+        bool|null $safeModeValue,
+        bool|null $smartQuotesValue = null,
+        string|null $smartQuotesLocale = null,
+    ): SystemConfigService {
         $mock = $this->createMock(SystemConfigService::class);
+
+        $configMap = [
+            'ShopwareCarve.config.safeMode' => $safeModeValue,
+            'ShopwareCarve.config.smartQuotes' => $smartQuotesValue,
+            'ShopwareCarve.config.smartQuotesLocale' => $smartQuotesLocale,
+        ];
+
         $mock->method('get')
-            ->with('ShopwareCarve.config.safeMode')
-            ->willReturn($safeModeValue);
+            ->willReturnCallback(static function (string $key) use ($configMap): mixed {
+                return $configMap[$key] ?? null;
+            });
 
         return $mock;
     }

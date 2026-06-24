@@ -255,6 +255,8 @@ Access the plugin settings via Admin - Extensions - My extensions - Carve - Conf
 |-----|---------|-------------|
 | `ShopwareCarve.config.safeMode` | `true` | Harden HTML output (see Security note below). |
 | `ShopwareCarve.config.livePreview` | `true` | Show instant preview while editing a Carve CMS element in the admin. |
+| `ShopwareCarve.config.smartQuotes` | `false` | Smart quotes (typographic): Converts straight quotes to locale-correct typographic quotes. |
+| `ShopwareCarve.config.smartQuotesLocale` | `en` | Smart-quote language: Sets the locale for typographic quotes. Only applies when `smartQuotes` is enabled. Supported locales: en, de, de-CH, fr, es, it, pt, nl, pl, ru, uk, cs, hu, sv, da, fi, nb, nn, ja, zh. |
 
 ### safeMode
 
@@ -273,6 +275,48 @@ inject arbitrary HTML into the storefront.
 When `true` (the default), the CMS element config panel renders an instant storefront-identical
 preview powered by carve-js. Set to `false` to disable the preview (e.g. for performance or
 when carve-js is not installed).
+
+### smartQuotes
+
+When `true`, carve-php's smart-quotes extension is applied to HTML output, converting straight
+ASCII quotes (`"..."` and `'...'`) to locale-correct typographic equivalents. Only affects HTML
+output (`|carve`, `|carve_ctx`) - plain-text and Markdown targets are not affected.
+
+Default: `false`.
+
+### smartQuotesLocale
+
+Sets the locale used to choose typographic quote characters. Only takes effect when `smartQuotes`
+is `true`.
+
+Default: `en` (English curly quotes: `"..."` / `'...'`).
+
+Supported locales:
+
+| Locale | Description |
+|--------|-------------|
+| `en` | English |
+| `de` | German (de) |
+| `de-CH` | German (Switzerland) |
+| `fr` | French |
+| `es` | Spanish |
+| `it` | Italian |
+| `pt` | Portuguese |
+| `nl` | Dutch |
+| `pl` | Polish |
+| `ru` | Russian |
+| `uk` | Ukrainian |
+| `cs` | Czech |
+| `hu` | Hungarian |
+| `sv` | Swedish |
+| `da` | Danish |
+| `fi` | Finnish |
+| `nb` | Norwegian Bokmal |
+| `nn` | Norwegian Nynorsk |
+| `ja` | Japanese |
+| `zh` | Chinese |
+
+Note: future versions may auto-derive the locale from the Shopware sales channel language.
 
 ---
 

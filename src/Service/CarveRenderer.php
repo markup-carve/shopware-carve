@@ -3,6 +3,7 @@
 namespace Carve\Shopware\Service;
 
 use Carve\CarveConverter;
+use Carve\Extension\SmartQuotesExtension;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
@@ -30,6 +31,13 @@ class CarveRenderer
         $safe = $value === null ? true : (bool) $value;
 
         $this->html = new CarveConverter(safeMode: $safe);
+
+        $sq = $this->systemConfig->get('ShopwareCarve.config.smartQuotes');
+        if ($sq === true || $sq === '1' || $sq === 1) {
+            $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
+            $this->html->addExtension(new SmartQuotesExtension(locale: is_string($loc) && $loc !== '' ? $loc : 'en'));
+        }
+
         $this->text = CarveConverter::plainText();
         $this->markdown = CarveConverter::markdown();
     }

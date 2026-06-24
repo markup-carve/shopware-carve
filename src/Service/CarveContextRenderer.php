@@ -3,6 +3,7 @@
 namespace Carve\Shopware\Service;
 
 use Carve\CarveConverter;
+use Carve\Extension\SmartQuotesExtension;
 use Carve\Shopware\Inline\ProductInlineMatcher;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -44,6 +45,12 @@ class CarveContextRenderer
         $safe = $value === null ? true : (bool) $value;
 
         $converter = new CarveConverter(safeMode: $safe);
+
+        $sq = $this->systemConfig->get('ShopwareCarve.config.smartQuotes');
+        if ($sq === true || $sq === '1' || $sq === 1) {
+            $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
+            $converter->addExtension(new SmartQuotesExtension(locale: is_string($loc) && $loc !== '' ? $loc : 'en'));
+        }
 
         (new ProductInlineMatcher(function (string $sku) use ($context): ?array {
             $criteria = new Criteria();
