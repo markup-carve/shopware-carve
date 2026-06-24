@@ -21,7 +21,7 @@ Component.register('sw-cms-el-config-carve', {
         },
         previewHtml() {
             try {
-                return carveToHtml(this.content);
+                return carveToHtml(this.content, { allowRawHtml: false });
             } catch (e) {
                 return '';
             }

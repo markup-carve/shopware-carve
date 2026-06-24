@@ -11,7 +11,7 @@ Shopware.Component.register('sw-cms-el-carve', {
         html() {
             const src = this.element?.config?.content?.value ?? '';
             try {
-                return carveToHtml(src);
+                return carveToHtml(src, { allowRawHtml: false });
             } catch (e) {
                 return '';
             }
