@@ -25,7 +25,9 @@ class CarveRenderCommand extends Command
         $this->addOption('html', null, InputOption::VALUE_NONE, 'HTML output (default)');
         $this->addOption('md', null, InputOption::VALUE_NONE, 'Markdown output');
         $this->addOption('plain', null, InputOption::VALUE_NONE, 'Plain-text output');
-        $this->addOption('ansi', null, InputOption::VALUE_NONE, 'ANSI terminal output');
+        // Note: --ansi/--no-ansi are reserved by Symfony's console globally, so the
+        // ANSI render target is exposed as --term to avoid an option-name collision.
+        $this->addOption('term', null, InputOption::VALUE_NONE, 'ANSI terminal output (colored)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -35,7 +37,7 @@ class CarveRenderCommand extends Command
         $converter = match (true) {
             (bool) $input->getOption('md') => CarveConverter::markdown(),
             (bool) $input->getOption('plain') => CarveConverter::plainText(),
-            (bool) $input->getOption('ansi') => CarveConverter::ansi(),
+            (bool) $input->getOption('term') => CarveConverter::ansi(),
             default => new CarveConverter(safeMode: true),
         };
 

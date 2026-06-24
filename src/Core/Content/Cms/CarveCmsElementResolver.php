@@ -8,6 +8,7 @@ use Shopware\Core\Content\Cms\DataResolver\CriteriaCollection;
 use Shopware\Core\Content\Cms\DataResolver\Element\AbstractCmsElementResolver;
 use Shopware\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopware\Core\Framework\Struct\ArrayStruct;
 
 /**
  * Resolves the `carve` CMS element. The element is self-contained: it holds a
@@ -38,6 +39,8 @@ class CarveCmsElementResolver extends AbstractCmsElementResolver
         $config = $slot->getFieldConfig();
         $content = $config->get('content');
         $source = $content?->getValue();
-        $slot->setData(['html' => $this->renderer->toHtml(is_string($source) ? $source : null)]);
+        // setData() requires a Struct (not a plain array) on Shopware 6.7; ArrayStruct
+        // keeps the template accessor `element.data.html` working via array access.
+        $slot->setData(new ArrayStruct(['html' => $this->renderer->toHtml(is_string($source) ? $source : null)]));
     }
 }

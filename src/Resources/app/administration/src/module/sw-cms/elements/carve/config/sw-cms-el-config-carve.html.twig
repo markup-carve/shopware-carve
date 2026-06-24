@@ -1,10 +1,14 @@
 {% block sw_cms_el_config_carve %}
     <div class="sw-cms-el-config-carve">
-        <sw-textarea-field
-            v-model:value="content"
+        {# Shopware 6.7 maps sw-textarea-field onto Meteor's mt-textarea, whose v-model
+           prop is `modelValue` (not `value`); bind via :model-value/@update:model-value
+           so the `content` setter fires and the live preview recomputes on every keystroke. #}
+        <mt-textarea
+            :model-value="content"
+            @update:model-value="content = $event"
             label="Carve source"
             placeholder="## Heading&#10;&#10;*bold* text">
-        </sw-textarea-field>
+        </mt-textarea>
         <label class="sw-field__label">Live preview (byte-identical to storefront)</label>
         <div class="sw-cms-el-config-carve__preview carve-content" v-html="previewHtml"></div>
     </div>

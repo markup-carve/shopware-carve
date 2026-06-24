@@ -1,2 +1,2 @@
-// Storefront entry: pulls in Carve content styles via the theme build.
-import './scss/base.scss';
+// Storefront entry: Carve plugin JS.
+// SCSS is handled via the Shopware theme SCSS build (not imported here).

@@ -151,7 +151,8 @@ bin/console carve:render path/to/content.crv --plain
 bin/console carve:render path/to/content.crv --md
 
 # Render with ANSI color (terminal output)
-bin/console carve:render path/to/content.crv --ansi
+# (--term, not --ansi: the latter is reserved by Symfony's console to force color globally)
+bin/console carve:render path/to/content.crv --term
 ```
 
 ---
