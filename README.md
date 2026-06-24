@@ -41,11 +41,12 @@ or additional dependencies, and degrade gracefully without them:
 
 - **Tabs** (`TabsExtension`) - requires carve-js tab component
 - **Code groups** (`CodeGroupExtension`) - requires carve-js
-- **Mermaid / chart** - requires Mermaid.js / Chart.js loaded on the storefront
 - **Spoiler** (`SpoilerExtension`) - requires carve-js reveal component
 
-Smart quotes (`SmartQuotesExtension`) remain config-driven and are added only when
-`ShopwareCarve.config.smartQuotes` is enabled in the plugin settings.
+Config-driven extensions (added only when enabled in the plugin settings): smart quotes
+(`ShopwareCarve.config.smartQuotes`), Mermaid diagrams (`ShopwareCarve.config.enableMermaid`)
+and charts (`ShopwareCarve.config.enableCharts`). Mermaid/chart lazy-load their library from a
+CDN only when a diagram is present - see the Configuration section.
 
 ---
 
