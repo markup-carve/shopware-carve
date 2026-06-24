@@ -152,7 +152,50 @@ Screenshots saved under `carve-demo/_screenshots/`:
 | `04-xss-product-inert.png`             | XSS product — `javascript:` link inert, `<script>` escaped, no alert |
 | `cli-ansi-output.txt`                  | `carve:render --term` colored ANSI output                 |
 
-## 7. 6.7 compatibility fixes applied to the plugin during this demo
+## 7. Configuration (plugin settings)
+
+The plugin exposes four settings at Admin > Extensions > My Extensions > Configure (or
+`#/sw/extension/config/ShopwareCarve`):
+
+| Setting | Key | Default | Notes |
+|---|---|---|---|
+| Safe mode (hardened HTML) | `ShopwareCarve.config.safeMode` | off | Strips raw HTML in Carve source |
+| Admin live preview | `ShopwareCarve.config.livePreview` | on | Shows byte-identical preview pane in the CMS element config sidebar |
+| Smart quotes (typographic) | `ShopwareCarve.config.smartQuotes` | off | Replaces straight ASCII `"..."` with locale-specific typographic quotes |
+| Smart-quote language | `ShopwareCarve.config.smartQuotesLocale` | (none) | Locale code: `en`, `de`, `de-ch`, `fr`, `es`, etc. |
+
+### Verified behaviors
+
+**Icon:** the plugin tile in Extensions > My Extensions shows the Carve icon (green leaf/C on dark
+background), not a blank placeholder.
+
+**Configure screen:** all four fields render under the "Carve rendering" card with help-icon tooltips.
+The smart-quote language dropdown lists English, German (de), German (Switzerland), French, Spanish,
+and more.
+
+**Smart quotes (German):** with Smart quotes ON and language set to `de`, straight double-quotes
+`"hello"` in a product's `carve_body` render as German low-9/high-6 quotes `„hello"` on the
+storefront. Verified on CARVE-A (cache cleared after save).
+
+**Live preview toggle:** setting Admin live preview OFF saves `{"_value":false}` to
+`system_config`; the CMS element config JS component reads this on `created()` via
+`systemConfigApiService.getValues('ShopwareCarve.config')` and gates the preview pane behind
+`v-if="livePreviewEnabled"`. Setting it back ON re-enables the pane. Toggling was verified via the
+Configure screen and confirmed in the DB.
+
+Screenshots saved under `carve-demo/_screenshots/config/`:
+
+| File | Surface |
+|------|---------|
+| `01-extensions-icon.png` | My Extensions - Carve tile with icon |
+| `02-configure-screen.png` | Configure screen - all four settings visible |
+| `03-smart-quotes-de.png` | Storefront CARVE-A - German typographic quotes |
+| `05-live-preview-off.png` | Configure - Admin live preview toggled OFF |
+| `06-live-preview-on.png` | Configure - Admin live preview ON (final state) |
+| `07-regression-carve-a.png` | Storefront CARVE-A - renders normally after config changes |
+| `08-regression-carve-xss.png` | Storefront CARVE-XSS - XSS remains inert |
+
+## 8. 6.7 compatibility fixes applied to the plugin during this demo
 
 These were genuine 6.7 defects found via browser verification and fixed in the plugin source:
 
