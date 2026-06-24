@@ -1,0 +1,10 @@
+.carve-content {
+    line-height: 1.6;
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: .4rem .6rem; }
+
+    .admonition { border-left: 4px solid #ccc; padding: .6rem 1rem; margin: 1rem 0; background: #f7f7f7; }
+    .admonition.warning { border-color: #e0a800; background: #fff8e1; }
+    .admonition.note { border-color: #2b6cb0; background: #ebf4ff; }
+}

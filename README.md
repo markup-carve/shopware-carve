@@ -1,0 +1,277 @@
+# shopware-carve
+
+Render [Carve](https://github.com/markup-carve/carve) markup to safe, semantic HTML in Shopware 6.
+One source - eight surfaces: Twig filters, CMS elements, product/category fields, admin live
+preview, transactional mail, inline product references, and a CLI renderer.
+
+**Safe by default.** Raw HTML is off. `javascript:`, `data:`, `vbscript:`, `file:` URL schemes are
+neutralized. `on*`, `srcdoc`, and `formaction` attributes are stripped. No separate sanitizer needed.
+The `|carve` filter is `is_safe => html` only because carve-php's safe mode is always on - never
+disable it.
+
+- Composer: `markup-carve/shopware-carve`
+- License: MIT
+- Shopware: 6.6 and 6.7
+- PHP: ^8.2
+- Namespace: `Carve\Shopware\`
+
+> **Pre-1.0 caveat.** Both `carve-php` and `carve-js` are design-exploration libraries. Syntax and
+> output format can still change before 1.0. Pin versions explicitly and review the carve-php
+> changelog before upgrades.
+
+---
+
+## Surfaces
+
+### 1 - Twig filters `|carve`, `|carve_text`, `|carve_md`
+
+**Benefit:** Render Carve to safe HTML, plain text, or Markdown from any theme template. The
+universal primitive everything else builds on - safe output with no bolt-on sanitizer; plain and
+Markdown variants enable channel reuse (mail, export).
+
+```twig
+{# HTML output (safe, is_safe => html) #}
+{{ product.translated.description | carve }}
+
+{# Plain text (e.g. for meta descriptions) #}
+{{ product.translated.description | carve_text }}
+
+{# Markdown (e.g. for export) #}
+{{ product.translated.description | carve_md }}
+```
+
+For content that contains `:product[SKU]` inline references, use `|carve_ctx(context)` to pass the
+sales channel context so product links resolve correctly (see Surface 7).
+
+---
+
+### 2 - Carve CMS element (shopping experiences)
+
+**Benefit:** Drag and drop a safe rich-text block into any CMS page or product layout via the admin.
+Non-developers author headings, bold text, tables, and admonitions with zero XSS surface and no
+code execution.
+
+Add the element type `carve` from the element panel in the Shopping Experiences editor. The element
+renders its `content` field through `CarveRenderer::toHtml()` server-side. The admin config panel
+shows a live preview (Surface 5).
+
+---
+
+### 3 - Product custom field `carve_body`
+
+**Benefit:** Structured, diffable, translator-friendly product copy rendered under the product
+description on the storefront. Source is plain text (versionable in git); identical in admin
+preview and storefront.
+
+After running migrations (see Install), a `carve_body` text area appears on the product detail
+admin page. The plugin's storefront override renders it below the core description:
+
+```twig
+{# storefront/page/product-detail/description.html.twig - rendered automatically #}
+{{ product.customFields.carve_body | carve }}
+```
+
+---
+
+### 4 - Category custom field `carve_body`
+
+**Benefit:** Safe rich text for category landing copy - same safety and determinism as product
+fields but on category pages.
+
+The plugin adds a `carve_body` field to category entities (via migration) and renders it in the
+category CMS listing template automatically.
+
+---
+
+### 5 - Admin live preview (carve-js)
+
+**Benefit:** While typing in the CMS element or custom fields, the preview updates instantly and is
+byte-identical to the storefront output. WYSIWYG confidence via PHP/JS parity with no API roundtrip.
+
+The admin CMS element config component (`sw-cms-el-config-carve`) imports `carveToHtml` from
+`@markup-carve/carve` and calls it on every `input` event. The shared cross-implementation test
+corpus guarantees that carve-js and carve-php produce the same bytes for the same source.
+
+---
+
+### 6 - Transactional mail rendering
+
+**Benefit:** One Carve source feeds both the HTML part and the plain-text part of a multipart mail.
+Safe interpolation of user/order data into mail bodies.
+
+See [`docs/mail.md`](docs/mail.md) for the full setup. Short example:
+
+```twig
+{# HTML part of a mail template #}
+{% set body %}
+## Order {{ order.orderNumber }}
+
+Dear **{{ order.orderCustomer.firstName }}**,
+
+your order is on its way.
+{% endset %}
+{{ body | carve }}
+
+{# Plain-text part of the same mail template #}
+{{ body | carve_text }}
+```
+
+---
+
+### 7 - Commerce inline type `:product[SKU]`
+
+**Benefit:** Authors embed a live product reference (link with name and price) inline in any Carve
+content, resolved against the current sales channel at render time. Markdown has no safe,
+first-class way to embed live commerce entities in authored copy.
+
+Use the `|carve_ctx(context)` filter (available in storefront templates as `context`) rather than
+the plain `|carve` filter when the content may contain product references:
+
+```twig
+{{ product.customFields.carve_body | carve_ctx(context) }}
+```
+
+Unknown or out-of-stock SKUs degrade gracefully to inert text - no exceptions thrown.
+
+---
+
+### 8 - Multi-target CLI `carve:render`
+
+**Benefit:** Render a `.crv` file or piped source to HTML, Markdown, plain text, or ANSI from the
+console. Write once, show anywhere: storefront, email, terminal, and export from a single source.
+
+```bash
+# Render to HTML
+bin/console carve:render path/to/content.crv --html
+
+# Render to plain text
+bin/console carve:render path/to/content.crv --plain
+
+# Render to Markdown
+bin/console carve:render path/to/content.crv --md
+
+# Render with ANSI color (terminal output)
+bin/console carve:render path/to/content.crv --ansi
+```
+
+---
+
+## Install
+
+### Prerequisites
+
+shopware-carve depends on two libraries that are not yet published to Packagist or npm. Install
+them from local clones until they are released.
+
+#### PHP dependency: carve-php
+
+Clone carve-php alongside your Shopware project root (adjust the path to suit your layout):
+
+```bash
+git clone https://github.com/markup-carve/carve-php ../carve-php
+```
+
+Add a `path` repository to your project's `composer.json` so Composer resolves it locally:
+
+```json
+{
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../carve-php",
+            "options": { "symlink": false }
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
+```
+
+Then require the plugin:
+
+```bash
+composer require markup-carve/shopware-carve
+```
+
+Verify the library loaded correctly:
+
+```php
+<?php
+var_dump(class_exists('Carve\\CarveConverter')); // bool(true)
+```
+
+Once carve-php is published to Packagist you can remove the `path` repository and run
+`composer update` normally.
+
+#### JS dependency: carve-js (admin live preview only)
+
+Clone carve-js somewhere on your machine:
+
+```bash
+git clone https://github.com/markup-carve/carve-js /path/to/carve-js
+```
+
+Install it into the plugin's admin directory as a local file dependency:
+
+```bash
+cd custom/plugins/ShopwareCarve/src/Resources/app/administration
+npm install /path/to/carve-js
+```
+
+This writes a `file:` reference into the plugin's `package.json`. Once `@markup-carve/carve` is
+published to npm you can replace the local install with `npm install @markup-carve/carve`.
+
+---
+
+### Plugin installation
+
+```bash
+# Activate the plugin
+bin/console plugin:install --activate ShopwareCarve
+
+# Run migrations (adds carve_body to products and categories)
+bin/console database:migrate --all ShopwareCarve
+
+# Build the admin (required for CMS element and live preview)
+bin/console bundle:dump
+bin/build-administration.sh
+bin/console assets:install
+
+# Compile storefront theme (picks up carve-content styles)
+bin/console theme:compile
+
+# Clear cache
+bin/console cache:clear
+```
+
+---
+
+## Security note
+
+The `|carve` and `|carve_ctx` filters are marked `is_safe => html` - meaning Twig will not
+double-escape their output. This is only safe because `CarveRenderer` always enables carve-php's
+safe mode:
+
+- Raw HTML in source is escaped, not passed through.
+- `javascript:`, `data:`, `vbscript:`, and `file:` URL schemes are neutralized.
+- `on*` event attributes, `srcdoc`, and `formaction` are stripped.
+- Parse depth and input size are bounded against DoS.
+
+**Never disable safe mode.** If you fork or patch `CarveRenderer`, keep `safeMode: true`. Disabling
+it while leaving `is_safe => html` in the Twig filter registration creates a stored XSS vector.
+
+---
+
+## Shopware version support
+
+| Shopware | Supported |
+|---|---|
+| 6.6.x | Yes |
+| 6.7.x | Yes |
+| < 6.6 | No |
+
+---
+
+## License
+
+MIT - see [LICENSE](LICENSE).
