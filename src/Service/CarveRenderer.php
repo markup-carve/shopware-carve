@@ -60,6 +60,25 @@ class CarveRenderer
         return $this->buildHtmlConverter()->convert($source);
     }
 
+    /**
+     * Renders UGC (user-generated content, e.g. product reviews) to safe HTML.
+     *
+     * Always forces safe mode on (raw HTML is never passed through) and always
+     * applies the comment profile, regardless of global plugin config. This
+     * makes the output safe to emit without a separate sanitizer even when
+     * allowRawHtml or a permissive profile is configured globally.
+     *
+     * Smart quotes still respect the global config - they are harmless for UGC.
+     */
+    public function toHtmlUgc(?string $source): string
+    {
+        if ($source === null || trim($source) === '') {
+            return '';
+        }
+
+        return $this->buildUgcConverter()->convert($source);
+    }
+
     public function toText(?string $source): string
     {
         return $this->render($this->text, $source);
@@ -78,8 +97,30 @@ class CarveRenderer
      */
     private function buildHtmlConverter(): CarveConverter
     {
-        $allow = $this->configBool($this->systemConfig->get('ShopwareCarve.config.allowRawHtml'), false);
-        $safe = $allow ? false : true;
+        return $this->buildConverter(forceCommentProfile: false, forceSafeMode: false);
+    }
+
+    /**
+     * Builds a UGC HTML converter with forced safe mode and comment profile.
+     *
+     * Safe mode is forced on (safeMode: true) so raw HTML is always escaped,
+     * regardless of the global allowRawHtml config. The comment profile is always
+     * applied so headings, images, tables, raw HTML, etc. are denied even if the
+     * global profile is 'none' or 'full'.
+     */
+    private function buildUgcConverter(): CarveConverter
+    {
+        return $this->buildConverter(forceCommentProfile: true, forceSafeMode: true);
+    }
+
+    private function buildConverter(bool $forceCommentProfile, bool $forceSafeMode): CarveConverter
+    {
+        if ($forceSafeMode) {
+            $safe = true;
+        } else {
+            $allow = $this->configBool($this->systemConfig->get('ShopwareCarve.config.allowRawHtml'), false);
+            $safe = $allow ? false : true;
+        }
 
         $converter = new CarveConverter(safeMode: $safe);
 
@@ -90,18 +131,24 @@ class CarveRenderer
             $converter->addExtension(new SmartQuotesExtension(locale: is_string($loc) && $loc !== '' ? $loc : 'en'));
         }
 
-        if ($this->configBool($this->systemConfig->get('ShopwareCarve.config.enableMermaid'))) {
-            $converter->addExtension(FencedRenderExtension::mermaid());
+        if (!$forceCommentProfile) {
+            if ($this->configBool($this->systemConfig->get('ShopwareCarve.config.enableMermaid'))) {
+                $converter->addExtension(FencedRenderExtension::mermaid());
+            }
+
+            if ($this->configBool($this->systemConfig->get('ShopwareCarve.config.enableCharts'))) {
+                $converter->addExtension(FencedRenderExtension::chart());
+            }
         }
 
-        if ($this->configBool($this->systemConfig->get('ShopwareCarve.config.enableCharts'))) {
-            $converter->addExtension(FencedRenderExtension::chart());
-        }
-
-        $profileKey = $this->systemConfig->get('ShopwareCarve.config.profile');
-        $profile = $this->resolveProfile(is_string($profileKey) ? $profileKey : null);
-        if ($profile !== null) {
-            $converter->setProfile($profile);
+        if ($forceCommentProfile) {
+            $converter->setProfile(Profile::comment());
+        } else {
+            $profileKey = $this->systemConfig->get('ShopwareCarve.config.profile');
+            $profile = $this->resolveProfile(is_string($profileKey) ? $profileKey : null);
+            if ($profile !== null) {
+                $converter->setProfile($profile);
+            }
         }
 
         return $converter;

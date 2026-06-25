@@ -264,6 +264,53 @@ class CarveRendererTest extends TestCase
         self::assertStringNotContainsString('[npm]', $html);
     }
 
+    // -----------------------------------------------------------------------
+    // toHtmlUgc tests
+    // -----------------------------------------------------------------------
+
+    public function testUgcBlankReturnsEmpty(): void
+    {
+        self::assertSame('', $this->renderer->toHtmlUgc(null));
+        self::assertSame('', $this->renderer->toHtmlUgc('   '));
+    }
+
+    public function testUgcStripsHeadingEvenWhenGlobalProfileIsNone(): void
+    {
+        // toHtmlUgc must always apply the comment profile, regardless of global config.
+        // Global profile = 'none' and allowRawHtml = true are both set, yet headings
+        // must still be stripped because toHtmlUgc forces comment profile + safe mode.
+        $renderer = new CarveRenderer(
+            $this->makeConfigMock(allowRawHtmlValue: true, profile: 'none'),
+        );
+
+        $html = $renderer->toHtmlUgc('# Heading text');
+
+        self::assertStringNotContainsString('<h1', $html);
+        self::assertStringContainsString('Heading text', $html);
+    }
+
+    public function testUgcEscapesRawScriptEvenWhenAllowRawHtmlIsTrue(): void
+    {
+        // toHtmlUgc must force safe mode on so raw HTML stays escaped even if
+        // allowRawHtml is globally enabled.
+        $renderer = new CarveRenderer(
+            $this->makeConfigMock(allowRawHtmlValue: true),
+        );
+
+        $rawHtmlSource = "``` =html\n<script>alert('xss')</script>\n```";
+        $html = $renderer->toHtmlUgc($rawHtmlSource);
+
+        self::assertStringNotContainsString('<script>', $html);
+    }
+
+    public function testUgcRendersBasicInlineFormatting(): void
+    {
+        // Bold and italic are allowed by the comment profile.
+        $html = $this->renderer->toHtmlUgc('*bold* and _italic_');
+
+        self::assertStringContainsString('<strong>bold</strong>', $html);
+    }
+
     /**
      * @return SystemConfigService&MockObject
      */

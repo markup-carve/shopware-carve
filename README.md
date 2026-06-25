@@ -160,6 +160,39 @@ Unknown or out-of-stock SKUs degrade gracefully to inert text - no exceptions th
 
 ---
 
+### 9 - Product reviews (UGC)
+
+**Benefit:** Shopware lets customers write review text as plain text; with this surface,
+review bodies are rendered as rich Carve HTML using a hardened profile so customers can
+use basic formatting (bold, italic, links, lists) without introducing XSS or structural
+noise (no headings, no images, no raw HTML).
+
+Enable via `ShopwareCarve.config.renderReviews` (default `false`). When enabled, the
+plugin's storefront override of `component/review/review-item.html.twig` passes
+`review.content` through the `|carve_ugc` filter instead of escaping it as plain text.
+When disabled, the template falls back to `{{ review.content|e }}` - the same safe
+output as unmodified Shopware.
+
+```twig
+{# Rendered automatically when renderReviews is on - no manual change needed #}
+{{ review.content|carve_ugc }}
+```
+
+The `|carve_ugc` filter always uses:
+- **Safe mode on** - raw HTML is never passed through, regardless of the global
+  `allowRawHtml` setting.
+- **Comment profile** - headings, images, tables, footnotes, raw HTML blocks, divs,
+  thematic breaks, and math are all denied and degrade to plain text. Only basic inline
+  formatting and block-level paragraphs, lists, blockquotes, and code blocks are allowed.
+  External links get `rel="nofollow ugc"`. This is enforced unconditionally - the global
+  `profile` config has no effect on `|carve_ugc`.
+
+Note: Shopware has a built-in product review system but no native Q&A. For Q&A rendering
+you would need a dedicated Q&A plugin that exposes review-like entities; wire those to
+`|carve_ugc` in the same way.
+
+---
+
 ### 8 - Multi-target CLI `carve:render`
 
 **Benefit:** Render a `.crv` file or piped source to HTML, Markdown, plain text, or ANSI from the
@@ -285,6 +318,7 @@ Access the plugin settings via Admin - Extensions - My extensions - Carve - Conf
 | `ShopwareCarve.config.profile` | `none` | Content profile: restricts which Carve elements appear in HTML output. Options: `none`, `article`, `comment`, `minimal`. See Content profile section below. |
 | `ShopwareCarve.config.enableMermaid` | `false` | Lazy-load Mermaid.js from CDN and render ` ```mermaid ` blocks as diagrams. CDN must be in CSP. |
 | `ShopwareCarve.config.enableCharts` | `false` | Lazy-load Chart.js from CDN and render ` ```chart ` blocks as charts. CDN must be in CSP. |
+| `ShopwareCarve.config.renderReviews` | `false` | Render product review text as Carve HTML (comment profile, always hardened). See Surface 9. |
 
 ### allowRawHtml
 

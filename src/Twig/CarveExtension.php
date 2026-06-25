@@ -9,6 +9,7 @@ use Twig\TwigFilter;
 /**
  * Twig filters:
  *   {{ src|carve }}       -> safe HTML  (is_safe => html; sound only due to safe mode)
+ *   {{ src|carve_ugc }}   -> safe HTML, always comment profile + safe mode (UGC/reviews)
  *   {{ src|carve_text }}  -> plain text (e.g. mail text part)
  *   {{ src|carve_md }}    -> Markdown
  */
@@ -22,6 +23,7 @@ class CarveExtension extends AbstractExtension
     {
         return [
             new TwigFilter('carve', [$this, 'renderHtml'], ['is_safe' => ['html']]),
+            new TwigFilter('carve_ugc', [$this, 'renderHtmlUgc'], ['is_safe' => ['html']]),
             new TwigFilter('carve_text', [$this, 'renderText']),
             new TwigFilter('carve_md', [$this, 'renderMarkdown']),
         ];
@@ -30,6 +32,11 @@ class CarveExtension extends AbstractExtension
     public function renderHtml(?string $source): string
     {
         return $this->renderer->toHtml($source);
+    }
+
+    public function renderHtmlUgc(?string $source): string
+    {
+        return $this->renderer->toHtmlUgc($source);
     }
 
     public function renderText(?string $source): string

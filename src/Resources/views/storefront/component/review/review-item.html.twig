@@ -1,0 +1,11 @@
+{% sw_extends '@Storefront/storefront/component/review/review-item.html.twig' %}
+
+{% block component_review_item_content %}
+    <p class="product-detail-review-item-content" itemprop="description"{% if review.language %} lang="{{ review.language.translationCode.code }}"{% endif %}>
+        {% if config('ShopwareCarve.config.renderReviews') %}
+            {{ review.content|carve_ugc }}
+        {% else %}
+            {{ review.content|e }}
+        {% endif %}
+    </p>
+{% endblock %}

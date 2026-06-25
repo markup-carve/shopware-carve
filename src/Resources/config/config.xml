@@ -197,5 +197,14 @@
             <helpText>Renders ```chart code blocks as charts by lazy-loading Chart.js from jsDelivr CDN only when a chart is present on the page. Off by default. The CDN must be allowed by the storefront CSP (add https://cdn.jsdelivr.net to script-src and connect-src).</helpText>
             <helpText lang="de-DE">Rendert ```chart-Codeblöcke als Diagramme, indem Chart.js vom jsDelivr-CDN nur bei Bedarf nachgeladen wird. Standardmäßig deaktiviert. Das CDN muss in der Storefront-CSP erlaubt sein (https://cdn.jsdelivr.net zu script-src und connect-src hinzufügen).</helpText>
         </input-field>
+
+        <input-field type="bool">
+            <name>renderReviews</name>
+            <label>Render reviews with Carve</label>
+            <label lang="de-DE">Bewertungen mit Carve rendern</label>
+            <defaultValue>false</defaultValue>
+            <helpText>When on, storefront product review text is rendered as safe Carve HTML using the comment (UGC) profile - always hardened regardless of other settings; off by default.</helpText>
+            <helpText lang="de-DE">Wenn aktiviert, wird der Bewertungstext im Storefront als sicheres Carve-HTML mit dem Kommentar-Profil (UGC) gerendert - immer gehärtet, unabhängig von anderen Einstellungen; standardmäßig deaktiviert.</helpText>
+        </input-field>
     </card>
 </config>
