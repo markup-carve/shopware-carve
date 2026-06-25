@@ -144,6 +144,42 @@
             </options>
         </input-field>
 
+        <input-field type="single-select">
+            <name>profile</name>
+            <defaultValue>none</defaultValue>
+            <label>Content profile</label>
+            <label lang="de-DE">Inhaltsprofil</label>
+            <helpText>
+                Restricts which Carve elements are allowed in HTML output; use comment or minimal
+                for untrusted user content (reviews, Q&amp;A). Disallowed elements degrade per the
+                profile (default: to plain text). Applies to HTML rendering only.
+            </helpText>
+            <helpText lang="de-DE">
+                Schränkt ein, welche Carve-Elemente in der HTML-Ausgabe erlaubt sind. Verwende
+                „Comment" oder „Minimal" für nicht vertrauenswürdige Nutzerinhalte (Bewertungen,
+                Q&amp;A). Nicht erlaubte Elemente werden gemäß Profil reduziert (Standard: in
+                Klartext). Gilt nur für die HTML-Darstellung.
+            </helpText>
+            <options>
+                <option>
+                    <id>none</id>
+                    <name>None (no restriction)</name>
+                </option>
+                <option>
+                    <id>article</id>
+                    <name>Article</name>
+                </option>
+                <option>
+                    <id>comment</id>
+                    <name>Comment (UGC - basic formatting)</name>
+                </option>
+                <option>
+                    <id>minimal</id>
+                    <name>Minimal (inline only)</name>
+                </option>
+            </options>
+        </input-field>
+
         <input-field type="bool">
             <name>enableMermaid</name>
             <label>Enable Mermaid diagrams</label>

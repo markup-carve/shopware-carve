@@ -282,6 +282,7 @@ Access the plugin settings via Admin - Extensions - My extensions - Carve - Conf
 | `ShopwareCarve.config.livePreview` | `true` | Show instant preview while editing a Carve CMS element in the admin. |
 | `ShopwareCarve.config.smartQuotes` | `false` | Smart quotes (typographic): Converts straight quotes to locale-correct typographic quotes. |
 | `ShopwareCarve.config.smartQuotesLocale` | `en` | Smart-quote language: Sets the locale for typographic quotes. Only applies when `smartQuotes` is enabled. Supported locales: en, de, de-CH, fr, es, it, pt, nl, pl, ru, uk, cs, hu, sv, da, fi, nb, nn, ja, zh. |
+| `ShopwareCarve.config.profile` | `none` | Content profile: restricts which Carve elements appear in HTML output. Options: `none`, `article`, `comment`, `minimal`. See Content profile section below. |
 | `ShopwareCarve.config.enableMermaid` | `false` | Lazy-load Mermaid.js from CDN and render ` ```mermaid ` blocks as diagrams. CDN must be in CSP. |
 | `ShopwareCarve.config.enableCharts` | `false` | Lazy-load Chart.js from CDN and render ` ```chart ` blocks as charts. CDN must be in CSP. |
 
@@ -363,6 +364,48 @@ as charts. The Chart.js library is lazy-loaded from jsDelivr CDN (`https://cdn.j
 only when at least one `<div class="chart">` element is present on the page.
 
 Default: `false`.
+
+### profile (Content profile)
+
+Restricts which Carve node types are rendered in HTML output. Use `comment` or `minimal` for
+untrusted user content such as product reviews, Q&A answers, or any other UGC surface. Disallowed
+elements degrade to plain text by default (carve-php's `ACTION_TO_TEXT`). Applies to HTML output
+only (`|carve`, `|carve_ctx`) - text and Markdown converters are never profiled.
+
+Default: `none` (no restriction).
+
+| Value | Name | What it restricts |
+|-------|------|-------------------|
+| `none` | None | No restrictions. All Carve elements render normally. |
+| `article` | Article | Denies raw HTML blocks and inline raw HTML only. All other formatting (headings, images, tables, footnotes, etc.) is allowed. Suitable for blog posts and articles from trusted authors who must not embed scripts. |
+| `comment` | Comment (UGC) | Allows only basic inline formatting (bold, italic, strikethrough, code, links, insert/delete/highlight/superscript/subscript) and block-level paragraphs, lists, blockquotes, and code blocks. Denies headings, images, tables, footnotes, raw HTML, divs, sections, definition lists, thematic breaks, and math. Links get `rel="nofollow ugc"`. Max nesting depth: 4. |
+| `minimal` | Minimal (inline only) | Allows basic inline formatting (bold, italic, strikethrough, code, insert/delete/superscript/subscript, soft/hard breaks) and block-level paragraphs and lists only. Denies links, images, headings, tables, blockquotes, footnotes, raw HTML, and all advanced elements. Max nesting depth: 2. Suitable for chat messages and micro-posts. |
+| `full` | Full | Explicitly marks all features as allowed. Functionally equivalent to `none` but records intent. Use for trusted admin content. |
+
+#### Custom profile (PHP escape hatch)
+
+There is no UI for a fully custom profile. To apply bespoke restrictions, build a `Profile`
+directly in PHP and set it on the converter before rendering. The simplest approach is to decorate
+or replace `CarveRenderer` in your own plugin:
+
+```php
+use Carve\CarveConverter;
+use Carve\Profile;
+
+// Example: comment profile but also deny links
+$profile = Profile::comment()
+    ->denyInline(['link'])
+    ->setMaxNesting(3)
+    ->onDisallowed(Profile::ACTION_STRIP); // strip instead of converting to text
+
+$converter = new CarveConverter();
+$converter->setProfile($profile);
+$html = $converter->convert($source);
+```
+
+For the full list of node type constants, see
+[`Carve\NodeType`](https://github.com/markup-carve/carve-php/blob/main/src/NodeType.php) in the
+carve-php library and the node-type vocabulary in `docs/profiles.md` in the Carve spec.
 
 ### CDN and CSP
 

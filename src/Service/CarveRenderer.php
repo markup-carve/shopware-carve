@@ -4,6 +4,7 @@ namespace Carve\Shopware\Service;
 
 use Carve\CarveConverter;
 use Carve\Extension\AdmonitionExtension;
+use Carve\Profile;
 use Carve\Extension\AutolinkExtension;
 use Carve\Extension\CodeGroupExtension;
 use Carve\Extension\DetailsExtension;
@@ -29,8 +30,13 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  * emit into the storefront without further sanitizing, which is why the Twig `carve` filter is
  * marked is_safe => html.
  *
+ * The `ShopwareCarve.config.profile` setting optionally applies a carve-php Profile to the HTML
+ * converter. Profiles strip or degrade disallowed node types (e.g. headings, images, tables) and
+ * are useful for untrusted user content such as reviews or Q&A. Applies to HTML output only;
+ * the text and markdown singletons are not profiled.
+ *
  * The HTML converter is built per call in toHtml() because it depends on runtime config
- * (allowRawHtml / smart quotes) that can change in the Shopware admin without a cache:clear.
+ * (allowRawHtml / smart quotes / profile) that can change in the Shopware admin without a cache:clear.
  * The text and markdown converters have no config-dependent state and are constructed once
  * as stateless singletons.
  */
@@ -92,7 +98,31 @@ class CarveRenderer
             $converter->addExtension(FencedRenderExtension::chart());
         }
 
+        $profileKey = $this->systemConfig->get('ShopwareCarve.config.profile');
+        $profile = $this->resolveProfile(is_string($profileKey) ? $profileKey : null);
+        if ($profile !== null) {
+            $converter->setProfile($profile);
+        }
+
         return $converter;
+    }
+
+    /**
+     * Maps a config string to a carve-php Profile preset.
+     *
+     * Returns null for 'none', null, or any unknown value so that setProfile() is never
+     * called and the converter runs without profile restrictions (the default).
+     * Only the HTML converter uses profiles; text and markdown singletons are not profiled.
+     */
+    private function resolveProfile(?string $key): ?Profile
+    {
+        return match ($key) {
+            'article' => Profile::article(),
+            'comment' => Profile::comment(),
+            'minimal' => Profile::minimal(),
+            'full' => Profile::full(),
+            default => null,
+        };
     }
 
     /**

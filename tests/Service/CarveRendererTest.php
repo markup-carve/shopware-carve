@@ -207,6 +207,34 @@ class CarveRendererTest extends TestCase
         self::assertStringNotContainsString('ext-spoiler', $html);
     }
 
+    public function testProfileCommentDisallowsHeadings(): void
+    {
+        // The 'comment' preset allowBlock list does not include 'heading', so a heading in the
+        // source must NOT produce an <h1>-<h6> tag - it degrades to plain text per the profile's
+        // default ACTION_TO_TEXT action. With profile 'none' the same source renders an <h1>.
+        $renderer = new CarveRenderer($this->makeConfigMock(null, null, null, null, null, 'comment'));
+        $source = '# Section Heading';
+
+        $html = $renderer->toHtml($source);
+
+        // Heading tag must not appear in profiled output
+        self::assertStringNotContainsString('<h1', $html);
+        // The heading text itself must survive (degraded to plain text, not stripped)
+        self::assertStringContainsString('Section Heading', $html);
+    }
+
+    public function testProfileNoneAllowsHeadings(): void
+    {
+        // With profile 'none' (the default / no restriction), headings render normally.
+        $renderer = new CarveRenderer($this->makeConfigMock(null, null, null, null, null, 'none'));
+        $source = '# Section Heading';
+
+        $html = $renderer->toHtml($source);
+
+        self::assertStringContainsString('<h1', $html);
+        self::assertStringContainsString('Section Heading', $html);
+    }
+
     public function testCodeGroupRendersRadioTabMarkup(): void
     {
         // CodeGroupExtension converts ::: code-group with labeled fences to a CSS radio-tab
@@ -245,6 +273,7 @@ class CarveRendererTest extends TestCase
         string|null $smartQuotesLocale = null,
         bool|null $enableMermaid = null,
         bool|null $enableCharts = null,
+        string|null $profile = null,
     ): SystemConfigService {
         $mock = $this->createMock(SystemConfigService::class);
 
@@ -254,6 +283,7 @@ class CarveRendererTest extends TestCase
             'ShopwareCarve.config.smartQuotesLocale' => $smartQuotesLocale,
             'ShopwareCarve.config.enableMermaid' => $enableMermaid,
             'ShopwareCarve.config.enableCharts' => $enableCharts,
+            'ShopwareCarve.config.profile' => $profile,
         ];
 
         $mock->method('get')

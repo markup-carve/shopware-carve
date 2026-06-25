@@ -4,6 +4,7 @@ namespace Carve\Shopware\Service;
 
 use Carve\CarveConverter;
 use Carve\Extension\AdmonitionExtension;
+use Carve\Profile;
 use Carve\Extension\AutolinkExtension;
 use Carve\Extension\CodeGroupExtension;
 use Carve\Extension\DetailsExtension;
@@ -31,6 +32,9 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  * Dangerous URL schemes (javascript:, data:, vbscript:, file:) and on-event/srcdoc/formaction
  * attributes are ALWAYS stripped regardless of allowRawHtml - they are a baseline provided by
  * carve-php's safeMode and are never toggled off.
+ *
+ * The `ShopwareCarve.config.profile` setting optionally applies a carve-php Profile to the HTML
+ * converter to restrict which node types are rendered (useful for UGC). Applies to HTML output only.
  *
  * `:product[SKU]` is parsed by carve-php as a generic InlineExtension node (type
  * "product"). A render.inline_extension event listener intercepts those nodes and
@@ -87,6 +91,12 @@ class CarveContextRenderer
             $converter->addExtension(FencedRenderExtension::chart());
         }
 
+        $profileKey = $this->systemConfig->get('ShopwareCarve.config.profile');
+        $profile = $this->resolveProfile(is_string($profileKey) ? $profileKey : null);
+        if ($profile !== null) {
+            $converter->setProfile($profile);
+        }
+
         (new ProductInlineMatcher(function (string $sku) use ($context): ?array {
             $criteria = new Criteria();
             $criteria->addFilter(new EqualsFilter('productNumber', $sku));
@@ -106,6 +116,24 @@ class CarveContextRenderer
         }))->register($converter);
 
         return $converter->convert($source);
+    }
+
+    /**
+     * Maps a config string to a carve-php Profile preset.
+     *
+     * Returns null for 'none', null, or any unknown value so that setProfile() is never
+     * called and the converter runs without profile restrictions (the default).
+     * Only the HTML converter uses profiles; text and markdown targets are not profiled.
+     */
+    private function resolveProfile(?string $key): ?Profile
+    {
+        return match ($key) {
+            'article' => Profile::article(),
+            'comment' => Profile::comment(),
+            'minimal' => Profile::minimal(),
+            'full' => Profile::full(),
+            default => null,
+        };
     }
 
     private function configBool(mixed $value, bool $default = false): bool
