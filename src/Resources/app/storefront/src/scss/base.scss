@@ -327,4 +327,73 @@
             filter: none;
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Code groups (CodeGroupExtension) and tabs (TabsExtension)
+    //
+    // Both extensions emit a CSS radio-tab pattern - all inputs+labels come first,
+    // then all panels as siblings. The Kth radio controls the Kth panel via
+    // nth-of-type selectors. No JavaScript required.
+    //
+    // CodeGroupExtension emits:
+    //   <div class="code-group">
+    //     <input type="radio" name="codegroup-N" id="codegroup-N-tab-K"
+    //            class="code-group-radio" [checked]>
+    //     <label for="codegroup-N-tab-K" class="code-group-label">npm</label>
+    //     ... (more input+label pairs) ...
+    //     <div class="code-group-panel"><pre>...</pre></div>
+    //     ... (more panels) ...
+    //   </div>
+    //
+    // TabsExtension emits the same shape with classes:
+    //   tabs / tabs-radio / tabs-label / tabs-panel
+    //   and name="tabset-N".
+    // -------------------------------------------------------------------------
+
+    .code-group,
+    .tabs {
+        border: 1px solid #ddd;
+        border-radius: .25rem;
+        margin: 1rem 0;
+        overflow: hidden;
+    }
+
+    .code-group-radio,
+    .tabs-radio {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .code-group-label,
+    .tabs-label {
+        display: inline-block;
+        padding: .5rem .9rem;
+        cursor: pointer;
+        font-weight: 600;
+        border-bottom: 2px solid transparent;
+        user-select: none;
+    }
+
+    .code-group-radio:checked + .code-group-label,
+    .tabs-radio:checked + .tabs-label {
+        border-bottom-color: #2b6cb0;
+        color: #2b6cb0;
+    }
+
+    .code-group-panel,
+    .tabs-panel {
+        display: none;
+        padding: 0 .75rem;
+    }
+
+    // Map the Kth radio to the Kth panel. Panels come after ALL inputs+labels as
+    // siblings, so we use nth-of-type on both the radio and the panel. Supports
+    // up to 8 tabs; add more entries here if deeper groups are needed.
+    @for $i from 1 through 8 {
+        .code-group-radio:nth-of-type(#{$i}):checked ~ .code-group-panel:nth-of-type(#{$i}),
+        .tabs-radio:nth-of-type(#{$i}):checked ~ .tabs-panel:nth-of-type(#{$i}) {
+            display: block;
+        }
+    }
 }

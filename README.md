@@ -36,12 +36,8 @@ The following carve-php extensions are registered unconditionally on every HTML 
 | `ExternalLinksExtension` | Adds `rel="nofollow noopener"` and `target="_blank"` to all external HTTP/HTTPS links, including those produced by `AutolinkExtension`. |
 | `TableOfContentsExtension` | Collects headings and makes a `<ul class="toc">` available via `getTocHtml()` (or auto-inserts at `position: 'top'`/`'bottom'` when configured). Not auto-inserted by default - use `position` option or call `getTocHtml()` manually. |
 | `SpoilerExtension` | Block `::: spoiler "Title"` becomes a native `<details class="spoiler"><summary>Title</summary>...</details>` (collapsed by default - no JS). Inline `:spoiler[text]` becomes `<span class="spoiler">text</span>` (CSS blur-until-hover, no JS). |
-
-The following extension categories are **not** enabled because they require client-side JavaScript
-or additional dependencies, and degrade gracefully without them:
-
-- **Tabs** (`TabsExtension`) - requires carve-js tab component
-- **Code groups** (`CodeGroupExtension`) - requires carve-js
+| `CodeGroupExtension` | Converts `::: code-group` with labeled fenced blocks (e.g. ` ```bash [npm] `) to a tabbed group with `<input class="code-group-radio">` / `<label class="code-group-label">npm</label>` / `<div class="code-group-panel">` markup. Tab switching is CSS-only (radio hack) - no JavaScript. |
+| `TabsExtension` | Converts `:::: tabs` / `::: tab "Title"` blocks to the same CSS radio-tab pattern with classes `tabs-radio` / `tabs-label` / `tabs-panel`. No JavaScript. |
 
 Config-driven extensions (added only when enabled in the plugin settings): smart quotes
 (`ShopwareCarve.config.smartQuotes`), Mermaid diagrams (`ShopwareCarve.config.enableMermaid`)

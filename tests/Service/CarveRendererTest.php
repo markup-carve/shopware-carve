@@ -207,6 +207,35 @@ class CarveRendererTest extends TestCase
         self::assertStringNotContainsString('ext-spoiler', $html);
     }
 
+    public function testCodeGroupRendersRadioTabMarkup(): void
+    {
+        // CodeGroupExtension converts ::: code-group with labeled fences to a CSS radio-tab
+        // pattern: all inputs+labels first, then all panels. Tab switching is CSS-only - no JS.
+        $source = implode("\n", [
+            '::: code-group',
+            '``` bash [npm]',
+            'npm install',
+            '```',
+            '``` bash [pnpm]',
+            'pnpm install',
+            '```',
+            ':::',
+        ]);
+
+        $html = $this->renderer->toHtml($source);
+
+        // Radio inputs for CSS switching
+        self::assertStringContainsString('class="code-group-radio"', $html);
+        // Labels carry the tab titles - the key fix: [npm]/[pnpm] must not be lost
+        self::assertStringContainsString('class="code-group-label"', $html);
+        self::assertStringContainsString('>npm<', $html);
+        self::assertStringContainsString('>pnpm<', $html);
+        // Panels wrap the code blocks
+        self::assertStringContainsString('class="code-group-panel"', $html);
+        // Must not fall back to a plain fenced code block without group structure
+        self::assertStringNotContainsString('[npm]', $html);
+    }
+
     /**
      * @return SystemConfigService&MockObject
      */

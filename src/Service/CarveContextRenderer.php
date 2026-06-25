@@ -5,6 +5,7 @@ namespace Carve\Shopware\Service;
 use Carve\CarveConverter;
 use Carve\Extension\AdmonitionExtension;
 use Carve\Extension\AutolinkExtension;
+use Carve\Extension\CodeGroupExtension;
 use Carve\Extension\DetailsExtension;
 use Carve\Extension\ExternalLinksExtension;
 use Carve\Extension\FencedRenderExtension;
@@ -13,6 +14,7 @@ use Carve\Extension\ListTableExtension;
 use Carve\Extension\SmartQuotesExtension;
 use Carve\Extension\SpoilerExtension;
 use Carve\Extension\TableOfContentsExtension;
+use Carve\Extension\TabsExtension;
 use Carve\Shopware\Inline\ProductInlineMatcher;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -61,8 +63,10 @@ class CarveContextRenderer
 
         $converter->addExtensions([
             new AdmonitionExtension(),
+            new CodeGroupExtension(),
             new DetailsExtension(),
             new SpoilerExtension(),
+            new TabsExtension(),
             new ListTableExtension(),
             new InlineFootnotesExtension(),
             new AutolinkExtension(),
