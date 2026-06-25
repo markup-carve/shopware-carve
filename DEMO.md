@@ -227,3 +227,19 @@ rm -rf vendor/markup-carve/shopware-carve && ddev composer install --no-interact
 
 Then rebuild (`bin/build-administration.sh`, `bin/build-storefront.sh`, `theme:compile`,
 `cache:clear`). The same applies to the local `markup-carve/carve-php` clone.
+
+### Always run build-storefront after re-mirroring the plugin
+
+Re-mirroring the plugin into `vendor/` (the step above) wipes its compiled
+storefront JS. `theme:compile` does NOT rebuild plugin JS - so the storefront
+`shopware-carve.js` (which lazy-loads Mermaid/Chart) silently drops off the page
+and diagrams stop hydrating. After ANY plugin re-mirror, run the FULL build:
+
+``` bash
+ddev exec bin/console bundle:dump
+ddev exec bin/build-administration.sh
+ddev exec bin/build-storefront.sh     # <-- required; restores the storefront JS
+ddev exec bin/console assets:install
+ddev exec bin/console theme:compile
+ddev exec bin/console cache:clear
+```
