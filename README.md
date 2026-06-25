@@ -283,6 +283,15 @@ is long:
 The manufacturer field added by the `carve_manufacturer_body` migration (Surface 4b above) follows
 the same pattern - set the source in the admin, render it wherever your theme shows the brand.
 
+### Building your own elements
+
+Carve can resolve your own inline/block elements against live Shopware data
+(prices, stock, product cards, legal snippets) at render time - the same
+mechanism that powers `:product[SKU]`. See **[`docs/custom-elements.md`](docs/custom-elements.md)**
+for the render-hook pattern, two complete worked examples (`:badge[...]` pure
+markup and `:price[SKU]` live data), how to make an element opt-in via config,
+and a catalog of commerce-specific element ideas.
+
 ---
 
 ## Install
