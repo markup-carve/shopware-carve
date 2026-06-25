@@ -108,6 +108,31 @@ category CMS listing template automatically.
 
 ---
 
+### 4b - Manufacturer/brand custom field `carve_manufacturer_body`
+
+**Benefit:** Authored brand copy on the manufacturer entity - same Carve safety and admin UX as
+the product and category fields.
+
+The migration adds a `carve_manufacturer_body` text area to `product_manufacturer` entities in the
+`carve` custom field set. It appears in the manufacturer admin form after running migrations.
+
+Shopware core has no dedicated storefront manufacturer page and no stable override block that
+renders manufacturer copy as rich text. The field is therefore **filter-only**: theme developers
+render it at whatever point the brand is shown in their layout:
+
+```twig
+{# In any storefront template that has the manufacturer in scope #}
+{% if product.manufacturer.translated.customFields.carve_manufacturer_body %}
+    <div class="carve-content carve-manufacturer-description">
+        {{ product.manufacturer.translated.customFields.carve_manufacturer_body|carve }}
+    </div>
+{% endif %}
+```
+
+For product references inside the manufacturer copy, use `|carve_ctx(context)` instead of `|carve`.
+
+---
+
 ### 5 - Admin live preview (carve-js)
 
 **Benefit:** While typing in the CMS element or custom fields, the preview updates instantly and is
@@ -212,6 +237,51 @@ bin/console carve:render path/to/content.crv --md
 # (--term, not --ansi: the latter is reserved by Symfony's console to force color globally)
 bin/console carve:render path/to/content.crv --term
 ```
+
+---
+
+## Using `|carve` in your own templates
+
+The `|carve`, `|carve_text`, `|carve_md`, `|carve_ctx`, and `|carve_ugc` filters are registered
+globally in the Twig environment. They work in any Shopware template surface - storefront themes,
+transactional mail templates, Flow Builder mail bodies, document (invoice/delivery note) templates,
+and on any custom entity's text field. No extra configuration is needed beyond installing the plugin.
+
+**Custom storefront template** - render any text field from any entity:
+
+```twig
+{# Any storefront .html.twig with a Carve source in scope #}
+{{ myEntity.translated.someCarveField|carve }}
+
+{# With :product[SKU] inline references resolved against the current sales channel #}
+{{ myEntity.translated.someCarveField|carve_ctx(context) }}
+```
+
+**Flow Builder / mail template** - one source, two mail parts:
+
+```twig
+{# HTML part of an email template #}
+{% set body = order.customFields.carve_message_body ?? '' %}
+{{ body|carve }}
+
+{# Plain-text part of the same email template #}
+{{ body|carve_text }}
+```
+
+**Document (invoice / delivery note) template** - same filter, works in Twig-based document
+overrides. Because documents are rendered once and stored as PDF, cache the output when the source
+is long:
+
+```twig
+{# In a custom document Twig override #}
+{% set manufacturerCopy = order.lineItems.first.product.manufacturer.translated.customFields.carve_manufacturer_body ?? '' %}
+{% if manufacturerCopy %}
+    {{ manufacturerCopy|carve }}
+{% endif %}
+```
+
+The manufacturer field added by the `carve_manufacturer_body` migration (Surface 4b above) follows
+the same pattern - set the source in the admin, render it wherever your theme shows the brand.
 
 ---
 
