@@ -59,8 +59,8 @@ class Migration1782300100AddCarveCategoryField extends MigrationStep
             'type' => 'text',
             'config' => json_encode([
                 'label' => ['en-GB' => 'Carve body (category)', 'de-DE' => 'Carve-Inhalt (Kategorie)'],
-                'componentName' => 'sw-field',
-                'customFieldType' => 'textarea',
+                'componentName' => 'sw-textarea-field',
+                'customFieldType' => 'text',
                 'customFieldPosition' => 2,
                 'helpText' => [
                     'en-GB' => 'Carve markup rendered to safe HTML on the category page.',
