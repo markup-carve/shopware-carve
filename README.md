@@ -7,7 +7,9 @@ preview, transactional mail, inline product references, and a CLI renderer.
 **Safe by default.** Raw HTML passthrough is off. `javascript:`, `data:`, `vbscript:`, `file:` URL
 schemes are neutralized. `on*`, `srcdoc`, and `formaction` attributes are stripped. These protections
 are always-on baselines independent of any plugin setting. No separate sanitizer needed. The `|carve`
-filter is `is_safe => html` because carve-php's URL/attribute hardening is unconditional.
+filter is `is_safe => html` because carve-php's URL/attribute hardening is unconditional. For the full
+threat model, a Carve-vs-Markdown comparison with examples, and the honest limits, see
+[`docs/security.md`](docs/security.md).
 
 - Composer: `markup-carve/shopware-carve`
 - License: MIT

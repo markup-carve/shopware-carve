@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@markup-carve/carve": "^0.1.0"
+    "@markup-carve/carve": "file:/var/www/html/_pkgs/carve-js"
   }
 }
