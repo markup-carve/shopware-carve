@@ -263,39 +263,61 @@ matcher with a fake lookup, convert a snippet, and assert the HTML. See
 
 ---
 
-## Idea catalog (commerce-specific)
+## Idea catalog for Shopware devs and apps
 
 Not built yet - candidates that fit the "short token, server-resolved, no client
 JS" shape. Each is a render hook plus (for data-bound ones) a Shopware service.
+A live roadmap with checkboxes is tracked in the repo issues. ⭐ marks the
+highest value-per-effort.
 
-### Live commerce data (sales-channel aware)
-- `:price[SKU]` - current formatted price (example above).
-- `:stock[SKU]` - availability badge (In stock / X left / Out).
-- `:::product-card[SKU]` / `:::product-grid[SKU,...]` - card(s) with image, price, add-to-cart.
-- `:was-now[SKU]` / `:discount[SKU]` - list price struck through + new price + percent off.
-- `:delivery-time[SKU]`, `:rating[SKU]`, `:product-image[SKU]`, `:variants[SKU]`.
+### Live product and catalog data (server-resolved, sales-channel aware)
+- ⭐ `:product[SKU]` / `:product[SKU]{card}` - link or full card. *Why:* cross-sells in editorial copy stay live and unbroken instead of rotting as hardcoded text.
+- ⭐ `:price[SKU]` - current formatted price. *Why:* kills stale/wrong hardcoded prices; correct per currency, customer group, tax state.
+- ⭐ `:stock[SKU]` - availability badge. *Why:* urgency ("only 3 left") and honesty (sold out) at the point of mention, auto-updated.
+- `:was-now[SKU]` / `:discount[SKU]` - strike-through list price + percent off. *Why:* campaign copy shows the real reference price (DE strike-price rules).
+- `:::product-grid[SKU,...]` - hand-picked product set. *Why:* curate an exact set inside a content page without the CMS listing element's filter constraints.
+- `:rating[SKU]`, `:variants[SKU]`, `:category[handle]`, `:manufacturer[name]` - social proof, option chips, stable internal links that survive SEO-URL changes.
 
-### Conversion / trust (mostly pure markup)
-- `:button[Label](url)` / `::: cta` - themed call-to-action button.
-- `:badge[Sale|danger]` - label chip (example above).
-- `:coupon[CODE]` - copyable voucher chip.
-- `::: usp`, `::: trust-badges` - feature/payment icon rows.
-- `:countdown[ISO-DATE]` - sale countdown (live tick needs a little JS).
+### Conversion / CTA / layout (mostly pure markup)
+- ⭐ `:button[Label](url)` / `::: cta` - themed button. *Why:* authors add real CTAs from plain text, theme-styled, no HTML/CSS, no XSS.
+- ⭐ `:badge[Sale|danger]` - label chip. *Why:* New/Sale/B2B emphasis without inline styles; one place to restyle.
+- `:::columns` / `:::card` - layout primitives. *Why:* multi-column/card content in fields that are not full CMS pages.
+- `:::accordion` / `:::faq` - native `<details>` collapsibles. *Why:* FAQ/spec sections, SEO-friendly, no JS.
+- `:coupon[CODE]` - copyable code chip. *Why:* one-click copy, fewer typos, more redemptions.
+- `:add-to-cart[SKU]` - inline buy button. *Why:* turn editorial copy into a buy surface without a CMS block.
+- `:countdown[ISO-DATE]` - sale timer (tiny JS for the live tick). *Why:* urgency.
 
 ### Legal / compliance (DE/EU, config-resolved)
-- `:vat-note` / `:price-note` - the required "incl. VAT, plus shipping" suffix from the shop config.
-- `:legal[withdrawal|tos|privacy|imprint]` - link to the configured legal page.
-- `:shipping-from[50]` - "free shipping from EUR 50" in the shop currency.
+- ⭐ `:vat-note` / `:price-note` - "incl. VAT, plus shipping" from config. *Why:* the legally required price suffix, one source of truth, no per-page mistakes.
+- ⭐ `:legal[withdrawal|tos|privacy|imprint]` - link to the configured legal page. *Why:* mandatory links that are never broken, centrally managed.
+- `:shipping-from[50]` - free-shipping threshold in shop currency. *Why:* config-driven, consistent.
 
-### Spec / technical (B2B)
-- `::: csv` -> real `<table>` from spreadsheet-pasted rows (load/size tables).
-- `::: specs[SKU]` - auto spec sheet from product properties.
-- `:unit[6 mm]`, `:sku[SKU]`, `::: size-chart`.
+### Spec / technical / B2B
+- ⭐ `::: csv` -> real `<table>`. *Why:* spreadsheet-pasted load/size/compatibility tables with block content per cell - the thing pipe-tables cannot do.
+- `:::specs[SKU]` - auto spec sheet from product properties. *Why:* zero-maintenance table generated from PIM data.
+- `:datasheet[SKU]` - link to the product's datasheet media. *Why:* one-token B2B doc access.
+- `:unit[6 mm]` / `:dimension[...]` - consistent technical notation.
 
-### Generic-but-useful (low/no JS)
-- `:icon[truck]` (theme icon set), `:color[#ff8800]` + `::: palette`,
-  `:rating-stars[4.5]`, `:spark[1,4,2,8]`, `::: qr[url]`, `barcode-ean13`.
+### Trust / social proof / media
+- `:::trust-badges`, `:::usp`, `:reviews-summary[SKU]` - payment/shipping icons, benefit lists, aggregate rating. *Why:* themed, consistent conversion elements.
+- `:product-image[SKU]` / `:::gallery[...]` - live image / media-library gallery. *Why:* always the current asset.
+- `:video[provider:id]` - GDPR-safe click-to-load embed. *Why:* no auto third-party load, consent-friendly by construction.
+
+### Developer / app utility (the platform angle)
+- ⭐ `:snippet[key]` - render a translation snippet inline. *Why:* i18n inside authored content - one source, all languages via the snippet system; big for multilingual shops and app-shipped copy.
+- ⭐ `:::app-block[name]{...}` - extension point for apps/plugins to register their own server-resolved widgets via the carve-php extension API. *Why:* an app ships its own markup vocabulary usable in any Carve field - a platform play, not just static content.
+- `:route[name]{params}` / `:seo-url[...]` - generate a storefront URL. *Why:* stable links that respect SEO URLs + sales-channel domain, not hardcoded paths.
+- `:asset[path]` - theme/bundle asset URL. *Why:* reference plugin/app assets without deploy-fragile paths.
+- `:config[allowedKey]` - output a whitelisted SystemConfig value (shop name, phone). *Why:* DRY shop metadata in content. Security: strict allowlist only, never arbitrary keys.
+- `:icon[name]` - theme icon set. *Why:* consistent iconography, no inline SVG.
+
+### Generic-but-commerce-flavored (low/no JS)
+- `:color[#ff8800]` + `:::palette`, `:rating-stars[4.5]`, `:spark[1,4,2,8]` (build-time SVG), `:::qr[url]`, `barcode-ean13`, `:progress[70]`.
+
+### Two cross-cutting reasons this matters for devs/apps
+- **One safe authoring vocabulary across every surface** - the same elements work in product/category fields, CMS, reviews, mail and PDFs, so an app defines a widget once and it is usable everywhere a Carve field exists.
+- **Security stays free** - everything emits through the same hardened pipeline (escaped values, scheme/attribute denylist), so an app author cannot introduce XSS via a custom widget as long as dynamic values are escaped (see the examples above).
 
 Build order that maximizes value per effort: `:price` + `:stock`, then
-`:vat-note` / `:legal`, then `:button` / `:badge`, then `:::product-card`, then
-`::: csv`.
+`:vat-note` / `:legal`, then `:button` / `:badge`, then `:snippet`, then
+`:::product-card`, then `::: csv`.
