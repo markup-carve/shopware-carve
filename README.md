@@ -23,6 +23,26 @@ threat model, a Carve-vs-Markdown comparison with examples, and the honest limit
 
 ---
 
+## Gallery
+
+One plain-text source, rendered safely across the shop. The product description (left) and the
+admin authoring view with live preview (right) come from the same Carve source:
+
+| Storefront product description | Admin live preview |
+|---|---|
+| ![Product carve_body](docs/img/03-product-carve-body.png) | ![Admin live preview](docs/img/05-admin-live-preview.png) |
+
+Untrusted review text is hardened automatically - bold/italic/links survive, while headings, images,
+and raw `<script>` degrade to inert text:
+
+![UGC review hardened by the comment profile](docs/img/09-review-ugc.png)
+
+See **[`GALLERY.md`](GALLERY.md)** for all surfaces (CMS element, category and manufacturer copy,
+transactional mail, inline product references, and the CLI renderer) with the Carve source behind
+each screenshot.
+
+---
+
 ## Enabled extensions
 
 The following carve-php extensions are registered unconditionally on every HTML converter (both
