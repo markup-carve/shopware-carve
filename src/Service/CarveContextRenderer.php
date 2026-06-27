@@ -24,11 +24,11 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
- * Context-aware Carve rendering. Builds a per-call converter with raw HTML passthrough
- * controlled by the `ShopwareCarve.config.allowRawHtml` system config setting (default: false),
- * and with the :product[SKU] inline extension bound to the active sales channel, so authored
- * product references resolve to storefront links for the current channel.
+ * Context-aware Carve rendering. Converters are memoized per (SalesChannelContext, config)
+ * pair so that a page rendering N product descriptions or review fields builds and
+ * registers extensions only once instead of N times.
  *
+ * Raw HTML passthrough is controlled by `ShopwareCarve.config.allowRawHtml` (default: false).
  * Dangerous URL schemes (javascript:, data:, vbscript:, file:) and on-event/srcdoc/formaction
  * attributes are ALWAYS stripped regardless of allowRawHtml - they are a baseline provided by
  * carve-php's safeMode and are never toggled off.
@@ -38,13 +38,27 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  *
  * `:product[SKU]` is parsed by carve-php as a generic InlineExtension node (type
  * "product"). A render.inline_extension event listener intercepts those nodes and
- * resolves them to <a> links via a product repository lookup.
+ * resolves them to <a> links via a product repository lookup. The closure capturing
+ * the SalesChannelContext is bound once per context object and reused across calls.
  *
- * Per-call because the render listener closure captures the SalesChannelContext;
- * do not share this converter across requests.
+ * Cache key: spl_object_id(context) . '|' . config-signature. Different SalesChannelContext
+ * objects (e.g. across test suites or multi-context workers) produce distinct keys and
+ * each gets its own converter. Within a normal request a single context object is used,
+ * so the cache converges to one entry and the converter is built once.
+ *
+ * Reuse safety: CarveConverter.render() resets its shared render context and calls clear()
+ * on every ResettableExtensionInterface extension before each render. This is the same
+ * guarantee the text/markdown singletons in CarveRenderer rely on.
  */
 class CarveContextRenderer
 {
+    /**
+     * Memoized converters keyed by context-id + config signature.
+     *
+     * @var array<string, CarveConverter>
+     */
+    private array $converters = [];
+
     /**
      * @param EntityRepository<\Shopware\Core\Content\Product\ProductCollection> $productRepository
      */
@@ -60,6 +74,47 @@ class CarveContextRenderer
             return '';
         }
 
+        return $this->getCachedConverter($context)->convert($source);
+    }
+
+    /**
+     * Returns a memoized converter for the given context and current config.
+     *
+     * The cache key combines the object identity of the SalesChannelContext (so
+     * different context objects each get their own closure-bound converter) with a
+     * normalized config signature (so a config change still yields a fresh converter).
+     */
+    private function getCachedConverter(SalesChannelContext $context): CarveConverter
+    {
+        $sig = spl_object_id($context) . '|' . $this->buildContextSignature();
+
+        return $this->converters[$sig] ??= $this->buildConverter($context);
+    }
+
+    /**
+     * Computes a cache key from every config setting that affects the context converter.
+     */
+    private function buildContextSignature(): string
+    {
+        $allow = $this->configBool($this->systemConfig->get('ShopwareCarve.config.allowRawHtml'), false);
+        $sq = $this->configBool($this->systemConfig->get('ShopwareCarve.config.smartQuotes'));
+        $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
+        $mermaid = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enableMermaid'));
+        $charts = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enableCharts'));
+        $profile = $this->systemConfig->get('ShopwareCarve.config.profile');
+
+        return implode('|', [
+            $allow ? '1' : '0',
+            $sq ? '1' : '0',
+            is_string($loc) ? $loc : '',
+            $mermaid ? '1' : '0',
+            $charts ? '1' : '0',
+            is_string($profile) ? $profile : '',
+        ]);
+    }
+
+    private function buildConverter(SalesChannelContext $context): CarveConverter
+    {
         $allow = $this->configBool($this->systemConfig->get('ShopwareCarve.config.allowRawHtml'), false);
         $safe = $allow ? false : true;
 
@@ -115,7 +170,7 @@ class CarveContextRenderer
             return ['name' => $name, 'url' => $url];
         }))->register($converter);
 
-        return $converter->convert($source);
+        return $converter;
     }
 
     /**

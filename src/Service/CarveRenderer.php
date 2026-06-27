@@ -35,8 +35,18 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  * are useful for untrusted user content such as reviews or Q&A. Applies to HTML output only;
  * the text and markdown singletons are not profiled.
  *
- * The HTML converter is built per call in toHtml() because it depends on runtime config
- * (allowRawHtml / smart quotes / profile) that can change in the Shopware admin without a cache:clear.
+ * HTML converters are memoized per request by a config signature (allowRawHtml, smartQuotes,
+ * smartQuotesLocale, profile, enableMermaid, enableCharts). Within one DI-singleton lifetime
+ * (one request) the config is stable, so the same converter instance is reused across all
+ * toHtml() calls - avoiding repeated CarveConverter construction and ~10 addExtension() calls
+ * for every rendered field (e.g. a product listing with N descriptions).
+ *
+ * Reuse is safe: CarveConverter.render() resets its shared render context at the start of each
+ * call (HtmlRenderer.sharedRenderContext.reset()), and every stateful extension in the suite
+ * implements ResettableExtensionInterface and is cleared via extension.clear() before each
+ * render. The existing text/markdown singleton fields in this class already rely on the same
+ * guarantee.
+ *
  * The text and markdown converters have no config-dependent state and are constructed once
  * as stateless singletons.
  */
@@ -44,6 +54,16 @@ class CarveRenderer
 {
     private CarveConverter $text;
     private CarveConverter $markdown;
+
+    /**
+     * Memoized HTML converters keyed by config signature.
+     *
+     * A single request normally hits only one key (stable config), so this
+     * array stays at 1-2 entries for the lifetime of the service instance.
+     *
+     * @var array<string, CarveConverter>
+     */
+    private array $htmlConverters = [];
 
     public function __construct(private readonly SystemConfigService $systemConfig)
     {
@@ -57,7 +77,7 @@ class CarveRenderer
             return '';
         }
 
-        return $this->buildHtmlConverter()->convert($source);
+        return $this->getCachedHtmlConverter()->convert($source);
     }
 
     /**
@@ -76,7 +96,61 @@ class CarveRenderer
             return '';
         }
 
-        return $this->buildUgcConverter()->convert($source);
+        return $this->getCachedUgcConverter()->convert($source);
+    }
+
+    /**
+     * Returns a memoized HTML converter for the current config.
+     *
+     * Computes a signature from all config keys that affect the converter.
+     * On first call (or config change) builds and caches a fresh converter;
+     * on subsequent calls with the same config returns the cached instance.
+     */
+    private function getCachedHtmlConverter(): CarveConverter
+    {
+        $sig = $this->buildHtmlSignature();
+
+        return $this->htmlConverters[$sig] ??= $this->buildHtmlConverter();
+    }
+
+    /**
+     * Returns a memoized UGC converter.
+     *
+     * UGC converters always use forced safe mode and the comment profile.
+     * Only the smartQuotes config can vary, so the cache key is simpler.
+     */
+    private function getCachedUgcConverter(): CarveConverter
+    {
+        $sq = $this->configBool($this->systemConfig->get('ShopwareCarve.config.smartQuotes'));
+        $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
+        $sig = 'ugc|' . ($sq ? '1' : '0') . '|' . (is_string($loc) ? $loc : '');
+
+        return $this->htmlConverters[$sig] ??= $this->buildUgcConverter();
+    }
+
+    /**
+     * Computes a cache key from every config setting that affects the HTML converter.
+     *
+     * Values are normalized to their effective form (bool -> 0/1, unknown string -> '')
+     * so that raw Shopware config representations ("true"/true/1) map to the same key.
+     */
+    private function buildHtmlSignature(): string
+    {
+        $allow = $this->configBool($this->systemConfig->get('ShopwareCarve.config.allowRawHtml'), false);
+        $sq = $this->configBool($this->systemConfig->get('ShopwareCarve.config.smartQuotes'));
+        $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
+        $mermaid = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enableMermaid'));
+        $charts = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enableCharts'));
+        $profile = $this->systemConfig->get('ShopwareCarve.config.profile');
+
+        return implode('|', [
+            $allow ? '1' : '0',
+            $sq ? '1' : '0',
+            is_string($loc) ? $loc : '',
+            $mermaid ? '1' : '0',
+            $charts ? '1' : '0',
+            is_string($profile) ? $profile : '',
+        ]);
     }
 
     public function toText(?string $source): string
@@ -92,8 +166,9 @@ class CarveRenderer
     /**
      * Builds a fresh HTML converter from current system config.
      *
-     * Called on every toHtml() invocation so that allowRawHtml / smart-quotes changes
-     * made in the Shopware admin take effect immediately without requiring cache:clear.
+     * Called by getCachedHtmlConverter() on cache miss only. Reads the current
+     * config values and delegates to buildConverter(). Config changes between
+     * requests produce a different signature and therefore a fresh build.
      */
     private function buildHtmlConverter(): CarveConverter
     {

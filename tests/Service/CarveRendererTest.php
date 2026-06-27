@@ -311,6 +311,94 @@ class CarveRendererTest extends TestCase
         self::assertStringContainsString('<strong>bold</strong>', $html);
     }
 
+    // -----------------------------------------------------------------------
+    // Memoization tests
+    // -----------------------------------------------------------------------
+
+    public function testSameConfigProducesIdenticalOutputOnReuse(): void
+    {
+        // Correctness: reusing the memoized converter across calls must not bleed
+        // per-document state between calls (stateful extensions are reset each time).
+        $first = $this->renderer->toHtml('*bold*');
+        $second = $this->renderer->toHtml('*bold*');
+
+        self::assertSame($first, $second);
+    }
+
+    public function testDifferentInputsSameMemoizedConverter(): void
+    {
+        // Correctness with different inputs: the memoized converter must render
+        // each document independently even when its internal state is reset rather
+        // than rebuilt.
+        $a = $this->renderer->toHtml('*one*');
+        $b = $this->renderer->toHtml('*two*');
+
+        self::assertStringContainsString('<strong>one</strong>', $a);
+        self::assertStringContainsString('<strong>two</strong>', $b);
+    }
+
+    public function testMemoizationOneEntryAfterTwoSameConfigCalls(): void
+    {
+        // Reflection check: two calls with identical config must reuse one converter
+        // instance, leaving exactly one entry in the internal cache.
+        $renderer = new CarveRenderer($this->makeConfigMock(null));
+        $renderer->toHtml('first call');
+        $renderer->toHtml('second call');
+
+        $ref = new \ReflectionProperty(CarveRenderer::class, 'htmlConverters');
+        $cache = $ref->getValue($renderer);
+
+        self::assertCount(1, $cache, 'Expected 1 cached converter after 2 identical-config calls.');
+    }
+
+    public function testMemoizationTwoEntriesAfterDifferingConfigCalls(): void
+    {
+        // Reflection check: after one call with config A (allowRawHtml=false) and one
+        // with config B (allowRawHtml=true) the cache must hold 2 distinct converters.
+        $configA = $this->makeConfigMock(allowRawHtmlValue: false);
+        $configB = $this->makeConfigMock(allowRawHtmlValue: true);
+
+        // Build a renderer, call once with each config by constructing two renderers
+        // that share the same cache backing (not directly possible), so instead assert
+        // that separate renderer instances each end up with 1 entry - then verify two
+        // DIFFERENT signature strings would have been produced.
+        $rendererA = new CarveRenderer($configA);
+        $rendererB = new CarveRenderer($configB);
+
+        $rendererA->toHtml('*hello*');
+        $rendererA->toHtml('*world*'); // same config, still 1 entry
+
+        $rendererB->toHtml('*hello*');
+
+        $ref = new \ReflectionProperty(CarveRenderer::class, 'htmlConverters');
+        $cacheA = $ref->getValue($rendererA);
+        $cacheB = $ref->getValue($rendererB);
+
+        self::assertCount(1, $cacheA, 'Config A cache must have exactly 1 entry after 2 identical calls.');
+        self::assertCount(1, $cacheB, 'Config B cache must have exactly 1 entry.');
+
+        // The two entries must have DIFFERENT keys (different configs -> different signatures).
+        self::assertNotSame(array_keys($cacheA)[0], array_keys($cacheB)[0], 'Differing configs must produce distinct cache keys.');
+    }
+
+    public function testMemoizationUgcAndHtmlShareCacheArrayButDifferentKeys(): void
+    {
+        // toHtml() and toHtmlUgc() share $htmlConverters but use distinct key prefixes
+        // (UGC keys start with "ugc|"). After one call each, the cache has 2 entries.
+        $renderer = new CarveRenderer($this->makeConfigMock(null));
+        $renderer->toHtml('*hello*');
+        $renderer->toHtmlUgc('*hello*');
+
+        $ref = new \ReflectionProperty(CarveRenderer::class, 'htmlConverters');
+        $cache = $ref->getValue($renderer);
+
+        self::assertCount(2, $cache, 'HTML and UGC converters must each occupy one cache entry.');
+
+        $keys = array_keys($cache);
+        $ugcKey = array_filter($keys, static fn (string $k): bool => str_starts_with($k, 'ugc|'));
+        self::assertCount(1, $ugcKey, 'Exactly one UGC-prefixed key must exist.');
+    }
+
     /**
      * @return SystemConfigService&MockObject
      */
