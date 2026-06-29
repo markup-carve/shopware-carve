@@ -120,12 +120,12 @@ admin page. The plugin's storefront override renders it below the core descripti
 
 ---
 
-### 4 - Category custom field `carve_body`
+### 4 - Category custom field `carve_category_body`
 
 **Benefit:** Safe rich text for category landing copy - same safety and determinism as product
 fields but on category pages.
 
-The plugin adds a `carve_body` field to category entities (via migration) and renders it in the
+The plugin adds a `carve_category_body` field to category entities (via migration) and renders it in the
 category CMS listing template automatically.
 
 ---
@@ -389,7 +389,7 @@ published to npm you can replace the local install with `npm install @markup-car
 # Activate the plugin
 bin/console plugin:install --activate ShopwareCarve
 
-# Run migrations (adds carve_body to products and categories)
+# Run migrations (adds carve_body to products, carve_category_body to categories)
 bin/console database:migrate --all ShopwareCarve
 
 # Build the admin (required for CMS element and live preview)
