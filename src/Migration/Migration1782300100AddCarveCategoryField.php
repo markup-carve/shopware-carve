@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Carve\Shopware\Migration;
+namespace MarkupCarve\Shopware\Migration;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Defaults;

@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Carve\Shopware\Tests\Command;
+namespace MarkupCarve\Shopware\Tests\Command;
 
-use Carve\Shopware\Command\CarveRenderCommand;
+use MarkupCarve\Shopware\Command\CarveRenderCommand;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;

@@ -18,10 +18,10 @@
     "repositories": [
         { "type": "path", "url": "../carve-php", "options": { "symlink": false } }
     ],
-    "autoload": { "psr-4": { "Carve\\Shopware\\": "src/" } },
-    "autoload-dev": { "psr-4": { "Carve\\Shopware\\Tests\\": "tests/" } },
+    "autoload": { "psr-4": { "MarkupCarve\\Shopware\\": "src/" } },
+    "autoload-dev": { "psr-4": { "MarkupCarve\\Shopware\\Tests\\": "tests/" } },
     "extra": {
-        "shopware-plugin-class": "Carve\\Shopware\\ShopwareCarve",
+        "shopware-plugin-class": "MarkupCarve\\Shopware\\ShopwareCarve",
         "label": {
             "en-GB": "Carve for Shopware",
             "de-DE": "Carve fuer Shopware"

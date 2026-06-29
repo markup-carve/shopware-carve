@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Carve\Shopware\Tests\Inline;
+namespace MarkupCarve\Shopware\Tests\Inline;
 
-use Carve\CarveConverter;
-use Carve\Shopware\Inline\ProductInlineMatcher;
+use MarkupCarve\Carve\CarveConverter;
+use MarkupCarve\Shopware\Inline\ProductInlineMatcher;
 use PHPUnit\Framework\TestCase;
 
 class ProductInlineMatcherTest extends TestCase

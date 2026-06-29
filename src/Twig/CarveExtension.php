@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Carve\Shopware\Twig;
+namespace MarkupCarve\Shopware\Twig;
 
-use Carve\Shopware\Service\CarveRenderer;
+use MarkupCarve\Shopware\Service\CarveRenderer;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 

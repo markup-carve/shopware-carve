@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Carve\Shopware\Core\Content\Cms;
+namespace MarkupCarve\Shopware\Core\Content\Cms;
 
-use Carve\Shopware\Service\CarveRenderer;
+use MarkupCarve\Shopware\Service\CarveRenderer;
 use Shopware\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
 use Shopware\Core\Content\Cms\DataResolver\CriteriaCollection;
 use Shopware\Core\Content\Cms\DataResolver\Element\AbstractCmsElementResolver;

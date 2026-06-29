@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Carve\Shopware\Tests\Service;
+namespace MarkupCarve\Shopware\Tests\Service;
 
-use Carve\Shopware\Service\CarveRenderer;
+use MarkupCarve\Shopware\Service\CarveRenderer;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\System\SystemConfig\SystemConfigService;

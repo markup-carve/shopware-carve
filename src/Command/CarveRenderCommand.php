@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Carve\Shopware\Command;
+namespace MarkupCarve\Shopware\Command;
 
-use Carve\CarveConverter;
+use MarkupCarve\Carve\CarveConverter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;

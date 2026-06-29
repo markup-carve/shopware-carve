@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Carve\Shopware\Tests\Core\Content\Cms;
+namespace MarkupCarve\Shopware\Tests\Core\Content\Cms;
 
-use Carve\Shopware\Core\Content\Cms\CarveCmsElementResolver;
-use Carve\Shopware\Service\CarveRenderer;
+use MarkupCarve\Shopware\Core\Content\Cms\CarveCmsElementResolver;
+use MarkupCarve\Shopware\Service\CarveRenderer;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 

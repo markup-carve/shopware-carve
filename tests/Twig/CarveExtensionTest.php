@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Carve\Shopware\Tests\Twig;
+namespace MarkupCarve\Shopware\Tests\Twig;
 
-use Carve\Shopware\Service\CarveRenderer;
-use Carve\Shopware\Twig\CarveExtension;
+use MarkupCarve\Shopware\Service\CarveRenderer;
+use MarkupCarve\Shopware\Twig\CarveExtension;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Twig\TwigFilter;

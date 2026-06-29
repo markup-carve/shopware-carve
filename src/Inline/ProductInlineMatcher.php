@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Carve\Shopware\Inline;
+namespace MarkupCarve\Shopware\Inline;
 
-use Carve\CarveConverter;
-use Carve\Event\RenderEvent;
-use Carve\Node\Inline\InlineExtension;
-use Carve\Renderer\HtmlRenderer;
+use MarkupCarve\Carve\CarveConverter;
+use MarkupCarve\Carve\Event\RenderEvent;
+use MarkupCarve\Carve\Node\Inline\InlineExtension;
+use MarkupCarve\Carve\Renderer\HtmlRenderer;
 
 /**
  * Resolves the Carve inline extension `:product[SKU]` to a storefront product link.
