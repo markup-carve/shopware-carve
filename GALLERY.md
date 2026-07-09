@@ -20,7 +20,7 @@ page (the manufacturer field), that is called out explicitly below.
 The product description is authored as plain-text Carve and rendered under the
 core description. Note the rich constructs: a `tip` and a `warning` admonition,
 a `list-table`, a pipe table with column alignment, and an inline
-`:product[...]` reference resolved to a live link (Surface 7) in the last line.
+`:product[...]` reference resolved to a live link (Surface 8) in the last line.
 
 ![Product carve_body on the storefront](docs/img/03-product-carve-body.png)
 
@@ -80,7 +80,7 @@ Pairs perfectly with our :product[CARVE-B] for a consistent, fluffy grind.
 
 ---
 
-## Inline product reference `:product[SKU]` (Surface 7)
+## Inline product reference `:product[SKU]` (Surface 8)
 
 The closing line of the product copy above, `:product[CARVE-B]`, resolves against
 the current sales channel to a live link ("Precision Hand Grinder"). Unknown or
@@ -143,7 +143,7 @@ a sweet, even cup --- never ashy.
 
 ---
 
-## Manufacturer field `carve_manufacturer_body` (Surface 4b)
+## Manufacturer field `carve_manufacturer_body` (Surface 5)
 
 The manufacturer field is **filter-only** - Shopware core has no native
 storefront manufacturer page, so a theme decides where to render it. The image
@@ -168,7 +168,7 @@ farm, the process, and the cupping score.
 
 ---
 
-## Admin live preview (Surface 5)
+## Admin live preview (Surface 6)
 
 While editing a Carve CMS element, the config modal shows the raw source and a
 live preview whose HTML is byte-identical to the storefront (carve-js and
@@ -205,7 +205,7 @@ note in the tasting notes. Full brew log here: https://example.com/brewlog
 
 ---
 
-## Transactional mail (Surface 6)
+## Transactional mail (Surface 7)
 
 One Carve source feeds both the HTML and plain-text parts of a multipart mail
 (the **Text** tab in the viewer shows the plain part). Admonitions and inline
@@ -235,7 +235,7 @@ The Carve Coffee Roasters team
 
 ---
 
-## Multi-target CLI `carve:render` (Surface 8)
+## Multi-target CLI `carve:render` (Surface 10)
 
 The same source renders to HTML, Markdown, plain text, or ANSI from the console.
 Below is the `--term` (ANSI) output: colored headings, bold/italic runs, a
