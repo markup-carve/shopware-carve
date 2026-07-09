@@ -1,8 +1,9 @@
 # shopware-carve
 
 Render [Carve](https://github.com/markup-carve/carve) markup to safe, semantic HTML in Shopware 6.
-One source - eight surfaces: Twig filters, CMS elements, product/category fields, admin live
-preview, transactional mail, inline product references, and a CLI renderer.
+One source - ten surfaces: Twig filters, CMS elements, product/category/manufacturer fields,
+admin live preview, transactional mail, inline product references, product reviews, and a CLI
+renderer.
 
 **Safe by default.** Raw HTML passthrough is off. `javascript:`, `data:`, `vbscript:`, `file:` URL
 schemes are neutralized. `on*`, `srcdoc`, and `formaction` attributes are stripped. These protections
@@ -88,7 +89,7 @@ Markdown variants enable channel reuse (mail, export).
 ```
 
 For content that contains `:product[SKU]` inline references, use `|carve_ctx(context)` to pass the
-sales channel context so product links resolve correctly (see Surface 7).
+sales channel context so product links resolve correctly (see Surface 8).
 
 ---
 
@@ -100,7 +101,7 @@ code execution.
 
 Add the element type `carve` from the element panel in the Shopping Experiences editor. The element
 renders its `content` field through `CarveRenderer::toHtml()` server-side. The admin config panel
-shows a live preview (Surface 5).
+shows a live preview (Surface 6).
 
 ---
 
@@ -130,7 +131,7 @@ category CMS listing template automatically.
 
 ---
 
-### 4b - Manufacturer/brand custom field `carve_manufacturer_body`
+### 5 - Manufacturer/brand custom field `carve_manufacturer_body`
 
 **Benefit:** Authored brand copy on the manufacturer entity - same Carve safety and admin UX as
 the product and category fields.
@@ -155,7 +156,7 @@ For product references inside the manufacturer copy, use `|carve_ctx(context)` i
 
 ---
 
-### 5 - Admin live preview (carve-js)
+### 6 - Admin live preview (carve-js)
 
 **Benefit:** While typing in the CMS element or custom fields, the preview updates instantly and is
 byte-identical to the storefront output. WYSIWYG confidence via PHP/JS parity with no API roundtrip.
@@ -166,7 +167,7 @@ corpus guarantees that carve-js and carve-php produce the same bytes for the sam
 
 ---
 
-### 6 - Transactional mail rendering
+### 7 - Transactional mail rendering
 
 **Benefit:** One Carve source feeds both the HTML part and the plain-text part of a multipart mail.
 Safe interpolation of user/order data into mail bodies.
@@ -190,7 +191,7 @@ your order is on its way.
 
 ---
 
-### 7 - Commerce inline type `:product[SKU]`
+### 8 - Commerce inline type `:product[SKU]`
 
 **Benefit:** Authors embed a live product reference (link with name and price) inline in any Carve
 content, resolved against the current sales channel at render time. Markdown has no safe,
@@ -240,7 +241,7 @@ you would need a dedicated Q&A plugin that exposes review-like entities; wire th
 
 ---
 
-### 8 - Multi-target CLI `carve:render`
+### 10 - Multi-target CLI `carve:render`
 
 **Benefit:** Render a `.crv` file or piped source to HTML, Markdown, plain text, or ANSI from the
 console. Write once, show anywhere: storefront, email, terminal, and export from a single source.
@@ -302,7 +303,7 @@ is long:
 {% endif %}
 ```
 
-The manufacturer field added by the `carve_manufacturer_body` migration (Surface 4b above) follows
+The manufacturer field added by the `carve_manufacturer_body` migration (Surface 5 above) follows
 the same pattern - set the source in the admin, render it wherever your theme shows the brand.
 
 ### Building your own elements
