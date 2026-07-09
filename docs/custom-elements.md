@@ -66,10 +66,10 @@ A self-contained inline badge. Lives next to `ProductInlineMatcher`.
 
 namespace Carve\Shopware\Inline;
 
-use Carve\CarveConverter;
-use Carve\Event\RenderEvent;
-use Carve\Node\Inline\InlineExtension;
-use Carve\Renderer\HtmlRenderer;
+use MarkupCarve\Carve\CarveConverter;
+use MarkupCarve\Carve\Event\RenderEvent;
+use MarkupCarve\Carve\Node\Inline\InlineExtension;
+use MarkupCarve\Carve\Renderer\HtmlRenderer;
 
 /**
  * `:badge[text]` -> <span class="carve-badge">text</span>.
@@ -164,10 +164,10 @@ never go stale. Because it needs the `SalesChannelContext`, it is registered in
 
 namespace Carve\Shopware\Inline;
 
-use Carve\CarveConverter;
-use Carve\Event\RenderEvent;
-use Carve\Node\Inline\InlineExtension;
-use Carve\Renderer\HtmlRenderer;
+use MarkupCarve\Carve\CarveConverter;
+use MarkupCarve\Carve\Event\RenderEvent;
+use MarkupCarve\Carve\Node\Inline\InlineExtension;
+use MarkupCarve\Carve\Renderer\HtmlRenderer;
 
 /**
  * `:price[SKU]` -> the formatted current price for a product number, or inert

@@ -4,22 +4,31 @@
     "version": "0.1.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
-    "authors": [{ "name": "Mark Scherer" }],
+    "authors": [
+        {
+            "name": "Mark Scherer"
+        }
+    ],
     "require": {
         "php": "^8.2",
         "shopware/core": "~6.6.0 || ~6.7.0",
-        "markup-carve/carve-php": "*"
+        "markup-carve/carve-php": "^0.1.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0 || ^11.0"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "repositories": [
-        { "type": "path", "url": "../carve-php", "options": { "symlink": false } }
-    ],
-    "autoload": { "psr-4": { "MarkupCarve\\Shopware\\": "src/" } },
-    "autoload-dev": { "psr-4": { "MarkupCarve\\Shopware\\Tests\\": "tests/" } },
+    "autoload": {
+        "psr-4": {
+            "MarkupCarve\\Shopware\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MarkupCarve\\Shopware\\Tests\\": "tests/"
+        }
+    },
     "extra": {
         "shopware-plugin-class": "MarkupCarve\\Shopware\\ShopwareCarve",
         "label": {
@@ -35,5 +44,17 @@
         "allow-plugins": {
             "symfony/runtime": true
         }
+    },
+    "keywords": [
+        "carve",
+        "markup",
+        "shopware",
+        "shopware-plugin",
+        "html"
+    ],
+    "homepage": "https://github.com/markup-carve/shopware-carve",
+    "support": {
+        "issues": "https://github.com/markup-carve/shopware-carve/issues",
+        "source": "https://github.com/markup-carve/shopware-carve"
     }
 }
