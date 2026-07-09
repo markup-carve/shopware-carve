@@ -15,7 +15,7 @@ threat model, a Carve-vs-Markdown comparison with examples, and the honest limit
 - License: MIT
 - Shopware: 6.6 and 6.7
 - PHP: ^8.2
-- Namespace: `Carve\Shopware\`
+- Namespace: `MarkupCarve\Shopware\`
 
 > **Pre-1.0 caveat.** Both `carve-php` and `carve-js` are design-exploration libraries. Syntax and
 > output format can still change before 1.0. Pin versions explicitly and review the carve-php
@@ -357,7 +357,7 @@ Verify the library loaded correctly:
 
 ```php
 <?php
-var_dump(class_exists('Carve\\CarveConverter')); // bool(true)
+var_dump(class_exists('MarkupCarve\\Carve\\CarveConverter')); // bool(true)
 ```
 
 Once carve-php is published to Packagist you can remove the `path` repository and run
@@ -524,8 +524,8 @@ directly in PHP and set it on the converter before rendering. The simplest appro
 or replace `CarveRenderer` in your own plugin:
 
 ```php
-use Carve\CarveConverter;
-use Carve\Profile;
+use MarkupCarve\Carve\CarveConverter;
+use MarkupCarve\Carve\Profile;
 
 // Example: comment profile but also deny links
 $profile = Profile::comment()
