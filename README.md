@@ -1,5 +1,11 @@
 # shopware-carve
 
+[![Packagist Version](https://img.shields.io/packagist/v/markup-carve/shopware-carve.svg)](https://packagist.org/packages/markup-carve/shopware-carve)
+[![CI](https://github.com/markup-carve/shopware-carve/actions/workflows/ci.yml/badge.svg)](https://github.com/markup-carve/shopware-carve/actions/workflows/ci.yml)
+[![PHP Version](https://img.shields.io/packagist/php-v/markup-carve/shopware-carve.svg)](https://packagist.org/packages/markup-carve/shopware-carve)
+[![Total Downloads](https://img.shields.io/packagist/dt/markup-carve/shopware-carve.svg)](https://packagist.org/packages/markup-carve/shopware-carve)
+[![License](https://img.shields.io/packagist/l/markup-carve/shopware-carve.svg)](LICENSE)
+
 Render [Carve](https://github.com/markup-carve/carve) markup to safe, semantic HTML in Shopware 6.
 One source - ten surfaces: Twig filters, CMS elements, product/category/manufacturer fields,
 admin live preview, transactional mail, inline product references, product reviews, and a CLI
