@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<ruleset name="shopware-carve">
+    <arg value="nps"/>
+    <arg name="cache" value=".phpcs.cache"/>
+
+    <file>src/</file>
+    <file>tests/</file>
+
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+
+    <rule ref="PhpCollective">
+        <!-- We use createStub() (PHPUnit 13-clean, no unconfigured-mock notices); this sniff
+             assumes createMock() and demands a &MockObject return annotation, which conflicts
+             with the true Stub return type PHPStan infers. -->
+        <exclude name="PhpCollective.Testing.Mock.MissingReturnType"/>
+    </rule>
+
+    <rule ref="SlevomatCodingStandard.Functions.RequireTrailingCommaInDeclaration"/>
+    <rule ref="SlevomatCodingStandard.Functions.RequireTrailingCommaInClosureUse"/>
+
+</ruleset>

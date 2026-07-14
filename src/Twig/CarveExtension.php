@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Twig;
 
@@ -8,10 +10,10 @@ use Twig\TwigFilter;
 
 /**
  * Twig filters:
- *   {{ src|carve }}       -> safe HTML  (is_safe => html; sound only due to safe mode)
- *   {{ src|carve_ugc }}   -> safe HTML, always comment profile + safe mode (UGC/reviews)
- *   {{ src|carve_text }}  -> plain text (e.g. mail text part)
- *   {{ src|carve_md }}    -> Markdown
+ *   {{ src|carve }} -> safe HTML (is_safe => html; sound only due to safe mode)
+ *   {{ src|carve_ugc }} -> safe HTML, always comment profile + safe mode (UGC/reviews)
+ *   {{ src|carve_text }} -> plain text (e.g. mail text part)
+ *   {{ src|carve_md }} -> Markdown
  */
 class CarveExtension extends AbstractExtension
 {

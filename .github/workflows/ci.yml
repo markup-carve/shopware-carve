@@ -12,20 +12,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.2', '8.3']
+        php-version: ['8.2', '8.5']
     steps:
-      # composer.json resolves markup-carve/carve-php via a local path
-      # repository at ../carve-php, so both repos are checked out as siblings.
       - name: Checkout shopware-carve
-        uses: actions/checkout@v4
-        with:
-          path: shopware-carve
-
-      - name: Checkout carve-php (sibling path dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: markup-carve/carve-php
-          path: carve-php
+        uses: actions/checkout@v5
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -34,9 +24,28 @@ jobs:
           coverage: none
 
       - name: Install dependencies
-        working-directory: shopware-carve
         run: composer install --no-interaction --no-progress
 
       - name: Test
-        working-directory: shopware-carve
-        run: vendor/bin/phpunit
+        run: composer test
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout shopware-carve
+        uses: actions/checkout@v5
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: PHPStan
+        run: composer stan
+
+      - name: Code sniffer
+        run: composer cs-check

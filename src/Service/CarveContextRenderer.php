@@ -1,10 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Service;
 
 use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Carve\Extension\AdmonitionExtension;
-use MarkupCarve\Carve\Profile;
 use MarkupCarve\Carve\Extension\AutolinkExtension;
 use MarkupCarve\Carve\Extension\CodeGroupExtension;
 use MarkupCarve\Carve\Extension\DetailsExtension;
@@ -16,6 +17,7 @@ use MarkupCarve\Carve\Extension\SmartQuotesExtension;
 use MarkupCarve\Carve\Extension\SpoilerExtension;
 use MarkupCarve\Carve\Extension\TableOfContentsExtension;
 use MarkupCarve\Carve\Extension\TabsExtension;
+use MarkupCarve\Carve\Profile;
 use MarkupCarve\Shopware\Inline\ProductInlineMatcher;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -55,12 +57,13 @@ class CarveContextRenderer
     /**
      * Memoized converters keyed by context-id + config signature.
      *
-     * @var array<string, CarveConverter>
+     * @var array<string, \MarkupCarve\Carve\CarveConverter>
      */
     private array $converters = [];
 
     /**
-     * @param EntityRepository<\Shopware\Core\Content\Product\ProductCollection> $productRepository
+     * @param \Shopware\Core\Framework\DataAbstractionLayer\EntityRepository<\Shopware\Core\Content\Product\ProductCollection> $productRepository
+     * @param \Shopware\Core\System\SystemConfig\SystemConfigService $systemConfig
      */
     public function __construct(
         private readonly EntityRepository $productRepository,
@@ -164,7 +167,7 @@ class CarveContextRenderer
                 return null;
             }
 
-            $name = (string) ($product->getTranslation('name') ?? $product->getName() ?? $sku);
+            $name = (string)($product->getTranslation('name') ?? $product->getName() ?? $sku);
             $url = '/detail/' . $product->getId();
 
             return ['name' => $name, 'url' => $url];

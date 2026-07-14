@@ -7,3 +7,5 @@ node_modules/
 src/Resources/app/administration/node_modules/
 /.superpowers/
 /.phpunit.cache/
+/.phpcs.cache
+/.phpunit.result.cache

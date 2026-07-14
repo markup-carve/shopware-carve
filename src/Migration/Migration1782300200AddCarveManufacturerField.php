@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Migration;
 
+use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Migration\MigrationStep;
@@ -14,11 +17,18 @@ use Shopware\Core\Framework\Uuid\Uuid;
  * Shopware has no dedicated storefront manufacturer page. The field is intended for
  * use in CMS layouts and theme templates where the brand/manufacturer is displayed.
  * Theme devs place `{{ product.manufacturer.translated.customFields.carve_manufacturer_body|carve }}`
- * (or the |carve_ctx variant for :product[SKU] references) at the desired render point.
+ * (or the|carve_ctx variant for :product[SKU] references) at the desired render point.
  */
 class Migration1782300200AddCarveManufacturerField extends MigrationStep
 {
+    /**
+     * @var string
+     */
     private const SET_NAME = 'carve';
+
+    /**
+     * @var string
+     */
     private const FIELD_NAME = 'carve_manufacturer_body';
 
     public function getCreationTimestamp(): int
@@ -30,7 +40,7 @@ class Migration1782300200AddCarveManufacturerField extends MigrationStep
     {
         $setId = $connection->fetchOne(
             'SELECT id FROM custom_field_set WHERE name = :name',
-            ['name' => self::SET_NAME]
+            ['name' => self::SET_NAME],
         );
         if ($setId === false) {
             return; // product migration must run first; ordering guaranteed by timestamp
@@ -38,9 +48,9 @@ class Migration1782300200AddCarveManufacturerField extends MigrationStep
 
         $hasRelation = $connection->fetchOne(
             'SELECT id FROM custom_field_set_relation WHERE set_id = :sid AND entity_name = :e',
-            ['sid' => $setId, 'e' => 'product_manufacturer']
+            ['sid' => $setId, 'e' => 'product_manufacturer'],
         );
-        $now = (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+        $now = (new DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
         if ($hasRelation === false) {
             $connection->insert('custom_field_set_relation', [
                 'id' => Uuid::randomBytes(),
@@ -52,7 +62,7 @@ class Migration1782300200AddCarveManufacturerField extends MigrationStep
 
         $existing = $connection->fetchOne(
             'SELECT id FROM custom_field WHERE name = :name',
-            ['name' => self::FIELD_NAME]
+            ['name' => self::FIELD_NAME],
         );
         if ($existing !== false) {
             return;
