@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Migration;
 
+use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Migration\MigrationStep;
@@ -13,7 +16,14 @@ use Shopware\Core\Framework\Uuid\Uuid;
  */
 class Migration1782300000AddCarveProductField extends MigrationStep
 {
+    /**
+     * @var string
+     */
     private const SET_NAME = 'carve';
+
+    /**
+     * @var string
+     */
     private const FIELD_NAME = 'carve_body';
 
     public function getCreationTimestamp(): int
@@ -25,16 +35,16 @@ class Migration1782300000AddCarveProductField extends MigrationStep
     {
         $existing = $connection->fetchOne(
             'SELECT id FROM custom_field WHERE name = :name',
-            ['name' => self::FIELD_NAME]
+            ['name' => self::FIELD_NAME],
         );
         if ($existing !== false) {
             return;
         }
 
-        $now = (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+        $now = (new DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
         $setId = $connection->fetchOne(
             'SELECT id FROM custom_field_set WHERE name = :name',
-            ['name' => self::SET_NAME]
+            ['name' => self::SET_NAME],
         );
         if ($setId === false) {
             $setId = Uuid::randomBytes();

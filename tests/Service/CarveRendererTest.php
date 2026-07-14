@@ -1,10 +1,12 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
 use MarkupCarve\Shopware\Service\CarveRenderer;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class CarveRendererTest extends TestCase
@@ -345,7 +347,7 @@ class CarveRendererTest extends TestCase
         $renderer->toHtml('first call');
         $renderer->toHtml('second call');
 
-        $ref = new \ReflectionProperty(CarveRenderer::class, 'htmlConverters');
+        $ref = new ReflectionProperty(CarveRenderer::class, 'htmlConverters');
         $cache = $ref->getValue($renderer);
 
         self::assertCount(1, $cache, 'Expected 1 cached converter after 2 identical-config calls.');
@@ -370,7 +372,7 @@ class CarveRendererTest extends TestCase
 
         $rendererB->toHtml('*hello*');
 
-        $ref = new \ReflectionProperty(CarveRenderer::class, 'htmlConverters');
+        $ref = new ReflectionProperty(CarveRenderer::class, 'htmlConverters');
         $cacheA = $ref->getValue($rendererA);
         $cacheB = $ref->getValue($rendererB);
 
@@ -389,28 +391,28 @@ class CarveRendererTest extends TestCase
         $renderer->toHtml('*hello*');
         $renderer->toHtmlUgc('*hello*');
 
-        $ref = new \ReflectionProperty(CarveRenderer::class, 'htmlConverters');
+        $ref = new ReflectionProperty(CarveRenderer::class, 'htmlConverters');
         $cache = $ref->getValue($renderer);
 
         self::assertCount(2, $cache, 'HTML and UGC converters must each occupy one cache entry.');
 
         $keys = array_keys($cache);
-        $ugcKey = array_filter($keys, static fn (string $k): bool => str_starts_with($k, 'ugc|'));
+        $ugcKey = array_filter($keys, static fn (int|string $k): bool => str_starts_with((string)$k, 'ugc|'));
         self::assertCount(1, $ugcKey, 'Exactly one UGC-prefixed key must exist.');
     }
 
     /**
-     * @return SystemConfigService&MockObject
+     * @return \Shopware\Core\System\SystemConfig\SystemConfigService&\PHPUnit\Framework\MockObject\Stub
      */
     private function makeConfigMock(
         bool|null $allowRawHtmlValue,
-        bool|string|null $smartQuotesValue = null,
+        string|bool|null $smartQuotesValue = null,
         string|null $smartQuotesLocale = null,
         bool|null $enableMermaid = null,
         bool|null $enableCharts = null,
         string|null $profile = null,
     ): SystemConfigService {
-        $mock = $this->createMock(SystemConfigService::class);
+        $mock = $this->createStub(SystemConfigService::class);
 
         $configMap = [
             'ShopwareCarve.config.allowRawHtml' => $allowRawHtmlValue,

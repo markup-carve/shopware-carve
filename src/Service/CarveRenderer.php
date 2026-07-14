@@ -1,10 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Service;
 
 use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Carve\Extension\AdmonitionExtension;
-use MarkupCarve\Carve\Profile;
 use MarkupCarve\Carve\Extension\AutolinkExtension;
 use MarkupCarve\Carve\Extension\CodeGroupExtension;
 use MarkupCarve\Carve\Extension\DetailsExtension;
@@ -16,6 +17,7 @@ use MarkupCarve\Carve\Extension\SmartQuotesExtension;
 use MarkupCarve\Carve\Extension\SpoilerExtension;
 use MarkupCarve\Carve\Extension\TableOfContentsExtension;
 use MarkupCarve\Carve\Extension\TabsExtension;
+use MarkupCarve\Carve\Profile;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
@@ -53,6 +55,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 class CarveRenderer
 {
     private CarveConverter $text;
+
     private CarveConverter $markdown;
 
     /**
@@ -61,7 +64,7 @@ class CarveRenderer
      * A single request normally hits only one key (stable config), so this
      * array stays at 1-2 entries for the lifetime of the service instance.
      *
-     * @var array<string, CarveConverter>
+     * @var array<string, \MarkupCarve\Carve\CarveConverter>
      */
     private array $htmlConverters = [];
 

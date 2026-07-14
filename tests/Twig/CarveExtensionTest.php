@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Twig;
 
@@ -6,6 +8,7 @@ use MarkupCarve\Shopware\Service\CarveRenderer;
 use MarkupCarve\Shopware\Twig\CarveExtension;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Twig\Node\Node;
 use Twig\TwigFilter;
 
 class CarveExtensionTest extends TestCase
@@ -14,7 +17,7 @@ class CarveExtensionTest extends TestCase
 
     protected function setUp(): void
     {
-        $config = $this->createMock(SystemConfigService::class);
+        $config = $this->createStub(SystemConfigService::class);
         $config->method('get')->willReturn(null);
 
         $this->ext = new CarveExtension(new CarveRenderer($config));
@@ -38,7 +41,7 @@ class CarveExtensionTest extends TestCase
             }
         }
         self::assertNotNull($carve);
-        self::assertContains('html', $carve->getSafe(new \Twig\Node\Node()) ?? []);
+        self::assertContains('html', $carve->getSafe(new Node()) ?? []);
     }
 
     public function testCarveUgcFilterIsHtmlSafe(): void
@@ -50,7 +53,7 @@ class CarveExtensionTest extends TestCase
             }
         }
         self::assertNotNull($ugc);
-        self::assertContains('html', $ugc->getSafe(new \Twig\Node\Node()) ?? []);
+        self::assertContains('html', $ugc->getSafe(new Node()) ?? []);
     }
 
     public function testRenderHtml(): void

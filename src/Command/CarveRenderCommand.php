@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Command;
 
@@ -35,9 +37,9 @@ class CarveRenderCommand extends Command
         $src = $this->readSource($input);
 
         $converter = match (true) {
-            (bool) $input->getOption('md') => CarveConverter::markdown(),
-            (bool) $input->getOption('plain') => CarveConverter::plainText(),
-            (bool) $input->getOption('term') => CarveConverter::ansi(),
+            (bool)$input->getOption('md') => CarveConverter::markdown(),
+            (bool)$input->getOption('plain') => CarveConverter::plainText(),
+            (bool)$input->getOption('term') => CarveConverter::ansi(),
             default => new CarveConverter(safeMode: true),
         };
 
@@ -48,15 +50,15 @@ class CarveRenderCommand extends Command
 
     private function readSource(InputInterface $input): string
     {
-        $source = (string) $input->getArgument('source');
+        $source = (string)$input->getArgument('source');
         $inline = $input->getOption('text-input');
         if (is_string($inline)) {
             return $inline;
         }
         if ($source === '-') {
-            return (string) file_get_contents('php://stdin');
+            return (string)file_get_contents('php://stdin');
         }
 
-        return (string) file_get_contents($source);
+        return (string)file_get_contents($source);
     }
 }

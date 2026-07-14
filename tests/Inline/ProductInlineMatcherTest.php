@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Inline;
 
@@ -18,8 +20,7 @@ class ProductInlineMatcherTest extends TestCase
 
     public function testKnownSkuRendersLink(): void
     {
-        $html = $this->convert(':product[ABC-1]', static fn (string $sku): ?array =>
-            $sku === 'ABC-1' ? ['name' => 'Steel Rope', 'url' => '/p/abc-1'] : null);
+        $html = $this->convert(':product[ABC-1]', static fn (string $sku): ?array => $sku === 'ABC-1' ? ['name' => 'Steel Rope', 'url' => '/p/abc-1'] : null);
         self::assertStringContainsString('<a', $html);
         self::assertStringContainsString('/p/abc-1', $html);
         self::assertStringContainsString('Steel Rope', $html);

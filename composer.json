@@ -15,7 +15,9 @@
         "markup-carve/carve-php": "^0.1.1"
     },
     "require-dev": {
-        "phpunit/phpunit": "^10.0 || ^11.0"
+        "php-collective/code-sniffer": "dev-master",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^10.5 || ^11.5 || ^12.0 || ^13.0"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -42,8 +44,21 @@
     },
     "config": {
         "allow-plugins": {
-            "symfony/runtime": true
-        }
+            "symfony/runtime": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit",
+        "stan": "phpstan analyze",
+        "cs-check": "phpcs --colors --parallel=16",
+        "cs-fix": "phpcbf --colors --parallel=16",
+        "check": [
+            "@test",
+            "@stan",
+            "@cs-check"
+        ]
     },
     "keywords": [
         "carve",

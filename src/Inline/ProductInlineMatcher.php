@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Inline;
 
+use Closure;
 use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Carve\Event\RenderEvent;
 use MarkupCarve\Carve\Node\Inline\InlineExtension;
@@ -21,13 +24,17 @@ use MarkupCarve\Carve\Renderer\HtmlRenderer;
  */
 class ProductInlineMatcher
 {
-    /** @var \Closure(string): (array{name: string, url: string}|null) */
-    private \Closure $lookup;
+    /**
+     * @var \Closure(string): (array{name: string, url: string}|null)
+     */
+    private Closure $lookup;
 
-    /** @param callable(string): (array{name: string, url: string}|null) $lookup */
+    /**
+     * @param callable(string): (array{name: string, url: string}|null) $lookup
+     */
     public function __construct(callable $lookup)
     {
-        $this->lookup = \Closure::fromCallable($lookup);
+        $this->lookup = Closure::fromCallable($lookup);
     }
 
     public function register(CarveConverter $converter): void
@@ -43,7 +50,7 @@ class ProductInlineMatcher
                 return;
             }
 
-            $sku = trim(html_entity_decode(strip_tags((string) $event->getChildrenHtml())));
+            $sku = trim(html_entity_decode(strip_tags((string)$event->getChildrenHtml())));
             if ($sku === '') {
                 return;
             }
@@ -56,7 +63,7 @@ class ProductInlineMatcher
             }
 
             $event->setHtml(
-                '<a href="' . $this->escape($product['url']) . '">' . $this->escape($product['name']) . '</a>'
+                '<a href="' . $this->escape($product['url']) . '">' . $this->escape($product['name']) . '</a>',
             );
         });
     }
