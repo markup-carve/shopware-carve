@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      # Optional Shopware Community Store publishing. Leave the secrets unset to
+      # skip the upload step; the ZIP is still built and attached to the release.
+      SHOPWARE_CLI_ACCOUNT_EMAIL: ${{ secrets.SHOPWARE_CLI_ACCOUNT_EMAIL }}
+      SHOPWARE_CLI_ACCOUNT_PASSWORD: ${{ secrets.SHOPWARE_CLI_ACCOUNT_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install Shopware CLI
+        uses: shopware/shopware-cli-action@v3
+
+      - name: Validate extension
+        run: shopware-cli extension validate .
+
+      - name: Build extension ZIP
+        run: shopware-cli extension zip .
+
+      - name: Attach ZIP to GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "*.zip"
+          fail_on_unmatched_files: true
+
+      - name: Upload to Shopware Community Store
+        if: ${{ env.SHOPWARE_CLI_ACCOUNT_EMAIL != '' }}
+        run: shopware-cli account producer extension upload *.zip
