@@ -3,7 +3,7 @@
 All notable changes to `markup-carve/shopware-carve` are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.0] - 2026-07-14
 
 ### Added
 - Initial public release: render the Carve markup language to safe HTML in Shopware 6.6 and 6.7.
@@ -24,7 +24,3 @@ This project follows [Semantic Versioning](https://semver.org/).
 - URL-scheme denylist (`javascript:`, `vbscript:`, `data:`, `file:`) and attribute hardening
   (`on*`, `srcdoc`, `formaction`, script-bearing CSS) are always-on baselines from carve-php,
   independent of any setting. `allowRawHtml` governs only raw HTML passthrough and is off by default.
-
-### Notes
-- Depends on the pre-1.0 `markup-carve/carve-php` and `@markup-carve/carve` libraries; pin versions
-  and review their changelogs before upgrading.
