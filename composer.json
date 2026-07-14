@@ -38,8 +38,8 @@
             "de-DE": "Carve fuer Shopware"
         },
         "description": {
-            "en-GB": "Safe rich text via the Carve markup language: Twig filters, CMS element, product/category fields, mail, inline product refs.",
-            "de-DE": "Sicherer Rich-Text mit der Carve-Markup-Sprache: Twig-Filter, CMS-Element, Produkt-/Kategoriefelder, Mail, Inline-Produktrefs."
+            "en-GB": "Render the Carve markup language to safe HTML in Shopware: Twig filters, a CMS element and block, product and category fields, mail rendering, and inline product references.",
+            "de-DE": "Rendert die Carve-Markup-Sprache als sicheres HTML in Shopware: Twig-Filter, CMS-Element und -Block, Produkt- und Kategoriefelder, Mail-Rendering und Inline-Produktreferenzen."
         },
         "manufacturerLink": {
             "en-GB": "https://github.com/markup-carve",
