@@ -1,0 +1,11 @@
+tests
+docs
+.github
+DEMO.md
+GALLERY.md
+phpcs.xml
+phpstan.neon
+phpunit.xml.dist
+.editorconfig
+.gitattributes
+.sw-zip-blacklist
