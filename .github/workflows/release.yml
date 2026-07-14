@@ -37,10 +37,23 @@ jobs:
       - name: Build extension ZIP
         run: shopware-cli extension zip .
 
-      - name: Attach ZIP to GitHub release
+      # Release notes live in the repo (.github/release-notes/<version>.md) so
+      # they survive even if the GitHub release is deleted, and the tag alone
+      # produces a fully-populated release. Fail loudly if the file is missing.
+      - name: Resolve release notes
+        run: |
+          NOTES=".github/release-notes/${GITHUB_REF_NAME}.md"
+          if [ ! -f "$NOTES" ]; then
+            echo "::error::Missing release notes file $NOTES - create it before tagging ${GITHUB_REF_NAME}."
+            exit 1
+          fi
+          echo "NOTES_FILE=$NOTES" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub release with ZIP
         uses: softprops/action-gh-release@v2
         with:
           files: "*.zip"
+          body_path: ${{ env.NOTES_FILE }}
           fail_on_unmatched_files: true
 
       - name: Upload to Shopware Community Store
