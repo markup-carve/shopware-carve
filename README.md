@@ -24,7 +24,7 @@ threat model, a Carve-vs-Markdown comparison with examples, and the honest limit
 - PHP: ^8.2
 - Namespace: `MarkupCarve\Shopware\`
 
-> **Pre-1.0 caveat.** Both `carve-php` and `carve-js` are design-exploration libraries. Syntax and
+> **Pre-1.0 caveat.** Syntax and
 > output format can still change before 1.0. Pin versions explicitly and review the carve-php
 > changelog before upgrades.
 
