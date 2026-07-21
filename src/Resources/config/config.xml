@@ -199,6 +199,15 @@
         </input-field>
 
         <input-field type="bool">
+            <name>enablePlantuml</name>
+            <label>Enable PlantUML diagrams</label>
+            <label lang="de-DE">PlantUML-Diagramme aktivieren</label>
+            <defaultValue>false</defaultValue>
+            <helpText>Renders ```plantuml (and ```puml) code blocks as diagrams. PlantUML has no in-browser renderer, so each block is sent to the external Kroki service (https://kroki.io) which returns an SVG - only when a diagram is present on the page. Off by default. Your content is transmitted to kroki.io; self-host Kroki if that is a concern. The service must be allowed by the storefront CSP (add https://kroki.io to connect-src, and allow img data: for the inlined SVG).</helpText>
+            <helpText lang="de-DE">Rendert ```plantuml- (und ```puml-)Codeblöcke als Diagramme. PlantUML hat keinen Browser-Renderer, daher wird jeder Block an den externen Kroki-Dienst (https://kroki.io) gesendet, der ein SVG zurückgibt - nur wenn ein Diagramm auf der Seite vorhanden ist. Standardmäßig deaktiviert. Deine Inhalte werden an kroki.io übertragen; hoste Kroki selbst, falls das ein Problem ist. Der Dienst muss in der Storefront-CSP erlaubt sein (https://kroki.io zu connect-src hinzufügen und img data: für das eingebettete SVG erlauben).</helpText>
+        </input-field>
+
+        <input-field type="bool">
             <name>renderReviews</name>
             <label>Render reviews with Carve</label>
             <label lang="de-DE">Bewertungen mit Carve rendern</label>

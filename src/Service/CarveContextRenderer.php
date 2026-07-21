@@ -104,6 +104,7 @@ class CarveContextRenderer
         $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
         $mermaid = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enableMermaid'));
         $charts = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enableCharts'));
+        $plantuml = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enablePlantuml'));
         $profile = $this->systemConfig->get('ShopwareCarve.config.profile');
 
         return implode('|', [
@@ -112,6 +113,7 @@ class CarveContextRenderer
             is_string($loc) ? $loc : '',
             $mermaid ? '1' : '0',
             $charts ? '1' : '0',
+            $plantuml ? '1' : '0',
             is_string($profile) ? $profile : '',
         ]);
     }
@@ -147,6 +149,12 @@ class CarveContextRenderer
 
         if ($this->configBool($this->systemConfig->get('ShopwareCarve.config.enableCharts'))) {
             $converter->addExtension(FencedRenderExtension::chart());
+        }
+
+        if ($this->configBool($this->systemConfig->get('ShopwareCarve.config.enablePlantuml'))) {
+            // Built via the generic constructor, not FencedRenderExtension::plantuml(),
+            // so it works on the released carve-php (the preset only exists on dev-main).
+            $converter->addExtension(new FencedRenderExtension(language: ['plantuml', 'puml'], cssClass: 'plantuml'));
         }
 
         $profileKey = $this->systemConfig->get('ShopwareCarve.config.profile');

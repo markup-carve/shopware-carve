@@ -69,9 +69,11 @@ The following carve-php extensions are registered unconditionally on every HTML 
 | `TabsExtension` | Converts `:::: tabs` / `::: tab "Title"` blocks to the same CSS radio-tab pattern with classes `tabs-radio` / `tabs-label` / `tabs-panel`. No JavaScript. |
 
 Config-driven extensions (added only when enabled in the plugin settings): smart quotes
-(`ShopwareCarve.config.smartQuotes`), Mermaid diagrams (`ShopwareCarve.config.enableMermaid`)
-and charts (`ShopwareCarve.config.enableCharts`). Mermaid/chart lazy-load their library from a
-CDN only when a diagram is present - see the Configuration section.
+(`ShopwareCarve.config.smartQuotes`), Mermaid diagrams (`ShopwareCarve.config.enableMermaid`),
+charts (`ShopwareCarve.config.enableCharts`) and PlantUML diagrams
+(`ShopwareCarve.config.enablePlantuml`). Mermaid/chart lazy-load their library from a CDN, and
+PlantUML renders via the external Kroki service - both only when a diagram is present. See the
+Configuration section.
 
 ---
 
@@ -426,6 +428,7 @@ Access the plugin settings via Admin - Extensions - My extensions - Carve - Conf
 | `ShopwareCarve.config.profile` | `none` | Content profile: restricts which Carve elements appear in HTML output. Options: `none`, `article`, `comment`, `minimal`. See Content profile section below. |
 | `ShopwareCarve.config.enableMermaid` | `false` | Lazy-load Mermaid.js from CDN and render ` ```mermaid ` blocks as diagrams. CDN must be in CSP. |
 | `ShopwareCarve.config.enableCharts` | `false` | Lazy-load Chart.js from CDN and render ` ```chart ` blocks as charts. CDN must be in CSP. |
+| `ShopwareCarve.config.enablePlantuml` | `false` | Render ` ```plantuml ` (and ` ```puml `) blocks as diagrams via the external Kroki service (`https://kroki.io`). Kroki must be in CSP `connect-src`; `img` must allow `data:`. |
 | `ShopwareCarve.config.renderReviews` | `false` | Render product review text as Carve HTML (comment profile, always hardened). See Surface 9. |
 
 ### allowRawHtml
@@ -507,6 +510,23 @@ only when at least one `<div class="chart">` element is present on the page.
 
 Default: `false`.
 
+### enablePlantuml
+
+When `true`, ` ```plantuml ` (and ` ```puml `) fenced code blocks are rendered as diagrams.
+carve-php emits `<pre class="plantuml">SOURCE</pre>`; PlantUML has no in-browser renderer, so the
+storefront JS sends each block's source to the external **Kroki** service
+(`https://kroki.io/plantuml/svg`, HTTP POST as `text/plain`) only when at least one
+`<pre class="plantuml">` element is present on the page. The returned SVG replaces the `<pre>`
+with an inline `<img src="data:image/svg+xml;base64,...">`. No client library is loaded (Kroki
+needs none). On a network/service error the original code block stays visible.
+
+> [!IMPORTANT]
+> The diagram source is transmitted to the public `kroki.io` service. If your content is
+> confidential, [self-host Kroki](https://docs.kroki.io/kroki/setup/install/) and change
+> `KROKI_PLANTUML_URL` in `src/Resources/app/storefront/src/carve-diagrams.js` to your instance.
+
+Default: `false`.
+
 ### profile (Content profile)
 
 Restricts which Carve node types are rendered in HTML output. Use `comment` or `minimal` for
@@ -549,11 +569,21 @@ For the full list of node type constants, see
 [`Carve\NodeType`](https://github.com/markup-carve/carve-php/blob/main/src/NodeType.php) in the
 carve-php library and the node-type vocabulary in `docs/profiles.md` in the Carve spec.
 
-### CDN and CSP
+### CDN, Kroki and CSP
 
 When either `enableMermaid` or `enableCharts` is turned on, the storefront loads the
 corresponding library from `https://cdn.jsdelivr.net`. If your shop enforces a Content Security
 Policy, add `https://cdn.jsdelivr.net` to both `script-src` and `connect-src`.
+
+When `enablePlantuml` is turned on, the storefront instead POSTs the diagram source to the
+external Kroki service at `https://kroki.io` and inlines the returned SVG as an `<img>` data URI
+(no library is loaded). For a CSP, add:
+
+- `https://kroki.io` to `connect-src` (the `fetch` POST), and
+- `data:` to `img-src` (the inlined SVG data URI).
+
+If you self-host Kroki, substitute your own origin for `https://kroki.io` in both the CSP and
+`KROKI_PLANTUML_URL` in `carve-diagrams.js`.
 
 ---
 

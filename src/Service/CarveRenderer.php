@@ -38,7 +38,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  * the text and markdown singletons are not profiled.
  *
  * HTML converters are memoized per request by a config signature (allowRawHtml, smartQuotes,
- * smartQuotesLocale, profile, enableMermaid, enableCharts). Within one DI-singleton lifetime
+ * smartQuotesLocale, profile, enableMermaid, enableCharts, enablePlantuml). Within one DI-singleton lifetime
  * (one request) the config is stable, so the same converter instance is reused across all
  * toHtml() calls - avoiding repeated CarveConverter construction and ~10 addExtension() calls
  * for every rendered field (e.g. a product listing with N descriptions).
@@ -144,6 +144,7 @@ class CarveRenderer
         $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
         $mermaid = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enableMermaid'));
         $charts = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enableCharts'));
+        $plantuml = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enablePlantuml'));
         $profile = $this->systemConfig->get('ShopwareCarve.config.profile');
 
         return implode('|', [
@@ -152,6 +153,7 @@ class CarveRenderer
             is_string($loc) ? $loc : '',
             $mermaid ? '1' : '0',
             $charts ? '1' : '0',
+            $plantuml ? '1' : '0',
             is_string($profile) ? $profile : '',
         ]);
     }
@@ -216,6 +218,12 @@ class CarveRenderer
 
             if ($this->configBool($this->systemConfig->get('ShopwareCarve.config.enableCharts'))) {
                 $converter->addExtension(FencedRenderExtension::chart());
+            }
+
+            if ($this->configBool($this->systemConfig->get('ShopwareCarve.config.enablePlantuml'))) {
+                // Built via the generic constructor, not FencedRenderExtension::plantuml(),
+                // so it works on the released carve-php (the preset only exists on dev-main).
+                $converter->addExtension(new FencedRenderExtension(language: ['plantuml', 'puml'], cssClass: 'plantuml'));
             }
         }
 

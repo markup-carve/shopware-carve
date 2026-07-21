@@ -186,6 +186,27 @@ class CarveRendererTest extends TestCase
         self::assertStringContainsString('<code', $html);
     }
 
+    public function testPlantumlEnabledEmitsHydrationMarkup(): void
+    {
+        $renderer = new CarveRenderer($this->makeConfigMock(null, null, null, null, null, null, true));
+
+        $html = $renderer->toHtml("``` plantuml\n@startuml\nA -> B\n@enduml\n```");
+
+        // FencedRenderExtension::plantuml() emits <pre class="plantuml">...</pre>
+        self::assertStringContainsString('<pre class="plantuml">', $html);
+        // Must NOT fall back to a plain code block
+        self::assertStringNotContainsString('<code class="language-plantuml">', $html);
+    }
+
+    public function testPlantumlDisabledByDefaultYieldsCodeBlock(): void
+    {
+        // Default renderer (enablePlantuml = null/false) must not emit the hydration markup
+        $html = $this->renderer->toHtml("``` plantuml\n@startuml\nA -> B\n@enduml\n```");
+
+        self::assertStringNotContainsString('<pre class="plantuml">', $html);
+        self::assertStringContainsString('<code', $html);
+    }
+
     public function testSpoilerBlockRendersAsNativeDetails(): void
     {
         // SpoilerExtension converts ::: spoiler "Title" to a native <details> disclosure
@@ -411,6 +432,7 @@ class CarveRendererTest extends TestCase
         bool|null $enableMermaid = null,
         bool|null $enableCharts = null,
         string|null $profile = null,
+        bool|null $enablePlantuml = null,
     ): SystemConfigService {
         $mock = $this->createStub(SystemConfigService::class);
 
@@ -420,6 +442,7 @@ class CarveRendererTest extends TestCase
             'ShopwareCarve.config.smartQuotesLocale' => $smartQuotesLocale,
             'ShopwareCarve.config.enableMermaid' => $enableMermaid,
             'ShopwareCarve.config.enableCharts' => $enableCharts,
+            'ShopwareCarve.config.enablePlantuml' => $enablePlantuml,
             'ShopwareCarve.config.profile' => $profile,
         ];
 
