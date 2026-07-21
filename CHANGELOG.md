@@ -3,6 +3,15 @@
 All notable changes to `markup-carve/shopware-carve` are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Opt-in `enablePlantuml` setting: render ` ```plantuml ` / ` ```puml ` fenced blocks as diagrams.
+  carve-php emits `<pre class="plantuml">`; since PlantUML has no in-browser renderer, the
+  storefront JS POSTs each block to the external Kroki service (`https://kroki.io/plantuml/svg`)
+  and inlines the returned SVG as an `<img>` data URI - only when a diagram is present. Off by
+  default. Requires `https://kroki.io` in the CSP `connect-src` and `data:` in `img-src`.
+
 ## [0.1.0] - 2026-07-14
 
 ### Added
