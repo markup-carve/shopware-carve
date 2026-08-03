@@ -329,34 +329,12 @@ and a catalog of commerce-specific element ideas.
 
 ### Prerequisites
 
-shopware-carve depends on two libraries that are not yet published to Packagist or npm. Install
-them from local clones until they are released.
+Both libraries are published, so Composer and npm resolve them normally - no path
+repository and no local clone.
 
 #### PHP dependency: carve-php
 
-Clone carve-php alongside your Shopware project root (adjust the path to suit your layout):
-
-```bash
-git clone https://github.com/markup-carve/carve-php ../carve-php
-```
-
-Add a `path` repository to your project's `composer.json` so Composer resolves it locally:
-
-```json
-{
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../carve-php",
-            "options": { "symlink": false }
-        }
-    ],
-    "minimum-stability": "dev",
-    "prefer-stable": true
-}
-```
-
-Then require the plugin:
+Pulled in by the plugin's own `composer.json` (`markup-carve/carve-php: ^0.1.3`):
 
 ```bash
 composer require markup-carve/shopware-carve
@@ -369,26 +347,20 @@ Verify the library loaded correctly:
 var_dump(class_exists('MarkupCarve\\Carve\\CarveConverter')); // bool(true)
 ```
 
-Once carve-php is published to Packagist you can remove the `path` repository and run
-`composer update` normally.
-
 #### JS dependency: carve-js (admin live preview only)
-
-Clone carve-js somewhere on your machine:
-
-```bash
-git clone https://github.com/markup-carve/carve-js /path/to/carve-js
-```
-
-Install it into the plugin's admin directory as a local file dependency:
 
 ```bash
 cd custom/plugins/ShopwareCarve/src/Resources/app/administration
-npm install /path/to/carve-js
+npm install @markup-carve/carve
 ```
 
-This writes a `file:` reference into the plugin's `package.json`. Once `@markup-carve/carve` is
-published to npm you can replace the local install with `npm install @markup-carve/carve`.
+> [!NOTE]
+> Both published engines predate a language change: **a heading ends at the
+> newline**, so `# Title` followed by a plain line is a heading and a paragraph
+> rather than one folded title. carve-php 0.1.3 was released 2026-07-27 and
+> carve-js 0.1.2 on 2026-07-12; the change landed after both. The storefront and
+> the admin preview therefore agree with each other and both render the older
+> rule, until carve-php 0.1.4 and carve-js 0.1.3 ship.
 
 ---
 
