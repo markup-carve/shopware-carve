@@ -1,0 +1,188 @@
+name: Engine drift
+
+# This repo does not implement Carve - it calls an engine that is already
+# corpus-gated in its own repository. So what can rot here is not conformance,
+# it is the DEPENDENCY: nobody notices when the engine stops moving, and CI
+# stays green because hand-written expectations are satisfied by a stale parser
+# exactly as well as by a current one (carve#735).
+#
+# THREE DISTANCES, because they fail differently and only the first is visible
+# from composer.json:
+#
+#   1. what the range resolves to, against Packagist's LATEST. A `^0.1.3` range
+#      will not pick up a `0.2.0`, so the release that matters most - the one
+#      carrying breaking changes - is exactly the one a range-relative check
+#      sleeps through.
+#
+#   2. Packagist's latest, against carve-php `main`. This is the one that
+#      actually failed on the JavaScript side: a June engine sat in six repos
+#      while every range was satisfied and every check was green (carve#499).
+#      No range check can see it, because nothing about the range is wrong -
+#      the PUBLISHED engine had stopped tracking the source.
+#
+#   3. what that engine DOES, in documents. A commit distance is a proxy; 300
+#      commits can change nothing and one can change a construct. So the spec
+#      corpus is driven through the engine AS INSTALLED IN THIS REPO'S vendor
+#      tree - the artifact, not the version string - and the count is printed.
+#      When this was written the published engine rendered 135 of 737 documents
+#      differently and threw outright on one of them.
+#
+# It WARNS on all three rather than failing. Every one of them is upstream
+# moving, which is not a defect in this repository and cannot be fixed from it -
+# only a carve-php release can (carve#608's PHP twin). A job that goes red for
+# something outside the repo teaches people to ignore the job.
+#
+# It DOES fail when the range resolves to nothing, when the installed engine
+# cannot be loaded, or when the corpus is not really there - each of which means
+# a real thing is broken rather than merely old. The last guard matters more
+# than it looks: without it an empty corpus directory reports zero divergences
+# and passes, which is the exact shape of check that let the stale engine
+# through in the first place.
+
+on:
+  schedule:
+    # 05:00 UTC daily, alongside the other drift runs in the org.
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+jobs:
+  engine-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress --no-interaction
+
+      - name: Compare the range against Packagist
+        id: registry
+        run: |
+          set -euo pipefail
+          pkg='markup-carve/carve-php'
+          range="$(php -r '$c = json_decode(file_get_contents("composer.json"), true); echo $c["require"]["markup-carve/carve-php"] ?? ($c["require-dev"]["markup-carve/carve-php"] ?? "");')"
+          if [ -z "${range}" ]; then
+            echo "::error::${pkg} is not a dependency of this repo - this workflow is watching nothing"
+            exit 1
+          fi
+          resolved="$(composer show --format=json "${pkg}" 2>/dev/null | php -r '$d = json_decode(stream_get_contents(STDIN), true); echo $d["versions"][0] ?? "";')"
+          if [ -z "${resolved}" ]; then
+            echo "::error::${pkg}@${range} resolves to nothing - an install here is broken"
+            exit 1
+          fi
+          latest="$(curl -sS "https://repo.packagist.org/p2/${pkg}.json" | php -r '
+            $d = json_decode(stream_get_contents(STDIN), true);
+            $best = "";
+            foreach ($d["packages"]["markup-carve/carve-php"] ?? [] as $p) {
+                $v = ltrim($p["version"], "v");
+                if (preg_match("/[a-zA-Z]/", $v)) { continue; }
+                if ($best === "" || version_compare($v, $best, ">")) { $best = $v; }
+            }
+            echo $best;
+          ')"
+          echo "range            ${range}"
+          echo "resolves to      ${resolved}"
+          echo "packagist latest ${latest}"
+          if [ -n "${latest}" ] && [ "${resolved}" != "${latest}" ]; then
+            echo "::warning::${pkg} ${latest} is published, but the range ${range} takes ${resolved} - a major-bumped release does not arrive on its own"
+          fi
+          echo "latest=${latest}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out the engine
+        uses: actions/checkout@v4
+        with:
+          repository: markup-carve/carve-php
+          path: carve-php
+          fetch-depth: 0
+
+      - name: Compare the published engine against carve-php main
+        run: |
+          set -euo pipefail
+          latest='${{ steps.registry.outputs.latest }}'
+          tag=""
+          for candidate in "${latest}" "v${latest}"; do
+            if git -C carve-php rev-parse "${candidate}" >/dev/null 2>&1; then
+              tag="${candidate}"
+              break
+            fi
+          done
+          if [ -z "${tag}" ]; then
+            echo "::warning::carve-php has no tag for the published ${latest}, so the published engine cannot be located in the source"
+            exit 0
+          fi
+          behind="$(git -C carve-php rev-list --count "${tag}..origin/main")"
+          echo "published ${latest} is carve-php ${tag} ($(git -C carve-php log -1 --format=%s "${tag}"))"
+          echo "carve-php main is ${behind} commit(s) ahead of it"
+          if [ "${behind}" -gt 0 ]; then
+            echo "::warning::the PUBLISHED engine ${latest} is ${behind} commit(s) behind carve-php main - every repo installing from Packagist is that far behind the language, however current its range is"
+          fi
+
+      - name: Check out the corpus from carve main
+        uses: actions/checkout@v4
+        with:
+          repository: markup-carve/carve
+          path: carve-main
+
+      - name: Drive the corpus through the installed engine
+        run: |
+          set -euo pipefail
+          php -d error_reporting=E_ALL <<'PHP'
+          <?php
+          require __DIR__ . '/vendor/autoload.php';
+
+          // The ARTIFACT, not the version string. A pin comparison is what let
+          // a vendored engine reach 140 of 690 documents wrong elsewhere in
+          // this org while every recorded revision looked plausible; only
+          // rendering the documents says what the engine does.
+          $dir = __DIR__ . '/carve-main/tests/corpus';
+          $converter = \MarkupCarve\Carve\CarveConverter::create();
+
+          $documents = 0;
+          $wrong = 0;
+          $threw = 0;
+          $firstThrows = [];
+          foreach (glob($dir . '/*.crv') as $path) {
+              $expected = substr($path, 0, -4) . '.html';
+              if (!file_exists($expected)) {
+                  continue;
+              }
+              $documents++;
+              try {
+                  $got = $converter->convert(file_get_contents($path));
+              } catch (\Throwable $e) {
+                  $threw++;
+                  $wrong++;
+                  if (count($firstThrows) < 5) {
+                      $firstThrows[] = basename($path) . ': ' . get_class($e) . ': ' . $e->getMessage();
+                  }
+                  continue;
+              }
+              if (rtrim($got, "\n") !== rtrim(file_get_contents($expected), "\n")) {
+                  $wrong++;
+              }
+          }
+
+          // Without this an empty or wrong directory reports zero divergences
+          // and passes - the exact shape of check this workflow exists to stop
+          // shipping.
+          if ($documents < 400) {
+              fwrite(STDERR, "::error::only {$documents} corpus pairs found in {$dir}; the corpus has 690 or more, so this is a wiring problem rather than a clean run\n");
+              exit(1);
+          }
+
+          foreach ($firstThrows as $line) {
+              echo "threw: {$line}\n";
+          }
+          echo "documents={$documents}\n";
+          echo "wrong={$wrong}\n";
+          echo "threw={$threw}\n";
+
+          if ($wrong > 0) {
+              fwrite(STDERR, "::warning::the engine this repo installs renders {$wrong} of {$documents} corpus documents differently from carve main ({$threw} of them by throwing). That is the published engine trailing the language - carve#608's PHP twin - and only a carve-php release can close it.\n");
+          }
+          PHP
