@@ -5,12 +5,23 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-10
+
 ### Added
 - Opt-in `enablePlantuml` setting: render ` ```plantuml ` / ` ```puml ` fenced blocks as diagrams.
   carve-php emits `<pre class="plantuml">`; since PlantUML has no in-browser renderer, the
   storefront JS POSTs each block to the external Kroki service (`https://kroki.io/plantuml/svg`)
   and inlines the returned SVG as an `<img>` data URI - only when a diagram is present. Off by
   default. Requires `https://kroki.io` in the CSP `connect-src` and `data:` in `img-src`.
+
+### Changed
+
+- Require carve-php `^0.1.4`, including the current security hardening and
+  parser/writer convergence fixes.
+- Replace the floating code-sniffer dependency with the tagged `^0.6.0` line
+  and use stable Composer resolution.
+- Replace the deprecated Symfony `services.xml` with `services.yaml`.
+- Move CI, drift, and release workflows to the current checkout action runtime.
 
 ## [0.1.0] - 2026-07-14
 

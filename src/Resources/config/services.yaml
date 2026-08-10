@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/symfony/dependency-injection/7.4/Loader/schema/services.schema.json
+services:
+    MarkupCarve\Shopware\Service\CarveRenderer:
+        arguments:
+            - '@Shopware\Core\System\SystemConfig\SystemConfigService'
+
+    MarkupCarve\Shopware\Twig\CarveExtension:
+        arguments:
+            - '@MarkupCarve\Shopware\Service\CarveRenderer'
+        tags:
+            - twig.extension
+
+    MarkupCarve\Shopware\Core\Content\Cms\CarveCmsElementResolver:
+        arguments:
+            - '@MarkupCarve\Shopware\Service\CarveRenderer'
+        tags:
+            - shopware.cms.data_resolver
+
+    MarkupCarve\Shopware\Service\CarveContextRenderer:
+        arguments:
+            - '@product.repository'
+            - '@Shopware\Core\System\SystemConfig\SystemConfigService'
+
+    MarkupCarve\Shopware\Twig\CarveContextExtension:
+        arguments:
+            - '@MarkupCarve\Shopware\Service\CarveContextRenderer'
+        tags:
+            - twig.extension
+
+    MarkupCarve\Shopware\Command\CarveRenderCommand:
+        tags:
+            - console.command
