@@ -395,6 +395,7 @@ Access the plugin settings via Admin - Extensions - My extensions - Carve - Conf
 |-----|---------|-------------|
 | `ShopwareCarve.config.allowRawHtml` | `false` | Allow raw HTML passthrough (see Security note below). |
 | `ShopwareCarve.config.livePreview` | `true` | Show instant preview while editing a Carve CMS element in the admin. |
+| `ShopwareCarve.config.symbols` | empty | Map `:name:` shortcodes to configured replacements, one `name=value` per line. See Symbol shortcodes below. |
 | `ShopwareCarve.config.smartQuotes` | `false` | Smart quotes (typographic): Converts straight quotes to locale-correct typographic quotes. |
 | `ShopwareCarve.config.smartQuotesLocale` | `en` | Smart-quote language: Sets the locale for typographic quotes. Only applies when `smartQuotes` is enabled. Supported locales: en, de, de-CH, fr, es, it, pt, nl, pl, ru, uk, cs, hu, sv, da, fi, nb, nn, ja, zh. |
 | `ShopwareCarve.config.profile` | `none` | Content profile: restricts which Carve elements appear in HTML output. Options: `none`, `article`, `comment`, `minimal`. See Content profile section below. |
@@ -423,6 +424,26 @@ inject arbitrary HTML (including `<script>` tags) into the storefront.
 When `true` (the default), the CMS element config panel renders an instant storefront-identical
 preview powered by carve-js. Set to `false` to disable the preview (e.g. for performance or
 when carve-js is not installed).
+
+### Symbol shortcodes
+
+`ShopwareCarve.config.symbols` maps shortcodes such as `:rocket:` to replacements. Enter one
+`name=value` mapping per line, for example:
+
+```text
+rocket=🚀
+warning=<span class="warning-icon">!</span>
+```
+
+Whitespace around the name and value is trimmed. Blank lines and lines without `=` are ignored.
+Names use carve-php's shortcode grammar: they must start with an ASCII letter or `_`, followed by
+ASCII letters, digits, `_`, or `-`. Invalid names are ignored, and unmapped shortcodes remain
+literal.
+
+**Security warning:** symbol values are trusted raw HTML. carve-php inserts them verbatim and
+unescaped, even through `|carve_ugc` / `toHtmlUgc()`; safe mode does not sanitize these configured
+values. Only administrators who understand that the values become executable storefront markup
+should edit this setting. Never populate it from user-authored content.
 
 ### smartQuotes
 

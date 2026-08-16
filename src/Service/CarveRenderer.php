@@ -28,9 +28,12 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  * (fenced ```=html blocks and inline `...`{=html} spans) is escaped rather than passed through.
  * Dangerous URL schemes (javascript:, data:, vbscript:, file:) and on-event/srcdoc/formaction
  * attributes are ALWAYS stripped regardless of this setting - they are a baseline provided by
- * carve-php's safeMode and are never toggled off by allowRawHtml. Output is therefore safe to
- * emit into the storefront without further sanitizing, which is why the Twig `carve` filter is
- * marked is_safe => html.
+ * carve-php's safeMode and are never toggled off by allowRawHtml. The one deliberate exception is
+ * `ShopwareCarve.config.symbols`: configured symbol values are trusted raw HTML and carve-php
+ * inserts them unescaped, including in toHtmlUgc(). Administrators must therefore treat this map
+ * as executable storefront markup. Subject to that trust boundary, output is safe to emit into
+ * the storefront without further sanitizing, which is why the Twig `carve` filter is marked
+ * is_safe => html.
  *
  * The `ShopwareCarve.config.profile` setting optionally applies a carve-php Profile to the HTML
  * converter. Profiles strip or degrade disallowed node types (e.g. headings, images, tables) and
@@ -38,10 +41,10 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  * the text and markdown singletons are not profiled.
  *
  * HTML converters are memoized per request by a config signature (allowRawHtml, smartQuotes,
- * smartQuotesLocale, profile, enableMermaid, enableCharts, enablePlantuml). Within one DI-singleton lifetime
- * (one request) the config is stable, so the same converter instance is reused across all
- * toHtml() calls - avoiding repeated CarveConverter construction and ~10 addExtension() calls
- * for every rendered field (e.g. a product listing with N descriptions).
+ * smartQuotesLocale, profile, enableMermaid, enableCharts, enablePlantuml, symbols). Within one
+ * DI-singleton lifetime (one request) the config is stable, so the same converter instance is
+ * reused across all toHtml() calls - avoiding repeated CarveConverter construction and ~10
+ * addExtension() calls for every rendered field (e.g. a product listing with N descriptions).
  *
  * Reuse is safe: CarveConverter.render() resets its shared render context at the start of each
  * call (HtmlRenderer.sharedRenderContext.reset()), and every stateful extension in the suite
@@ -91,7 +94,8 @@ class CarveRenderer
      * makes the output safe to emit without a separate sanitizer even when
      * allowRawHtml or a permissive profile is configured globally.
      *
-     * Smart quotes still respect the global config - they are harmless for UGC.
+     * Smart quotes still respect the global config - they are harmless for UGC. Configured
+     * symbol values also apply and remain trusted raw HTML; safe mode does not escape them.
      */
     public function toHtmlUgc(?string $source): string
     {
@@ -120,13 +124,15 @@ class CarveRenderer
      * Returns a memoized UGC converter.
      *
      * UGC converters always use forced safe mode and the comment profile.
-     * Only the smartQuotes config can vary, so the cache key is simpler.
+     * Only the smartQuotes and symbols config can vary, so the cache key is simpler.
      */
     private function getCachedUgcConverter(): CarveConverter
     {
         $sq = $this->configBool($this->systemConfig->get('ShopwareCarve.config.smartQuotes'));
         $loc = $this->systemConfig->get('ShopwareCarve.config.smartQuotesLocale');
-        $sig = 'ugc|' . ($sq ? '1' : '0') . '|' . (is_string($loc) ? $loc : '');
+        $symbols = $this->configuredSymbols();
+        $sig = 'ugc|' . ($sq ? '1' : '0') . '|' . (is_string($loc) ? $loc : '')
+            . '|' . $this->symbolsSignature($symbols);
 
         return $this->htmlConverters[$sig] ??= $this->buildUgcConverter();
     }
@@ -146,6 +152,7 @@ class CarveRenderer
         $charts = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enableCharts'));
         $plantuml = $this->configBool($this->systemConfig->get('ShopwareCarve.config.enablePlantuml'));
         $profile = $this->systemConfig->get('ShopwareCarve.config.profile');
+        $symbols = $this->configuredSymbols();
 
         return implode('|', [
             $allow ? '1' : '0',
@@ -155,6 +162,7 @@ class CarveRenderer
             $charts ? '1' : '0',
             $plantuml ? '1' : '0',
             is_string($profile) ? $profile : '',
+            $this->symbolsSignature($symbols),
         ]);
     }
 
@@ -186,7 +194,9 @@ class CarveRenderer
      * Safe mode is forced on (safeMode: true) so raw HTML is always escaped,
      * regardless of the global allowRawHtml config. The comment profile is always
      * applied so headings, images, tables, raw HTML, etc. are denied even if the
-     * global profile is 'none' or 'full'.
+     * global profile is 'none' or 'full'. The comment profile does not allow symbol
+     * nodes, so a configured symbol does not expand in customer content even though the
+     * map is passed to this converter.
      */
     private function buildUgcConverter(): CarveConverter
     {
@@ -202,7 +212,11 @@ class CarveRenderer
             $safe = $allow ? false : true;
         }
 
-        $converter = new CarveConverter(safeMode: $safe);
+        // carve-php intentionally renders symbol values verbatim. These values are trusted raw
+        // HTML even in safe mode and in the UGC converter; the admin setting must never be filled
+        // from user-authored content. Names are constrained by configuredSymbols() to precisely
+        // the shortcode grammar accepted by carve-php.
+        $converter = new CarveConverter(safeMode: $safe, symbols: $this->configuredSymbols());
 
         $converter->addExtensions($this->shopwareExtensions());
 
@@ -228,6 +242,10 @@ class CarveRenderer
         }
 
         if ($forceCommentProfile) {
+            // The comment profile is applied unchanged. It does not allow symbol nodes, so a
+            // configured symbol does not expand in customer content - which is the point: the
+            // map is trusted raw HTML, and a review is the one place that trust should not
+            // reach. Widening the profile here would trade that guarantee for a shortcode.
             $converter->setProfile(Profile::comment());
         } else {
             $profileKey = $this->systemConfig->get('ShopwareCarve.config.profile');
@@ -298,5 +316,50 @@ class CarveRenderer
         }
 
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * Parses the admin-only symbol map into trusted raw HTML replacements.
+     *
+     * Each non-empty line uses `name=value`; whitespace around both parts is trimmed and the
+     * first equals sign separates them. Invalid lines are ignored. Names deliberately mirror
+     * carve-php's symbol grammar (`[a-zA-Z_][a-zA-Z0-9_-]*`) so no broader input can reach its
+     * raw symbol renderer. Values are NOT escaped or sanitized: carve-php inserts them verbatim,
+     * including for UGC rendering, and administrators must treat them as executable HTML.
+     *
+     * @return array<string, string>
+     */
+    private function configuredSymbols(): array
+    {
+        $configured = $this->systemConfig->get('ShopwareCarve.config.symbols');
+        if (!is_string($configured) || trim($configured) === '') {
+            return [];
+        }
+
+        $symbols = [];
+        foreach (preg_split('/\R/', $configured) ?: [] as $line) {
+            if (trim($line) === '' || !str_contains($line, '=')) {
+                continue;
+            }
+
+            [$name, $value] = array_map('trim', explode('=', $line, 2));
+            if (preg_match('/^[a-zA-Z_][a-zA-Z0-9_-]*$/', $name) !== 1) {
+                continue;
+            }
+
+            $symbols[$name] = $value;
+        }
+
+        return $symbols;
+    }
+
+    /**
+     * Returns a collision-resistant signature for the effective, parsed symbol map.
+     *
+     * @param array<string, string> $symbols
+     */
+    private function symbolsSignature(array $symbols): string
+    {
+        return hash('sha256', serialize($symbols));
     }
 }

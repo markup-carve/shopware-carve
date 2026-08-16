@@ -1,3 +1,6 @@
+# Nächste Version
+- Konfigurierbare `:name:`-Symbol-Kurzbefehle mit vertrauenswürdigen rohen HTML-Ersatzwerten hinzugefügt.
+
 # 0.1.0
 - Erste Veroeffentlichung: rendert die Carve-Markup-Sprache als sicheres HTML in Shopware 6.6 und 6.7.
 - Twig-Filter (carve, carve_text, carve_md), ein Carve-CMS-Element und -Block, Produkt- und Kategorie-Zusatzfelder, Live-Vorschau im Admin, Rendering in transaktionalen Mails und Inline-Produktreferenzen.

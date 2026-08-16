@@ -5,6 +5,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Add configurable `:name:` symbol shortcodes with trusted raw-HTML replacement values.
+
 ## [0.1.1] - 2026-08-10
 
 ### Added

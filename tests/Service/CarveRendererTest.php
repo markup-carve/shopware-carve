@@ -6,6 +6,7 @@ namespace MarkupCarve\Shopware\Tests\Service;
 
 use MarkupCarve\Shopware\Service\CarveRenderer;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 use ReflectionProperty;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
@@ -28,6 +29,59 @@ class CarveRendererTest extends TestCase
     {
         $html = $this->renderer->toHtml('*bold* text');
         self::assertStringContainsString('<strong>bold</strong>', $html);
+    }
+
+    public function testMappedSymbolShortcodeIsReplacedAndUnmappedIsLiteral(): void
+    {
+        $renderer = new CarveRenderer($this->makeConfigMock(null, symbols: 'rocket=🚀'));
+
+        $html = $renderer->toHtml(':rocket: :unknown:');
+
+        self::assertStringContainsString('🚀', $html);
+        self::assertStringContainsString(':unknown:', $html);
+        self::assertStringNotContainsString(':rocket:', $html);
+    }
+
+    public function testMalformedSymbolLinesAreIgnoredAndWhitespaceIsTrimmed(): void
+    {
+        $symbols = "\nmissing equals\n  rocket = 🚀  \n";
+        $renderer = new CarveRenderer($this->makeConfigMock(null, symbols: $symbols));
+
+        $html = $renderer->toHtml(':rocket: :missing:');
+
+        self::assertStringContainsString('🚀', $html);
+        self::assertStringContainsString(':missing:', $html);
+    }
+
+    /**
+     * The name guard is asserted on the parsed map, not on rendered output.
+     * carve-php would not match a malformed shortcode anyway, so an output-only
+     * assertion passes with the guard removed and proves nothing. What the guard
+     * actually does is keep anything outside the shortcode grammar from reaching
+     * carve-php's raw symbol renderer, and that is visible only in the map.
+     *
+     * @return void
+     */
+    public function testInvalidSymbolNamesNeverReachTheSymbolMap(): void
+    {
+        $renderer = new CarveRenderer($this->makeConfigMock(
+            null,
+            symbols: "bad name=<script>alert(1)</script>\n9lead=x\n<img src=x>=y\nok_one=A\n  spaced  =  B  ",
+        ));
+
+        $method = new ReflectionMethod($renderer, 'configuredSymbols');
+        $symbols = $method->invoke($renderer);
+
+        self::assertSame(['ok_one' => 'A', 'spaced' => 'B'], $symbols);
+    }
+
+    public function testMalformedSymbolLinesAreIgnored(): void
+    {
+        $renderer = new CarveRenderer($this->makeConfigMock(null, symbols: "\n   \nnoequals\nrocket=X\n"));
+
+        $method = new ReflectionMethod($renderer, 'configuredSymbols');
+
+        self::assertSame(['rocket' => 'X'], $method->invoke($renderer));
     }
 
     public function testNeutralizesJavascriptScheme(): void
@@ -334,6 +388,31 @@ class CarveRendererTest extends TestCase
         self::assertStringContainsString('<strong>bold</strong>', $html);
     }
 
+    /**
+     * Symbol values are trusted raw HTML, and a customer review is the one place
+     * that trust should not reach. The comment profile does not allow symbol
+     * nodes, so the shortcode stays literal in UGC even with a map configured.
+     */
+    public function testUgcLeavesConfiguredSymbolsLiteral(): void
+    {
+        $renderer = new CarveRenderer($this->makeConfigMock(null, symbols: 'rocket=🚀'));
+
+        $html = $renderer->toHtmlUgc(':rocket:');
+
+        self::assertStringContainsString(':rocket:', $html);
+        self::assertStringNotContainsString('🚀', $html);
+    }
+
+    public function testUgcDoesNotExpandSymbolsThatCarryMarkup(): void
+    {
+        $renderer = new CarveRenderer($this->makeConfigMock(null, symbols: 'promo=<span onclick="x()">deal</span>'));
+
+        $html = $renderer->toHtmlUgc('great :promo: here');
+
+        self::assertStringNotContainsString('<span', $html);
+        self::assertStringNotContainsString('onclick', $html);
+    }
+
     // -----------------------------------------------------------------------
     // Memoization tests
     // -----------------------------------------------------------------------
@@ -404,6 +483,24 @@ class CarveRendererTest extends TestCase
         self::assertNotSame(array_keys($cacheA)[0], array_keys($cacheB)[0], 'Differing configs must produce distinct cache keys.');
     }
 
+    public function testMemoizationSignatureChangesWhenSymbolsConfigChanges(): void
+    {
+        $symbols = 'status=old';
+        $config = $this->createStub(SystemConfigService::class);
+        $config->method('get')
+            ->willReturnCallback(static function (string $key) use (&$symbols): mixed {
+                return $key === 'ShopwareCarve.config.symbols' ? $symbols : null;
+            });
+        $renderer = new CarveRenderer($config);
+
+        self::assertStringContainsString('old', $renderer->toHtml(':status:'));
+        $symbols = 'status=new';
+        self::assertStringContainsString('new', $renderer->toHtml(':status:'));
+
+        $ref = new ReflectionProperty(CarveRenderer::class, 'htmlConverters');
+        self::assertCount(2, $ref->getValue($renderer));
+    }
+
     public function testMemoizationUgcAndHtmlShareCacheArrayButDifferentKeys(): void
     {
         // toHtml() and toHtmlUgc() share $htmlConverters but use distinct key prefixes
@@ -433,6 +530,7 @@ class CarveRendererTest extends TestCase
         bool|null $enableCharts = null,
         string|null $profile = null,
         bool|null $enablePlantuml = null,
+        string|null $symbols = null,
     ): SystemConfigService {
         $mock = $this->createStub(SystemConfigService::class);
 
@@ -444,6 +542,7 @@ class CarveRendererTest extends TestCase
             'ShopwareCarve.config.enableCharts' => $enableCharts,
             'ShopwareCarve.config.enablePlantuml' => $enablePlantuml,
             'ShopwareCarve.config.profile' => $profile,
+            'ShopwareCarve.config.symbols' => $symbols,
         ];
 
         $mock->method('get')
