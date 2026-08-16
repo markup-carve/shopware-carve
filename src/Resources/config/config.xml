@@ -44,6 +44,25 @@
             </helpText>
         </input-field>
 
+        <input-field type="text-area">
+            <name>symbols</name>
+            <label>Symbol shortcodes</label>
+            <label lang="de-DE">Symbol-Kurzbefehle</label>
+            <helpText>
+                One name=value mapping per line, for example rocket=🚀. Blank lines, lines without
+                =, and invalid names are ignored. Names may contain ASCII letters, digits, _ and -
+                and must start with a letter or _. Values are trusted raw HTML and are inserted
+                unescaped, including in user-generated content. Configure only fully trusted markup.
+            </helpText>
+            <helpText lang="de-DE">
+                Eine name=wert-Zuordnung pro Zeile, zum Beispiel rocket=🚀. Leerzeilen, Zeilen ohne
+                = und ungültige Namen werden ignoriert. Namen dürfen ASCII-Buchstaben, Ziffern, _
+                und - enthalten und müssen mit einem Buchstaben oder _ beginnen. Werte sind
+                vertrauenswürdiges rohes HTML und werden auch in Nutzerinhalten unmaskiert
+                eingefügt. Nur vollständig vertrauenswürdiges Markup konfigurieren.
+            </helpText>
+        </input-field>
+
         <input-field type="bool">
             <name>smartQuotes</name>
             <defaultValue>false</defaultValue>

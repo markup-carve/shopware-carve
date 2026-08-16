@@ -1,3 +1,6 @@
+# Next version
+- Add configurable `:name:` symbol shortcodes with trusted raw-HTML replacement values.
+
 # 0.1.1
 - Add opt-in PlantUML and Puml fence rendering through Kroki, disabled by default.
 - Update the Carve engine to 0.1.4 for current security hardening and rendering fixes.
