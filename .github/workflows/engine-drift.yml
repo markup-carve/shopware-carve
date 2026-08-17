@@ -170,8 +170,62 @@ jobs:
           // Without this an empty or wrong directory reports zero divergences
           // and passes - the exact shape of check this workflow exists to stop
           // shipping.
-          if ($documents < 400) {
-              fwrite(STDERR, "::error::only {$documents} corpus pairs found in {$dir}; the corpus has 690 or more, so this is a wiring problem rather than a clean run\n");
+          //
+          // EQUALITY, not a floor. This was `$documents < 400` against a corpus
+          // of 1131, so it passed with two thirds of the corpus absent, which is
+          // precisely the condition it exists to reject. Measured on a sibling
+          // repo carrying the identical floor, a corpus cut to 420 documents
+          // reported every remaining document byte-identical and read as a clean
+          // run, with all 45 then-diverging documents simply missing.
+          //
+          // THE REFERENCE HAS TO BE SOMETHING THIS SCRIPT DOES NOT ITSELF READ AS
+          // THE POPULATION. Deriving "how many documents should there be" from
+          // $dir would move both sides of the comparison together and guard
+          // nothing. So the reference is the corpus's SOURCE: tests/corpus is
+          // generated from the `::: compare` blocks in
+          // resources/examples/{core,extensions,edge-cases}.md, and the generator
+          // refuses to write a corpus where the two disagree. Both are in the
+          // checkout above, so this needs no second clone.
+          //
+          // Counting the source also leaves no literal here to go stale. A
+          // hardcoded 1131 is this same defect with a bigger number; adding an
+          // example upstream now moves the expectation on the next run.
+          $examplesDir = dirname($dir, 2) . '/resources/examples';
+          $declared = 0;
+          foreach (['core.md', 'extensions.md', 'edge-cases.md'] as $page) {
+              $path = $examplesDir . '/' . $page;
+              if (!is_file($path)) {
+                  // Not a soft skip. Without this page there is no independent
+                  // statement of how big the corpus should be, and a corpus check
+                  // with nothing to compare against is the failure shape this
+                  // guard exists to remove.
+                  fwrite(STDERR, "::error::no corpus source page at {$path}; tests/corpus is generated from these pages, so if the spec moved them this guard has to move with them\n");
+                  exit(1);
+              }
+              // Mirrors the generator's state machine rather than grepping: a
+              // `::: compare` line inside an already-open block is content, not a
+              // second pair, and a block closes on a bare marker line.
+              $marker = null;
+              foreach (explode("\n", file_get_contents($path)) as $rawLine) {
+                  $line = trim($rawLine);
+                  if ($marker !== null) {
+                      if ($line === $marker) {
+                          $marker = null;
+                      }
+                      continue;
+                  }
+                  if (preg_match('/^(:{3,})\s+compare(\s+\S.*)?$/', $line, $m) === 1) {
+                      $declared++;
+                      $marker = $m[1];
+                  }
+              }
+          }
+          if ($declared === 0) {
+              fwrite(STDERR, "::error::the corpus source pages under {$examplesDir} declare no ::: compare blocks at all; this is a wiring problem, not a corpus of size zero\n");
+              exit(1);
+          }
+          if ($documents !== $declared) {
+              fwrite(STDERR, "::error::{$documents} corpus pairs found in {$dir}, but the spec's example pages declare {$declared}. Every ::: compare block in resources/examples/{core,extensions,edge-cases}.md becomes one corpus pair, so a difference means the corpus checked out here is not the one those pages describe - a truncated or stale checkout, or a corpus that needs regenerating. It does not mean this run was clean.\n");
               exit(1);
           }
 
