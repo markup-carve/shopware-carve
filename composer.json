@@ -1,7 +1,7 @@
 {
     "name": "markup-carve/shopware-carve",
     "description": "Render Carve markup to safe HTML in Shopware: Twig filters, CMS element, product/category fields, live preview, mail, inline product references.",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "authors": [
@@ -12,7 +12,7 @@
     "require": {
         "php": "^8.2",
         "shopware/core": "~6.6.0 || ~6.7.0",
-        "markup-carve/carve-php": "^0.1.4"
+        "markup-carve/carve-php": "^0.1.5"
     },
     "require-dev": {
         "php-collective/code-sniffer": "^0.6.0",
