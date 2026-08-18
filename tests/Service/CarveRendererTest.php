@@ -192,7 +192,7 @@ class CarveRendererTest extends TestCase
         $html = $this->renderer->toHtml($source);
 
         self::assertStringContainsString('<table', $html);
-        self::assertStringContainsString('<th>', $html);
+        self::assertStringContainsString('<th scope="col">', $html);
         self::assertStringContainsString('<td>', $html);
         // Must not fall back to a plain div wrapper.
         self::assertStringNotContainsString('class="list-table"', $html);

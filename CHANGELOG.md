@@ -5,6 +5,24 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-18
+
+### Security
+
+- Require carve-php `^0.1.5`, which probes **every** candidate in a list-valued
+  URL attribute instead of trusting the value's leading scheme.
+  `srcset="safe.png 1x, javascript:alert(1) 2x"` passed the probe on its second
+  entry. Upgrade if you render untrusted Carve or import untrusted HTML.
+
+### Changed
+
+- Storefront markup changes with carve-php 0.1.5: a list-table header cell now
+  renders as `<th scope="col">` rather than a bare `<th>`, which is what a screen
+  reader needs to associate the column. Theme overrides or tests matching on the
+  bare tag need updating.
+
+### Added
+
 - Add configurable `:name:` symbol shortcodes with trusted raw-HTML replacement values.
 
 ## [0.1.1] - 2026-08-10
