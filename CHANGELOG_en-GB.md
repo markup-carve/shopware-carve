@@ -1,5 +1,10 @@
 # Next version
+- Pin the admin live preview's engine into the plugin ZIP, so a build resolves the stated `@markup-carve/carve` version instead of whatever the registry serves.
+
+# 0.1.2
+- Require carve-php 0.1.5, which probes every candidate in a list-valued URL attribute instead of trusting the value's leading scheme. Upgrade if you render untrusted Carve or import untrusted HTML.
 - Add configurable `:name:` symbol shortcodes with trusted raw-HTML replacement values.
+- A list-table header cell now renders as `<th scope="col">` rather than a bare `<th>`. Theme overrides or tests matching on the bare tag need updating.
 
 # 0.1.1
 - Add opt-in PlantUML and Puml fence rendering through Kroki, disabled by default.
