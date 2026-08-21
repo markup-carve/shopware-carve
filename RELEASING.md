@@ -49,7 +49,11 @@ release. `softprops/action-gh-release` sets the body from `body_path`.
 - **JS dependency must be on npm first.** The admin live preview depends on
   `@markup-carve/carve`. `shopware-cli extension zip` runs `npm install`, so that
   package must be published to npm **before** a shopware-carve release, or the
-  ZIP build fails with a 404. Release carve-js first.
+  ZIP build fails with a 404. Release carve-js first. That install now honors
+  `src/Resources/app/administration/package-lock.json`, so the ZIP carries the
+  engine CI measured rather than whatever the registry served at release time -
+  bump the lockfile (`npm install` in that directory) as a deliberate step when a
+  release should ship a newer engine.
 - **Version is frozen until a real release.** Per the org convention, the
   `version` field in `composer.json` stays at its initial value until the
   maintainer explicitly cuts a release. Shopware reads this field as the plugin
