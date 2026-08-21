@@ -614,6 +614,19 @@ inject arbitrary HTML including `<script>` tags into the storefront.
 | 6.7.x | Yes |
 | < 6.6 | No |
 
+Each supported line has its own CI leg that installs that line by name and reads the
+installed version back, so a row here is a measured claim rather than a declared one. A
+red leg therefore means support for that line is currently unverified - including when
+the cause is upstream, such as Composer refusing a release over a security advisory.
+
+The 6.6 legs run in [`ci.yml`](.github/workflows/ci.yml), the badge at the top of this
+file. The 6.7 legs run in
+[`shopware-67.yml`](.github/workflows/shopware-67.yml) on every pull request, and are
+**expected to be red today**: no Shopware 6.7 release currently installs, because
+Composer refuses the whole line over open advisories on `shopware/core` and on the
+`dompdf/dompdf` and `mcp/sdk` it reaches. The badge therefore tracks the line a merchant
+can install; the workflow tracks the line this plugin declares.
+
 ---
 
 ## License
