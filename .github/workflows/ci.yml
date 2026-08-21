@@ -21,20 +21,25 @@ on:
 # that silently resolved 6.6 passes - which is this defect again, one layer up,
 # and harder to see because now there is a job name asserting otherwise.
 #
-# A LEG THAT CANNOT INSTALL ITS LINE IS RED, DELIBERATELY. At the time of writing
-# no 6.7 installs at all: `shopware/core` itself carries open advisories through
-# v6.7.13.0, and the versions above that reach `dompdf/dompdf 3.1.4` or `mcp/sdk`,
-# so Composer's default `block-insecure` refuses the whole range. That is not a
-# reason to skip the leg or to mark it `continue-on-error` - a plugin declaring
-# support for a line it cannot even install is a real, reportable state, and the
-# red says so with Composer's own reasoning attached. It also needs no commit here
-# to clear: when the advisory window closes the same leg goes green on its own.
+# 6.7 IS MEASURED, BUT NOT FROM THIS FILE. The 6.7 half of the axis lives in
+# `shopware-67.yml`, on the same `pull_request` trigger, running the same install
+# and the same read-back. It is expected to be red: no 6.7 currently installs,
+# because Composer's default `block-insecure` refuses the whole line over upstream
+# security advisories. That red is a true statement about this plugin's declared
+# support and is meant to stay visible - see that file's header before touching it.
+#
+# The split is about ONE reader. `README.md` line 4 carries a public `ci.yml` badge
+# on a Packagist-published package that merchants evaluate, and that badge should
+# track the line a merchant can actually install. Nothing about the split reduces
+# what is measured per commit; it changes only which result the badge summarizes.
+# If you edit the install or the read-back here, edit the copy there too - they are
+# byte-identical on purpose, and a drift between them is invisible until a leg
+# stops discriminating.
 #
 # Note this is `composer update`, not `composer install`, and there is no
 # `composer.lock` in the repo - that question is markup-carve/shopware-carve#18 and
 # is deliberately parked. If a lockfile ever lands, these legs still have to
 # resolve per-line rather than install it, or the axis stops meaning anything.
-
 jobs:
   test:
     name: Test (PHP ${{ matrix.php-version }}, Shopware ${{ matrix.shopware }})
@@ -43,7 +48,7 @@ jobs:
       fail-fast: false
       matrix:
         php-version: ['8.2', '8.5']
-        shopware: ['~6.6.0', '~6.7.0']
+        shopware: ['~6.6.0']
     steps:
       - name: Checkout shopware-carve
         uses: actions/checkout@v7
@@ -91,9 +96,9 @@ jobs:
 
   # PHPStan gets the SAME axis, and it is the more sensitive half of it: `src/`
   # references 15 distinct `Shopware\Core\*` classes while `tests/` reaches 3, so
-  # a signature or namespace change between the two lines shows up here well before
-  # it shows up in an assertion. Leaving this job unmatrixed would keep the
-  # strongest detector permanently on 6.6.
+  # a signature or namespace change between the lines shows up here well before it
+  # shows up in an assertion. Its 6.7 twin is in `shopware-67.yml`; between them the
+  # detector runs on both declared lines rather than permanently on one.
   #
   # PHP stays fixed at 8.3 - the PHP axis is the test job's job, and crossing both
   # here would buy repetition rather than coverage.
@@ -103,7 +108,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shopware: ['~6.6.0', '~6.7.0']
+        shopware: ['~6.6.0']
     steps:
       - name: Checkout shopware-carve
         uses: actions/checkout@v7
@@ -152,7 +157,8 @@ jobs:
   # repository's own ruleset and never loads a Shopware class, so its result cannot
   # differ between the two lines. It used to ride along in the analysis job, where
   # the axis above would now run it once per Shopware line for a byte-identical
-  # result and report it only on the lines that installed.
+  # result, and report it only on the lines that installed - which today would mean
+  # not reporting it from the 6.7 workflow at all.
   #
   # It still resolves freely rather than by line, and that is a weaker guarantee
   # than the legs above have, not an equal one: `shopware/core` is a root

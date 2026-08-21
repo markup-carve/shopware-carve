@@ -11,7 +11,7 @@ This project follows [Semantic Versioning](https://semver.org/).
   `src/Resources/app/administration/package-lock.json` now travels with the
   extension, so the `npm install` behind `shopware-cli extension zip` builds the
   preview against the stated `markup-carve/carve` npm version rather than
-  whatever the registry resolves at build time.
+  whatever the registry resolves at build time (#21).
 
 ## [0.1.2] - 2026-08-18
 

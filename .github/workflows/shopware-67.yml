@@ -1,0 +1,157 @@
+name: Shopware 6.7
+
+# THIS WORKFLOW IS EXPECTED TO BE RED TODAY. DO NOT "FIX" IT BY DELETING IT,
+# BY ADDING `continue-on-error`, BY TURNING OFF `block-insecure`, OR BY LETTING
+# A LEG NAMED 6.7 RESOLVE 6.6. Every one of those recreates the exact defect
+# this workflow was split out of (markup-carve/shopware-carve#20), one layer up
+# and harder to see, because then a job name asserts coverage that nothing has.
+#
+# WHY IT IS RED. `composer.json` declares `shopware/core: ~6.6.0 || ~6.7.0`, and as
+# of 2026-08-21 no 6.7 installs at all. Composer 2.9's default `block-insecure`
+# refuses the whole line by two stacked mechanisms: 20 open advisories on
+# `shopware/core` itself cap the line below v6.7.10.1, and the v6.7.10.1 - v6.7.13.0
+# pool that leaves then reaches either `dompdf/dompdf 3.1.4` (six advisories) or
+# `mcp/sdk` (PKSA-p9gd-j6gr-6f9t), directly or through `symfony/mcp-bundle`.
+# Measured against a clean COMPOSER_HOME, `composer update --with
+# shopware/core:~6.7.0` reports:
+#
+#     Root composer.json requires shopware/core ~6.6.0 || ~6.7.0 -> satisfiable by
+#     shopware/core[v6.7.10.1, ..., v6.7.13.0].
+#     - shopware/core[v6.7.10.1, ..., v6.7.12.1] require dompdf/dompdf 3.1.4 ...
+#       affected by security advisories
+#     - shopware/core v6.7.13.0 requires mcp/sdk ^0.6.0 ... affected by security
+#       advisories
+#
+# A plugin declaring support for a line it cannot even install is a real,
+# reportable state, and the red says so with Composer's own reasoning attached.
+# It needs no commit here to clear: when the advisory window closes these legs go
+# green on their own.
+#
+# WHY IT IS A SEPARATE FILE. `README.md` line 4 carries a public `ci.yml` badge on
+# a Packagist-published package that merchants evaluate. The badge should track
+# the line a merchant can actually install, so 6.6 and the lint/JS lanes stay in
+# `ci.yml` and the 6.7 legs live here - measured on every pull request, just not
+# summarized into that badge. Splitting the file is the only thing that changed;
+# the install and the read-back below are byte-identical to the ones in `ci.yml`,
+# and if you edit one you must edit both.
+#
+# `pull_request` only, deliberately. A red push run on `main` would sit permanently
+# on the default branch's commit list with nothing a commit here could do about it.
+#
+# See `ci.yml`'s own header for the axis this pair of legs belongs to.
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test (PHP ${{ matrix.php-version }}, Shopware ${{ matrix.shopware }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.5']
+        shopware: ['~6.7.0']
+    steps:
+      - name: Checkout shopware-carve
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+
+      - name: Install Shopware ${{ matrix.shopware }}
+        run: |
+          set -euo pipefail
+          if ! composer update --no-interaction --no-progress --prefer-dist \
+                 --with "shopware/core:${{ matrix.shopware }}"; then
+            echo "::error::shopware/core ${{ matrix.shopware }} could not be installed, so the support composer.json declares for that line is unverified. Composer's reasoning is above; when it names a security advisory the fix is upstream and this leg stays red until it lands."
+            exit 1
+          fi
+
+      - name: Verify the Shopware line this leg measures
+        run: |
+          set -euo pipefail
+          constraint='${{ matrix.shopware }}'
+          # '~6.7.0' -> '6.7'. The leg asserts the LINE, not an exact patch: which
+          # patch release Composer picks is upstream's business, which major it
+          # picked is this job's whole point.
+          line="${constraint#\~}"
+          line="${line%.*}"
+          installed="$(composer show --format=json shopware/core 2>/dev/null | php -r '$d = json_decode(stream_get_contents(STDIN), true); echo $d["versions"][0] ?? "";')"
+          if [ -z "${installed}" ]; then
+            echo "::error::shopware/core is not installed, so this leg exercised no Shopware at all"
+            exit 1
+          fi
+          echo "constraint ${constraint} -> installed ${installed}"
+          case "${installed#v}" in
+            "${line}."*) ;;
+            *)
+              echo "::error::this leg is named for Shopware ${line} but installed ${installed}, so it measures a line the job does not claim"
+              exit 1
+              ;;
+          esac
+
+      - name: Test
+        run: composer test
+
+  # PHPStan is the more sensitive half of this workflow: `src/` references 15
+  # distinct `Shopware\Core\*` classes while `tests/` reaches 3, so a signature or
+  # namespace change between 6.6 and 6.7 shows up here well before it shows up in
+  # an assertion. That is the reading this workflow exists to keep taking.
+  #
+  # PHP stays fixed at 8.3 - the PHP axis is the test job's job, and crossing both
+  # here would buy repetition rather than coverage.
+  static-analysis:
+    name: PHPStan (Shopware ${{ matrix.shopware }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shopware: ['~6.7.0']
+    steps:
+      - name: Checkout shopware-carve
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install Shopware ${{ matrix.shopware }}
+        run: |
+          set -euo pipefail
+          if ! composer update --no-interaction --no-progress --prefer-dist \
+                 --with "shopware/core:${{ matrix.shopware }}"; then
+            echo "::error::shopware/core ${{ matrix.shopware }} could not be installed, so nothing here analyses this plugin against that line."
+            exit 1
+          fi
+
+      # Same read-back as the test job, and for the same reason: analysing 6.6
+      # under a job named for 6.7 is worse than not running at all.
+      - name: Verify the Shopware line this leg measures
+        run: |
+          set -euo pipefail
+          constraint='${{ matrix.shopware }}'
+          line="${constraint#\~}"
+          line="${line%.*}"
+          installed="$(composer show --format=json shopware/core 2>/dev/null | php -r '$d = json_decode(stream_get_contents(STDIN), true); echo $d["versions"][0] ?? "";')"
+          if [ -z "${installed}" ]; then
+            echo "::error::shopware/core is not installed, so this leg analysed against no Shopware at all"
+            exit 1
+          fi
+          echo "constraint ${constraint} -> installed ${installed}"
+          case "${installed#v}" in
+            "${line}."*) ;;
+            *)
+              echo "::error::this leg is named for Shopware ${line} but installed ${installed}, so it measures a line the job does not claim"
+              exit 1
+              ;;
+          esac
+
+      - name: PHPStan
+        run: composer stan
