@@ -5,7 +5,21 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Pin the admin live preview's engine into the plugin ZIP:
+  `src/Resources/app/administration/package-lock.json` now travels with the
+  extension, so the `npm install` behind `shopware-cli extension zip` builds the
+  preview against the stated `markup-carve/carve` npm version rather than
+  whatever the registry resolves at build time.
+
 ## [0.1.2] - 2026-08-18
+
+**Superseded - never shipped.** The 0.1.2 release was published without an
+installable ZIP and nothing reached the Shopware Community Store, so no merchant
+received any of the below. It is left published as the record of what happened;
+everything in this section ships in the next release instead. See the 0.1.2
+release note and RELEASING.md, "The asset audit".
 
 ### Security
 
