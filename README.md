@@ -614,6 +614,11 @@ inject arbitrary HTML including `<script>` tags into the storefront.
 | 6.7.x | Yes |
 | < 6.6 | No |
 
+Each supported line has its own CI leg that installs that line by name and reads the
+installed version back, so a row here is a measured claim rather than a declared one. A
+red leg therefore means support for that line is currently unverified - including when
+the cause is upstream, such as Composer refusing a release over a security advisory.
+
 ---
 
 ## License
