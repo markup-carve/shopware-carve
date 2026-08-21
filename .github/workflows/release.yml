@@ -22,6 +22,80 @@ jobs:
         with:
           fetch-depth: 0
 
+      # EVERYTHING THAT CAN BE MISSING IS CHECKED HERE, FIRST, before PHP is
+      # installed, before the CLI exists and before anything is built - so a
+      # release that cannot succeed is refused in seconds, while nothing has
+      # been published and nothing has been uploaded anywhere.
+      #
+      # This step used to sit at position 7, behind `Validate extension` and
+      # `Build extension ZIP`. On 2026-08-19 that cost the 0.1.2 release: the
+      # notes file was missing, the run got as far as building the ZIP, failed
+      # here, and skipped both publish steps. The release object had already
+      # been created by hand ten hours earlier via the draft-first path in
+      # RELEASING.md, so what was left behind was a published release page with
+      # a tag and a body and no ZIP - which looks exactly like a release that
+      # shipped. Nobody noticed for eight weeks.
+      #
+      # Moving this to the front does not fix that case on its own, and it is
+      # important not to believe it does: the workflow does not own the path
+      # that created that release object, so it cannot refuse before a hand-made
+      # release exists. What it does is make the workflow's own failures cheap
+      # and early. The check that actually catches the 0.1.2 shape is
+      # .github/scripts/check-release-assets.sh, run on a schedule by
+      # release-audit.yml and again at the end of this job.
+      - name: Preflight
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME}"
+          failed=0
+
+          # 1. The release body. This is the one that failed for 0.1.2.
+          notes=".github/release-notes/${version}.md"
+          if [ ! -s "${notes}" ]; then
+            echo "::error::missing or empty release notes file ${notes} - create it before tagging ${version} (RELEASING.md step 2)"
+            failed=1
+          else
+            echo "NOTES_FILE=${notes}" >> "${GITHUB_ENV}"
+            echo "ok  release notes  ${notes}"
+          fi
+
+          # 2. The plugin version. Shopware reads composer.json's `version` as
+          #    THE plugin version - the tag is not consulted - so a mismatch
+          #    publishes an installable ZIP that reports itself as some other
+          #    release, with every step green and nothing to look at. At the
+          #    time of writing composer.json says 0.1.2 while release notes for
+          #    0.1.3 already exist, so this is not hypothetical.
+          declared="$(php -r 'echo json_decode(file_get_contents("composer.json"), true)["version"] ?? "";' 2>/dev/null \
+            || sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' composer.json | head -1)"
+          if [ "${declared}" != "${version}" ]; then
+            echo "::error::composer.json declares version ${declared:-<none>} but the tag is ${version}. Shopware reads that field as the plugin version, so this would ship a ${declared:-?} plugin under a ${version} tag. Roll composer.json to ${version} and re-tag."
+            failed=1
+          else
+            echo "ok  plugin version ${declared}"
+          fi
+
+          # 3. The store changelogs. These are what a merchant reads in the
+          #    Shopware account, and `shopware-cli extension validate` requires
+          #    the released version to appear in them. Catching it here rather
+          #    than at the validate step keeps every input failure in one place.
+          #    Matched LITERALLY, field by field, rather than by interpolating
+          #    the version into a regex where its dots would match any
+          #    character - a check that accepts `# 0x1x3` for tag `0.1.3` is
+          #    the kind that quietly stops checking.
+          for file in CHANGELOG_en-GB.md CHANGELOG_de-DE.md; do
+            if ! awk -v v="${version}" '$1 == "#" && $2 == v { hit = 1 } END { exit !hit }' "${file}"; then
+              echo "::error::${file} has no '# ${version}' section - roll it before tagging (RELEASING.md step 1). A merchant reads this file in the store listing."
+              failed=1
+            else
+              echo "ok  store changelog ${file}"
+            fi
+          done
+
+          [ "${failed}" -eq 0 ] || {
+            echo "::error::preflight refused ${version}. Nothing has been built, published or uploaded."
+            exit 1
+          }
+
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -37,17 +111,38 @@ jobs:
       - name: Build extension ZIP
         run: shopware-cli extension zip .
 
-      # Release notes live in the repo (.github/release-notes/<version>.md) so
-      # they survive even if the GitHub release is deleted, and the tag alone
-      # produces a fully-populated release. Fail loudly if the file is missing.
-      - name: Resolve release notes
-        run: |
-          NOTES=".github/release-notes/${GITHUB_REF_NAME}.md"
-          if [ ! -f "$NOTES" ]; then
-            echo "::error::Missing release notes file $NOTES - create it before tagging ${GITHUB_REF_NAME}."
-            exit 1
-          fi
-          echo "NOTES_FILE=$NOTES" >> "$GITHUB_ENV"
+      # THE ORDER OF THE NEXT TWO STEPS IS DELIBERATE AND IS PART OF THIS FIX.
+      #
+      # The store upload used to run AFTER the GitHub release was published,
+      # which is the same failure shape one layer up: a store upload that fails
+      # on its own - bad credentials, a store-side rejection, a network blip -
+      # leaves a GitHub release that is published, has its ZIP attached and
+      # looks entirely complete, while no merchant received anything. Nothing
+      # anywhere can tell that apart from a release that shipped.
+      #
+      # So the step whose failure is INVISIBLE goes first, and the step whose
+      # failure is DETECTABLE goes last. If the store upload fails now, the
+      # GitHub release never gets its ZIP, and check-release-assets.sh sees a
+      # published release with nothing attached and says so - loudly, on a
+      # schedule, forever. The failure is preserved in the one place something
+      # is watching instead of being papered over by a green release page.
+      #
+      # THE ONE THING THIS ORDER COSTS, and the escape hatch for it. A store
+      # submission is not idempotent: if the upload succeeds and the publish
+      # below then fails, a plain re-run would try to submit the same version
+      # again and can be rejected as a duplicate, so the run would never reach
+      # the publish step and the release could never be completed by re-running.
+      # No ordering fixes that - it is a property of the external submission -
+      # so it gets an explicit lever instead. Set the repository variable
+      # `SKIP_STORE_UPLOAD` to `true`, re-run, and the job goes straight to
+      # publishing the ZIP the store already has; unset it afterwards.
+      #
+      # As measured when this was written the step had never actually executed:
+      # it self-skipped on every release including both successful ones, because
+      # the account secrets are not configured on this repository.
+      - name: Upload to Shopware Community Store
+        if: ${{ env.SHOPWARE_CLI_ACCOUNT_EMAIL != '' && vars.SKIP_STORE_UPLOAD != 'true' }}
+        run: shopware-cli account producer extension upload *.zip
 
       - name: Publish GitHub release with ZIP
         uses: softprops/action-gh-release@v2
@@ -56,6 +151,28 @@ jobs:
           body_path: ${{ env.NOTES_FILE }}
           fail_on_unmatched_files: true
 
-      - name: Upload to Shopware Community Store
-        if: ${{ env.SHOPWARE_CLI_ACCOUNT_EMAIL != '' }}
-        run: shopware-cli account producer extension upload *.zip
+      # Assert the outcome rather than trusting the step above to have produced
+      # it. `fail_on_unmatched_files` guards the local glob, not what the API
+      # ended up holding, and the release object may have been created by hand
+      # before this run - so the only trustworthy statement about whether this
+      # tag is installable is the one the API gives back after publishing.
+      #
+      # Same script the scheduled audit runs, scoped to this tag: one definition
+      # of "shipped", used both at release time and forever after.
+      - name: Verify the release carries its ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Bounded, never unbounded: the release was created moments ago and
+          # the list endpoint can lag it by a second or two. Three tries and
+          # then the failure stands.
+          for attempt in 1 2 3; do
+            if .github/scripts/check-release-assets.sh --tag "${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            echo "attempt ${attempt} did not see the asset yet"
+            [ "${attempt}" -eq 3 ] || sleep 5
+          done
+          echo "::error::${GITHUB_REF_NAME} was published without its ZIP. The release page exists and is not installable - fix it before anyone reads it as shipped."
+          exit 1
