@@ -1,0 +1,194 @@
+name: Storefront JS
+
+# The storefront lane. `src/Resources/app/storefront/src/main.js`,
+# `carve-diagrams.js` and `scss/base.scss` ship to merchants and, before this
+# job, were built, bundled, linted and compiled by nothing: the only
+# `package.json` under `src/Resources/app/` is `administration/`, the `admin-js`
+# job in ci.yml is scoped to that directory, and no workflow mentioned
+# storefront at all. A change that broke the storefront bundle went green
+# (markup-carve/shopware-carve#23) - the same shape as the admin lane one issue
+# earlier (markup-carve/shopware-carve#19).
+#
+# What is deliberately NOT here, because the storefront is dependency-free at
+# build time:
+#
+#   * No `package.json` under `src/Resources/app/storefront/`. `shopware-cli
+#     extension zip` runs `npm install` in an app directory that has one, so a
+#     devDependency there ships a build tool inside the plugin ZIP - the reason
+#     ci.yml already runs esbuild through npx for the admin lane. The storefront
+#     needs no runtime dependency, so a manifest would buy nothing and cost that.
+#   * No engine verification. `main.js` imports one relative file; nothing else
+#     is resolved at build time. Mermaid and Chart.js arrive at RUNTIME, from a
+#     CDN, and Kroki over `fetch`. There is no lockfile to read back because
+#     there is nothing to lock.
+#
+# So the questions this job can actually answer are: does it parse, does the
+# entry still contain the code it dispatches, does the SCSS still compile, and
+# is the one webpack-specific invariant still true. Every assertion below is
+# structural - on what the artifact CONTAINS - never on a command exiting 0,
+# because a bundle whose entry lost its import builds fine and is empty.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  storefront-js:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/Resources/app/storefront
+    steps:
+      - name: Checkout shopware-carve
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          # No `cache:` - there is no lockfile in this directory to key a cache
+          # on, and by design there never will be. Every tool below is pinned by
+          # version in its own npx invocation instead.
+          node-version: '22'
+
+      - name: Lint the storefront sources
+        run: |
+          set -euo pipefail
+          npx --yes eslint@10.8.1 \
+            --no-config-lookup \
+            --config "${GITHUB_WORKSPACE}/.github/storefront-eslint.config.mjs" \
+            src
+
+      # Building is the parse check that a linter cannot fully replace: esbuild
+      # resolves the relative import graph, so a renamed or deleted
+      # carve-diagrams.js fails here rather than in a merchant's theme build.
+      - name: Bundle the storefront entry
+        run: |
+          set -euo pipefail
+          out="$(mktemp -d)"
+          echo "STOREFRONT_OUT=${out}" >> "${GITHUB_ENV}"
+          npx --yes esbuild@0.28.2 --bundle src/main.js \
+            --format=esm --target=es2020 \
+            --outfile="${out}/storefront.js" --metafile="${out}/meta.json"
+
+      # The #19 move, one lane over. `main.js` is three lines whose entire job is
+      # to pull in carve-diagrams.js; drop that import and esbuild still emits a
+      # bundle, still exits 0, and the plugin ships a storefront that renders no
+      # diagram at all. So assert the input graph, not the exit code.
+      - name: The bundle actually contains the storefront sources
+        run: |
+          set -euo pipefail
+          node -e '
+            const meta = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+            const inputs = Object.keys(meta.inputs);
+            const required = ["src/main.js", "src/carve-diagrams.js"];
+            const missing = required.filter((f) => !inputs.includes(f));
+            if (missing.length > 0) {
+              console.error("::error::the storefront bundle has no input for " + missing.join(", ") +
+                " - the entry no longer reaches it, so the shipped bundle is empty of it. inputs: " +
+                inputs.join(", "));
+              process.exit(1);
+            }
+            console.log("bundle inputs: " + inputs.join(", "));
+          ' "${STOREFRONT_OUT}/meta.json"
+
+      # And the payload, because an input list says a file was read, not that
+      # what matters survived. These six strings are the whole contract between
+      # carve-php's FencedRenderExtension and this bundle: three markers it
+      # dispatches on, three services it reaches for.
+      - name: The bundle still carries the markers and the renderers it dispatches to
+        run: |
+          set -euo pipefail
+          node -e '
+            const bundle = require("fs").readFileSync(process.argv[1], "utf8");
+            const required = [
+              "pre.mermaid",
+              "div.chart",
+              "pre.plantuml",
+              "cdn.jsdelivr.net/npm/mermaid",
+              "cdn.jsdelivr.net/npm/chart.js",
+              "kroki.io/plantuml/svg",
+            ];
+            const missing = required.filter((s) => !bundle.includes(s));
+            if (missing.length > 0) {
+              console.error("::error::the storefront bundle is missing " + missing.join(", ") +
+                " - it built, but it no longer does what the storefront needs it to do");
+              process.exit(1);
+            }
+            console.log("all " + required.length + " storefront markers and renderer targets are in the bundle");
+          ' "${STOREFRONT_OUT}/storefront.js"
+
+      # The one invariant esbuild cannot see, and the only storefront-specific
+      # hazard here. Shopware builds storefront JS with WEBPACK. The three CDN
+      # references work only because each is a dynamic `import()` carrying
+      # `/* webpackIgnore: true */`; make one static, or drop the comment, and
+      # webpack tries to resolve a remote URL while a merchant builds their
+      # theme. It succeeds in this job either way, so it has to be asserted on
+      # the source.
+      - name: Remote code stays out of the webpack graph
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const root = "src";
+            const files = [];
+            (function walk(dir) {
+              for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                const p = path.join(dir, entry.name);
+                if (entry.isDirectory()) walk(p);
+                else if (entry.name.endsWith(".js")) files.push(p);
+              }
+            })(root);
+            if (files.length === 0) {
+              console.error("::error::found no storefront .js files under " + root + ", so this check measured nothing");
+              process.exit(1);
+            }
+
+            let bad = 0;
+            for (const file of files) {
+              const source = fs.readFileSync(file, "utf8");
+
+              // A static import of a remote URL is unconditionally wrong here:
+              // webpack has no loader that can fetch one.
+              for (const m of source.matchAll(/^\s*import\s[^;]*?["'"'"'](https?:\/\/[^"'"'"']+)["'"'"']/gm)) {
+                console.error("::error file=" + file + "::static import of the remote module " + m[1] +
+                  " - webpack cannot resolve that during a theme build. Load it with a dynamic " +
+                  "import(/* webpackIgnore: true */ URL) instead.");
+                bad++;
+              }
+
+              // Every dynamic import that is not a plain relative specifier has
+              // to opt out of the webpack graph.
+              for (const m of source.matchAll(/import\s*\(([\s\S]*?)\)/g)) {
+                const arg = m[1];
+                if (/^\s*["'"'"']\.{1,2}\//.test(arg)) continue;
+                if (arg.includes("webpackIgnore: true")) continue;
+                console.error("::error file=" + file + "::dynamic import(" + arg.trim().slice(0, 60) +
+                  ") carries no /* webpackIgnore: true */, so webpack will try to bundle it during a theme build");
+                bad++;
+              }
+            }
+            if (bad > 0) process.exit(1);
+            console.log("checked " + files.length + " storefront file(s): remote code is loaded at runtime only");
+          '
+
+      # base.scss is 432 lines shipped to every storefront page and compiled by
+      # nothing in this repo. It uses no @use, no @import and no Shopware theme
+      # variable, so it compiles standalone with the same dart-sass the theme
+      # build uses.
+      - name: Compile the storefront SCSS
+        run: |
+          set -euo pipefail
+          out="$(mktemp -d)"
+          npx --yes sass@1.103.1 --no-source-map src/scss/base.scss "${out}/base.css"
+          node -e '
+            const css = require("fs").readFileSync(process.argv[1], "utf8");
+            if (!css.includes(".carve-content")) {
+              console.error("::error::the compiled storefront CSS carries no .carve-content rule, " +
+                "so nothing it emits can reach rendered Carve output");
+              process.exit(1);
+            }
+            console.log("compiled " + css.length + " bytes of storefront CSS");
+          ' "${out}/base.css"
