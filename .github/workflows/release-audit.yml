@@ -1,0 +1,59 @@
+name: Release audit
+
+# WHAT THIS WATCHES, AND WHY A SCHEDULE RATHER THAN A RELEASE-TIME CHECK.
+#
+# release.yml verifies its own releases at the end of the job, which covers
+# every release this workflow makes. It cannot cover the ones it does not make.
+# RELEASING.md documents a draft-first flow where a human creates the release
+# object before pushing the tag, and 0.1.2 went out that way: the object was
+# created by hand, the run then failed at its notes step and skipped both
+# publish steps, and what remained was a published release with a tag, a body
+# and no ZIP. Every step that could have complained had already been skipped,
+# so release-time verification - however well placed - had nothing to say.
+#
+# The eight weeks that followed are the point of this file. There was never a
+# moment when something asked "is what is published actually installable?", so
+# a release and a non-release stayed indistinguishable until someone happened
+# to read the API by hand. This asks, on a schedule, about every published
+# release there has ever been - so a broken one is found within a day whether
+# it broke in this workflow, in a hand-created release, in a store-upload
+# failure, or by someone deleting an asset years later.
+#
+# It FAILS rather than warns, unlike engine-drift.yml. That job warns because
+# what it watches is upstream moving, which is not a defect in this repository
+# and cannot be fixed from it. This one is the opposite: a published release
+# with no artifact is entirely this repository's problem, entirely fixable from
+# it, and every day it stays broken is another day merchants do not have a
+# release they are being told exists.
+
+on:
+  schedule:
+    # 05:00 UTC daily, alongside the other drift runs in the org.
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Check only this tag (blank = every published release)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  release-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Every published release must carry an installable ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -n "${TAG}" ]; then
+            .github/scripts/check-release-assets.sh --tag "${TAG}"
+          else
+            .github/scripts/check-release-assets.sh
+          fi

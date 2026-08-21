@@ -1,9 +1,22 @@
 # Releasing
 
 The release is driven by a **git tag**. Pushing a tag `X.Y.Z` on `main` runs
-`.github/workflows/release.yml`, which validates the plugin, builds the
-installable ZIP with `shopware-cli`, and publishes a GitHub release with the
-ZIP attached and the notes from `.github/release-notes/X.Y.Z.md`.
+`.github/workflows/release.yml`, which checks its inputs, builds the installable
+ZIP with `shopware-cli`, uploads it to the store, and publishes a GitHub release
+with the ZIP attached and the notes from `.github/release-notes/X.Y.Z.md`.
+
+The job runs in this order, and the order is load-bearing:
+
+1. **Preflight** - every input that can be missing, checked before PHP is even
+   installed: the notes file, `composer.json`'s `version` against the tag, and a
+   `# X.Y.Z` section in both store changelogs. A release that cannot succeed is
+   refused here, in seconds, with nothing built and nothing published.
+2. Validate and build the ZIP.
+3. **Upload to the store**, then **publish the GitHub release** - in that order,
+   because a failed store upload is invisible and a GitHub release with no ZIP
+   is not. See "Why the store upload goes first" below.
+4. **Verify the published release carries its ZIP**, by asking the API rather
+   than trusting the publish step.
 
 ## Steps
 
@@ -13,8 +26,12 @@ ZIP attached and the notes from `.github/release-notes/X.Y.Z.md`.
      (store format; the store validator requires a `CHANGELOG*.md` with the
      released version).
 2. **Write the release notes** at `.github/release-notes/X.Y.Z.md`. This is the
-   GitHub release body. The workflow **fails** if the file is missing, so it can
-   never publish an empty release.
+   GitHub release body. Preflight **fails** if the file is missing or empty, so
+   it can never publish an empty release.
+   **Roll `composer.json`'s `version` to `X.Y.Z` in the same PR.** Shopware reads
+   that field as the plugin version - the tag is not consulted - so a mismatch
+   ships a plugin that reports itself as the previous release, with every step
+   green. Preflight refuses the tag rather than let that out.
 3. Open a PR with 1 and 2, merge to `main`.
 4. **Tag on `main` and push:**
    ```bash
@@ -24,6 +41,8 @@ ZIP attached and the notes from `.github/release-notes/X.Y.Z.md`.
    ```
 5. Watch the run: `gh run list --workflow=release.yml`. On success the release
    is published with `ShopwareCarve-X.Y.Z.zip` attached and the notes body.
+   You do not have to keep watching: `.github/workflows/release-audit.yml` runs
+   daily and fails if any published release is missing its ZIP.
 
 ## Notes source of truth
 
@@ -54,15 +73,86 @@ release. `softprops/action-gh-release` sets the body from `body_path`.
   engine CI measured rather than whatever the registry served at release time -
   bump the lockfile (`npm install` in that directory) as a deliberate step when a
   release should ship a newer engine.
-- **Version is frozen until a real release.** Per the org convention, the
-  `version` field in `composer.json` stays at its initial value until the
-  maintainer explicitly cuts a release. Shopware reads this field as the plugin
-  version (unlike plain Composer libs where the tag drives it).
+- **Version moves only at release time, and then it must move.** Per the org
+  convention the `version` field in `composer.json` is not bumped per feature
+  PR - it changes when the maintainer cuts a release, in the same PR as the
+  changelogs and the notes. It is not optional at that point: Shopware reads
+  this field as the plugin version (unlike plain Composer libs where the tag
+  drives it), so a tag ahead of it ships a mislabeled plugin. Preflight compares
+  the two and refuses the tag.
 - **Store upload is optional.** The `Upload to Shopware Community Store` step runs
   only when `SHOPWARE_CLI_ACCOUNT_EMAIL` / `SHOPWARE_CLI_ACCOUNT_PASSWORD` repo
   secrets are set; otherwise it self-skips and only the GitHub release is produced.
 - **Packagist** is not automatic. Submit the package once at packagist.org; it
   then auto-indexes future tags for `composer require markup-carve/shopware-carve`.
+
+## Why the store upload goes first
+
+The store upload runs **before** the GitHub release is published, which reads
+backwards until you ask which failure anyone can see.
+
+A store upload that fails on its own - bad credentials, a store-side rejection,
+a network blip - used to leave a GitHub release that was published, had its ZIP
+attached and looked completely finished, while no merchant had received
+anything. Nothing anywhere could tell that apart from a release that shipped.
+
+Now the invisible step goes first and the detectable one goes last. If the store
+upload fails, the GitHub release never gets its ZIP, and the asset audit sees a
+published release with nothing attached and says so. The failure ends up in the
+one place something is watching, instead of being hidden behind a green release
+page.
+
+**What that costs, and the lever for it.** A store submission is not
+idempotent. If the upload succeeds and the publish step then fails, re-running
+the tag would try to submit the same version again and can be rejected as a
+duplicate - so the run would never reach the publish step, and the release could
+not be completed by re-running. No ordering fixes that; it is a property of the
+external submission. So when you hit it, set the repository variable
+`SKIP_STORE_UPLOAD` to `true`, re-run, and the job goes straight to publishing
+the ZIP the store already has. Unset it afterwards.
+
+```bash
+gh variable set SKIP_STORE_UPLOAD --body true
+gh run rerun <id>
+gh variable delete SKIP_STORE_UPLOAD
+```
+
+**As of this writing the store step has never actually run.** It self-skipped on
+every release including 0.1.0 and 0.1.1, because `SHOPWARE_CLI_ACCOUNT_EMAIL` and
+`SHOPWARE_CLI_ACCOUNT_PASSWORD` are not configured on this repository - so
+nothing has ever been pushed to the Community Store by this workflow. Set the
+secrets when that should start happening.
+
+## The asset audit
+
+`.github/scripts/check-release-assets.sh` asks the releases API whether every
+**published** release carries a `*.zip`. Drafts are excluded on purpose: a draft
+with no asset is a release being prepared, a published one with no asset is a
+release that lied.
+
+Run it by hand any time - it needs nothing but `gh`:
+
+```bash
+.github/scripts/check-release-assets.sh            # every published release
+.github/scripts/check-release-assets.sh --tag 0.1.1
+```
+
+`.github/workflows/release-audit.yml` runs it daily and on demand
+(`gh workflow run release-audit.yml -f tag=X.Y.Z`), and `release.yml` runs the
+same script scoped to the tag it just published.
+
+**This exists because of 0.1.2.** That run built the ZIP, failed at its notes
+step, and skipped both publish steps - but the release object already existed,
+created by hand ten hours earlier through the draft-first flow below. What was
+left was a published release with a tag, a body and no ZIP, indistinguishable
+from one that shipped. It stayed that way for eight weeks, and no merchant ever
+received 0.1.2 or the carve-php security floor it carried. Whether 0.1.2 is
+re-run or superseded is a maintainer decision; the audit is what makes sure the
+next one is noticed the same day.
+
+If it fails, the release is not installable. Either re-run the release workflow
+for that tag (see the re-run note above) or unpublish the release - leaving a
+published release that ships nothing is the failure itself, not a cosmetic one.
 
 ## Draft-first alternative
 
