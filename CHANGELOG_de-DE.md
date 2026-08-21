@@ -1,5 +1,15 @@
 # Nächste Version
+- Die Engine der Admin-Live-Vorschau wird im Plugin-ZIP festgeschrieben, sodass ein Build die angegebene `@markup-carve/carve`-Version auflöst und nicht die jeweils aktuelle aus der Registry.
+
+# 0.1.2
+- Erfordert carve-php 0.1.5: Bei einem URL-Attribut mit Werteliste wird nun jeder Kandidat geprueft, statt dem fuehrenden Schema des Werts zu vertrauen. Aktualisieren, wenn nicht vertrauenswuerdiges Carve gerendert oder nicht vertrauenswuerdiges HTML importiert wird.
 - Konfigurierbare `:name:`-Symbol-Kurzbefehle mit vertrauenswürdigen rohen HTML-Ersatzwerten hinzugefügt.
+- Eine Kopfzelle in Listentabellen wird jetzt als `<th scope="col">` statt als blosses `<th>` gerendert. Theme-Overrides oder Tests, die auf das blosse Tag pruefen, muessen angepasst werden.
+
+# 0.1.1
+- Optionales Rendering von PlantUML- und Puml-Bloecken ueber Kroki, standardmaessig deaktiviert.
+- Carve-Engine auf 0.1.4 aktualisiert fuer die aktuelle Sicherheitshaertung und Rendering-Korrekturen.
+- Plugin-Service-Konfiguration aktualisiert und Entwicklungswerkzeuge auf getaggte stabile Releases festgelegt.
 
 # 0.1.0
 - Erste Veroeffentlichung: rendert die Carve-Markup-Sprache als sicheres HTML in Shopware 6.6 und 6.7.
