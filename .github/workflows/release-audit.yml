@@ -19,6 +19,24 @@ name: Release audit
 # it broke in this workflow, in a hand-created release, in a store-upload
 # failure, or by someone deleting an asset years later.
 #
+# ONE RELEASE IS EXEMPT AND ONLY ONE. The maintainer ruled 0.1.2 superseded by
+# 0.1.3 rather than re-run: it keeps its page as the record of what happened, it
+# will never get a ZIP, and 0.1.3 carries its contents. Without an exemption
+# this job would fail every morning over a decision already made, which is how a
+# job gets muted - the same silence as not checking, reached from the other
+# side. The exemption is a single named version with its reason, held in
+# check-release-assets.sh, printed on its own `skip` line so a reader of a
+# passing log still sees that 0.1.2 ships nothing. Any OTHER assetless release
+# still fails, and the exemption itself fails once the release it names is gone.
+#
+# The step before the audit is what keeps that true. An exclusion is only safe
+# while the check around it still refuses everything else, and a green run says
+# nothing about which of those is the case - so the self-test feeds the script
+# listings it will never meet in production (a second assetless release, a
+# look-alike tag, an exemption pointing at a release that vanished) and asserts
+# it still says no. It runs here, every day, against the same script the live
+# check below uses.
+#
 # It FAILS rather than warns, unlike engine-drift.yml. That job warns because
 # what it watches is upstream moving, which is not a defect in this repository
 # and cannot be fixed from it. This one is the opposite: a published release
@@ -45,6 +63,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      # Before believing what the audit says about the real releases, check that
+      # it can still say no - see the note above.
+      - name: The audit still refuses every assetless release it does not name
+        run: .github/scripts/check-release-assets.test.sh
 
       - name: Every published release must carry an installable ZIP
         env:

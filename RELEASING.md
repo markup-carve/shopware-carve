@@ -130,6 +130,24 @@ secrets when that should start happening.
 with no asset is a release being prepared, a published one with no asset is a
 release that lied.
 
+**0.1.2 is exempt, by name, and it is the only exemption.** It is listed in the
+script's `superseded_releases` table with its reason, so the daily job passes
+while still printing a `skip` line that says 0.1.2 ships nothing. Any other
+assetless published release fails exactly as before, a tag that merely looks
+like it (`0.1.20`) gets no exemption, and the entry itself fails once no
+published release with that tag exists. Adding a line to that table is a
+maintainer decision about one specific release - it is never the way to quiet a
+failing audit, because the audit failing is the only signal that a release is
+not installable.
+
+`.github/scripts/check-release-assets.test.sh` is what keeps that honest. It
+runs the script against canned listings it will never meet in production - a
+second assetless release, a look-alike tag, an exemption pointing at a release
+that has gone - and asserts it still refuses them. The audit workflow runs it
+every morning before it trusts the live answer, because a green audit says
+nothing about whether the check can still say no. Run it by hand with
+`.github/scripts/check-release-assets.test.sh`; it needs only `bash` and `jq`.
+
 Run it by hand any time - it needs nothing but `gh`:
 
 ```bash
@@ -146,13 +164,21 @@ step, and skipped both publish steps - but the release object already existed,
 created by hand ten hours earlier through the draft-first flow below. What was
 left was a published release with a tag, a body and no ZIP, indistinguishable
 from one that shipped. It stayed that way for eight weeks, and no merchant ever
-received 0.1.2 or the carve-php security floor it carried. Whether 0.1.2 is
-re-run or superseded is a maintainer decision; the audit is what makes sure the
-next one is noticed the same day.
+received 0.1.2 or the carve-php security floor it carried.
 
-If it fails, the release is not installable. Either re-run the release workflow
-for that tag (see the re-run note above) or unpublish the release - leaving a
-published release that ships nothing is the failure itself, not a cosmetic one.
+**That was ruled: 0.1.2 is superseded, not re-run.** It keeps its page, its tag
+and its body - amended to say plainly that nothing shipped from it - and 0.1.3
+carries its whole content, the carve-php 0.1.5 requirement included, so a shop
+going from 0.1.1 to 0.1.3 misses nothing. Do not re-run the 0.1.2 tag: it would
+attach an artifact under a body stating none was ever attached, and leave the
+audit's exemption describing something untrue.
+
+If it fails, the release is not installable. Re-run the release workflow for that
+tag (see the re-run note above), unpublish the release, or - as with 0.1.2 -
+supersede it deliberately: fold its content into the next version, say so on its
+page, and name it in `superseded_releases`. Leaving a published release that
+ships nothing, with nothing recording that, is the failure itself and not a
+cosmetic one.
 
 ## Draft-first alternative
 
