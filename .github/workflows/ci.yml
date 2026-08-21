@@ -24,9 +24,11 @@ on:
 # 6.7 IS MEASURED, BUT NOT FROM THIS FILE. The 6.7 half of the axis lives in
 # `shopware-67.yml`, on the same `pull_request` trigger, running the same install
 # and the same read-back. It is expected to be red: no 6.7 currently installs,
-# because Composer's default `block-insecure` refuses the whole line over upstream
-# security advisories. That red is a true statement about this plugin's declared
-# support and is meant to stay visible - see that file's header before touching it.
+# because Composer refuses by default to load a release under an open security
+# advisory, and every 6.7 candidate is refused - either for an advisory on
+# `shopware/core` itself, or for one on a package it requires. That red is a true
+# statement about this plugin's declared support and is meant to stay visible; see
+# that file's header before touching it.
 #
 # The split is about ONE reader. `README.md` line 4 carries a public `ci.yml` badge
 # on a Packagist-published package that merchants evaluate, and that badge should
