@@ -49,3 +49,121 @@ jobs:
 
       - name: Code sniffer
         run: composer cs-check
+
+  # The JS lane. Before this job existed nothing in CI installed npm at all:
+  # the two jobs above are `composer install`, `engine-drift.yml` is
+  # `composer update`, and `release.yml` installs no dependencies. So
+  # `@markup-carve/carve` was declared in the admin module and exercised by
+  # nothing, and a change that broke the admin bundle went green
+  # (markup-carve/shopware-carve#19).
+  #
+  # Worse than unmeasured: `shopware-cli extension zip` runs `npm install`, so
+  # before this job the FIRST run that resolved this dependency was the one
+  # producing the release artifact (RELEASING.md). A lockfile plus this job move
+  # that resolve to a pull request, where a failure is cheap.
+  admin-js:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/Resources/app/administration
+    steps:
+      - name: Checkout shopware-carve
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          # The engine declares `engines.node >= 20`; 22 is the current LTS.
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: src/Resources/app/administration/package-lock.json
+
+      # `ci`, not `install`: it installs the lockfile exactly and fails when the
+      # lockfile and package.json disagree, so this run measures a stated engine
+      # rather than whatever the registry serves at the moment it runs.
+      - name: Install from the lockfile
+        run: npm ci --no-audit --no-fund
+
+      # A lockfile nothing reads back is not a pin. This step reports the engine
+      # behind the result, and refuses when the lock names none or when what is
+      # installed is not what the lock names - a dropped lockfile, a hand-edited
+      # tree, or an `npm install` that quietly re-resolved.
+      - name: Verify the engine this run measures
+        run: |
+          set -euo pipefail
+          pkg='@markup-carve/carve'
+          locked="$(node -e '
+            const lock = require("./package-lock.json");
+            const entry = (lock.packages || {})["node_modules/@markup-carve/carve"];
+            process.stdout.write(entry && entry.version ? entry.version : "");
+          ')"
+          if [ -z "${locked}" ]; then
+            echo "::error::package-lock.json pins no ${pkg}, so this run measured an unstated engine"
+            exit 1
+          fi
+          # By path, deliberately. The engine's `exports` map does not expose
+          # ./package.json, so `require('@markup-carve/carve/package.json')`
+          # throws ERR_PACKAGE_PATH_NOT_EXPORTED and would read as the package
+          # being absent.
+          installed="$(node -e '
+            const fs = require("fs");
+            const p = "./node_modules/@markup-carve/carve/package.json";
+            process.stdout.write(fs.existsSync(p) ? (JSON.parse(fs.readFileSync(p, "utf8")).version || "") : "");
+          ')"
+          if [ -z "${installed}" ]; then
+            echo "::error::${pkg} is not installed, so nothing here exercises the admin engine"
+            exit 1
+          fi
+          echo "${pkg} locked=${locked} installed=${installed}"
+          if [ "${installed}" != "${locked}" ]; then
+            echo "::error::installed ${pkg} ${installed} is not the locked ${locked}"
+            exit 1
+          fi
+
+      # Installing the engine proves it downloads. Building the entry proves the
+      # admin module graph still resolves against it and that the named export
+      # the components import is really there: esbuild fails on an unresolved
+      # import AND on `No matching export`, so an engine that renamed
+      # `carveToHtml` fails here rather than in a merchant's admin panel.
+      #
+      # esbuild is pinned and run through npx rather than added to the admin
+      # package.json: `shopware-cli extension zip` runs `npm install` in that
+      # directory at release time, so a devDependency there would ship a build
+      # tool inside the plugin ZIP.
+      - name: Build the admin bundle
+        run: |
+          set -euo pipefail
+          out="$(mktemp -d)"
+          npx --yes esbuild@0.28.2 --bundle src/main.js \
+            --loader:.twig=text --format=esm \
+            --outfile="${out}/admin.js" --metafile="${out}/meta.json"
+          # Structural, not a size heuristic: the engine's files must actually be
+          # inputs of the bundle. Without this, aliasing or externalizing the
+          # engine would still produce a bundle and still pass, which is the same
+          # measures-nothing shape this job exists to remove.
+          node -e '
+            const meta = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+            const engine = Object.keys(meta.inputs)
+              .filter((p) => p.includes("node_modules/@markup-carve/carve/"));
+            if (engine.length === 0) {
+              console.error("::error::the admin bundle pulled in no @markup-carve/carve file, so the build did not exercise the engine");
+              process.exit(1);
+            }
+            console.log("engine files in the bundle: " + engine.join(", "));
+          ' "${out}/meta.json"
+
+      # The artifact, not the version string. A version that matches the lock
+      # says nothing about what the engine does; this renders one document
+      # through the export the admin components actually call.
+      - name: Render one document through the installed engine
+        run: |
+          set -euo pipefail
+          node --input-type=module -e '
+            import { carveToHtml } from "@markup-carve/carve";
+            const html = carveToHtml("*bold* and /italic/");
+            console.log(html);
+            if (!html.includes("<strong>bold</strong>") || !html.includes("<em>italic</em>")) {
+              console.error("::error::the installed engine did not render Carve emphasis as expected: " + html);
+              process.exit(1);
+            }
+          '

@@ -334,7 +334,7 @@ repository and no local clone.
 
 #### PHP dependency: carve-php
 
-Pulled in by the plugin's own `composer.json` (`markup-carve/carve-php: ^0.1.3`):
+Pulled in by the plugin's own `composer.json` (`markup-carve/carve-php: ^0.1.5`):
 
 ```bash
 composer require markup-carve/shopware-carve
@@ -351,16 +351,22 @@ var_dump(class_exists('MarkupCarve\\Carve\\CarveConverter')); // bool(true)
 
 ```bash
 cd custom/plugins/ShopwareCarve/src/Resources/app/administration
-npm install @markup-carve/carve
+npm ci
 ```
 
+`npm ci` rather than `npm install @markup-carve/carve`: the plugin ships a
+`package-lock.json`, so `npm ci` installs the engine version CI measured, while
+`npm install <pkg>` re-resolves the range and rewrites the lockfile. The declared
+range stays `^0.1.0`, which on this org's 0.x scheme - where `0.1` is the major
+and the third digit the minor - stops at `< 0.2.0`, so it admits every engine
+minor and excludes only a release the engine itself calls breaking.
+
 > [!NOTE]
-> Both published engines predate a language change: **a heading ends at the
-> newline**, so `# Title` followed by a plain line is a heading and a paragraph
-> rather than one folded title. carve-php 0.1.3 was released 2026-07-27 and
-> carve-js 0.1.2 on 2026-07-12; the change landed after both. The storefront and
-> the admin preview therefore agree with each other and both render the older
-> rule, until carve-php 0.1.4 and carve-js 0.1.3 ship.
+> The two lanes render the same language. carve-php 0.1.5 and carve-js 0.1.4 both
+> implement **a heading ends at the newline**, so `# Title` followed by a plain
+> line is a heading and a paragraph rather than one folded title - the storefront
+> and the admin preview agree. Earlier releases (carve-php 0.1.3, carve-js 0.1.2)
+> predated that change and folded the two lines into one title.
 
 ---
 
