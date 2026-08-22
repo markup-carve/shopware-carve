@@ -38,10 +38,12 @@ on:
 # byte-identical on purpose, and a drift between them is invisible until a leg
 # stops discriminating.
 #
-# Note this is `composer update`, not `composer install`, and there is no
-# `composer.lock` in the repo - that question is markup-carve/shopware-carve#18 and
-# is deliberately parked. If a lockfile ever lands, these legs still have to
-# resolve per-line rather than install it, or the axis stops meaning anything.
+# Note these legs are `composer update`, not `composer install`, and that stays
+# true now that a `composer.lock` exists. A lock pins ONE `shopware/core`, so
+# installing it here would make every leg measure that one version and collapse
+# the axis into the single-line silence it was split out of. The axis resolves per
+# line on purpose; reproducibility lives in the `locked-install` job below, which
+# is the only job that reads the lockfile. If you add a leg here, it resolves.
 jobs:
   test:
     name: Test (PHP ${{ matrix.php-version }}, Shopware ${{ matrix.shopware }})
@@ -185,6 +187,134 @@ jobs:
 
       - name: Code sniffer
         run: composer cs-check
+
+  # THE REPRODUCIBLE LEG, and the only job in this repository that reads
+  # `composer.lock`.
+  #
+  # Every PHP job above resolves instead of installing, and has to: the Shopware
+  # axis picks a different `shopware/core` per leg, and a lockfile pins exactly
+  # one. The cost was that no leg could say which ENGINE it had been green
+  # against. Composer picked `markup-carve/carve-php` fresh out of `^0.1.5` at the
+  # moment each run started, so a carve-php publish changed what CI measured with
+  # no commit here, and a green run recorded nothing about the thing this plugin
+  # actually calls (markup-carve/shopware-carve#18). That is not hypothetical in
+  # this org: `markup-carve/mkdocs-carve` sat red for two days when carve-lang
+  # 0.1.1 published under an open constraint.
+  #
+  # This leg closes that half without touching the axis. The lockfile records one
+  # resolution, `composer install` reproduces it, and the read-back below refuses
+  # when what is installed is not what the lock names - a dropped lockfile, a
+  # hand-edited vendor tree, or a `composer update` whose lock nobody committed.
+  # A lockfile nothing reads back is not a pin, which is the same rule the
+  # `admin-js` job states for the npm half.
+  #
+  # PHP 8.2, because that is the floor `composer.json` declares and the platform
+  # this lock was solved against. A lock installs only where it was solved:
+  # `lcobucci/clock 3.3.1`, which `shopware/core` pulls in, declares
+  # `~8.2.0 || ~8.3.0 || ~8.4.0`, so this exact lock REFUSES to install on 8.5.
+  # Regenerate it on 8.2 (`composer update`) rather than raising this leg's PHP,
+  # or the floor stops being the thing that is reproducible. The top of the PHP
+  # range keeps its own coverage in the test job above, which resolves freely.
+  #
+  # `--check-lock` without `--strict`: `composer.json` carries a `version` field
+  # deliberately (RELEASING.md - Shopware reads it to name the ZIP), and `--strict`
+  # fails on Packagist's warning about it.
+  #
+  # `engine-drift.yml` stays unconstrained on purpose and is the other half of this
+  # split. A repository where every run is pinned is reproducible and blind: no
+  # pinned run would ever resolve an engine published after the lock, so one run
+  # has to meet a new release first and warn.
+  locked-install:
+    name: Locked install (PHP 8.2)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout shopware-carve
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      # A lock that has drifted from the manifest would install a set nobody
+      # declared, and `composer install` reports that as a warning rather than a
+      # failure. Here it is the failure.
+      - name: The lockfile is in step with composer.json
+        run: composer validate --check-lock --no-interaction
+
+      # `install`, not `update`: this is the one job that must not re-resolve.
+      - name: Install from the lockfile
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Verify the engine this run measures
+        run: |
+          set -euo pipefail
+          pkg='markup-carve/carve-php'
+          locked="$(php -r '
+            $lock = json_decode(file_get_contents("composer.lock"), true);
+            foreach (array_merge($lock["packages"] ?? [], $lock["packages-dev"] ?? []) as $p) {
+              if (($p["name"] ?? "") === "markup-carve/carve-php") { echo $p["version"]; return; }
+            }
+          ')"
+          if [ -z "${locked}" ]; then
+            echo "::error::composer.lock pins no ${pkg}, so this run measured an unstated engine"
+            exit 1
+          fi
+          installed="$(composer show --format=json "${pkg}" 2>/dev/null | php -r '$d = json_decode(stream_get_contents(STDIN), true); echo $d["versions"][0] ?? "";')"
+          if [ -z "${installed}" ]; then
+            echo "::error::${pkg} is not installed, so nothing here exercises the engine"
+            exit 1
+          fi
+          echo "${pkg} locked=${locked} installed=${installed}"
+          if [ "${installed#v}" != "${locked#v}" ]; then
+            echo "::error::installed ${pkg} ${installed} is not the locked ${locked}"
+            exit 1
+          fi
+
+      # The lock also decides which Shopware line this leg runs against, and that
+      # is the one place a lockfile can quietly contradict the axis above. It is
+      # asserted for the LINE and not the patch: which 6.6 patch the lock holds is
+      # a lockfile-refresh detail, which major it holds is this repository's
+      # declared support.
+      - name: Verify the Shopware line the lockfile holds
+        run: |
+          set -euo pipefail
+          installed="$(composer show --format=json shopware/core 2>/dev/null | php -r '$d = json_decode(stream_get_contents(STDIN), true); echo $d["versions"][0] ?? "";')"
+          if [ -z "${installed}" ]; then
+            echo "::error::shopware/core is not installed, so this leg exercised no Shopware at all"
+            exit 1
+          fi
+          echo "shopware/core installed from the lockfile at ${installed}"
+          case "${installed#v}" in
+            6.6.*) ;;
+            *)
+              echo "::error::this leg installed shopware/core ${installed}; the lockfile is resolved for the 6.6 line, and 6.7 cannot be locked while its releases are advisory-blocked (see shopware-67.yml)"
+              exit 1
+              ;;
+          esac
+
+      # The artifact, not the version string. A version that matches the lock says
+      # nothing about what the engine DOES; this renders one document through the
+      # converter `src/Service/CarveRenderer.php` builds on. Mirrors the render
+      # step the admin-js job runs for the npm engine.
+      - name: Render one document through the installed engine
+        run: |
+          set -euo pipefail
+          php -r '
+            require "vendor/autoload.php";
+            $html = (new MarkupCarve\Carve\CarveConverter())->convert("*bold* and /italic/");
+            echo $html, PHP_EOL;
+            if (!str_contains($html, "<strong>bold</strong>") || !str_contains($html, "<em>italic</em>")) {
+              fwrite(STDERR, "::error::the installed engine did not render Carve emphasis as expected: " . $html . PHP_EOL);
+              exit(1);
+            }
+          '
+
+      # The suite, so a green run here is a statement about a NAMED engine rather
+      # than about whatever Packagist served.
+      - name: Test
+        run: composer test
 
   # The JS lane. Before this job existed nothing in CI installed npm at all:
   # the two jobs above are `composer install`, `engine-drift.yml` is
