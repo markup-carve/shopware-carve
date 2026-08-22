@@ -73,6 +73,16 @@ release. `softprops/action-gh-release` sets the body from `body_path`.
   engine CI measured rather than whatever the registry served at release time -
   bump the lockfile (`npm install` in that directory) as a deliberate step when a
   release should ship a newer engine.
+- **The PHP lockfile is refreshed on the floor, not on your machine.**
+  `composer.lock` is committed so CI can state which `markup-carve/carve-php` a
+  green run measured (the `locked-install` job installs it and reads the version
+  back). It is solved against PHP **8.2**, the floor `composer.json` declares, and
+  it installs only there: `shopware/core` pulls in `lcobucci/clock`, which caps
+  itself at 8.4. So refresh it with `composer update` under PHP 8.2 - a refresh on
+  a newer PHP produces a lock the job cannot install. `composer validate
+  --check-lock` runs in that job, so a range moved without a refresh is reported
+  rather than ignored. The lock is deliberately NOT what the Shopware axis
+  installs; those legs resolve per line (see `ci.yml`'s header).
 - **Version moves only at release time, and then it must move.** Per the org
   convention the `version` field in `composer.json` is not bumped per feature
   PR - it changes when the maintainer cuts a release, in the same PR as the

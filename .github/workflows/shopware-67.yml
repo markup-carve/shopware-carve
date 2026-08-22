@@ -37,6 +37,16 @@ name: Shopware 6.7
 # the install and the read-back below are byte-identical to the ones in `ci.yml`,
 # and if you edit one you must edit both.
 #
+# NO LOCKFILE REACHES THIS LANE, and that is a consequence of the red rather than
+# a gap. `composer.lock` landed for markup-carve/shopware-carve#18 so a run can
+# state which engine it measured, and it is necessarily solved for ONE
+# `shopware/core`. Solving it for 6.7 would require installing 6.7, which is the
+# thing that does not work here - Composer refuses the whole pool before a lock
+# can be written. So the lock holds the 6.6 line, `ci.yml`'s `locked-install` job
+# is the only job that installs it, and these legs keep resolving. When the
+# advisory window closes, these legs go green on their own and a 6.7 lockfile
+# becomes possible; neither is a reason to touch anything below.
+#
 # `pull_request` only, deliberately. A red push run on `main` would sit permanently
 # on the default branch's commit list with nothing a commit here could do about it.
 #
