@@ -628,7 +628,3 @@ Composer refuses the whole line over open advisories on `shopware/core` and on t
 can install; the workflow tracks the line this plugin declares.
 
 ---
-
-## License
-
-MIT - see [LICENSE](LICENSE).
