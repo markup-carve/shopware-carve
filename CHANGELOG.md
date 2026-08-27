@@ -5,6 +5,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-08-27
+
 ### Changed
 
 - Pin the admin live preview's engine into the plugin ZIP:
@@ -12,6 +14,14 @@ This project follows [Semantic Versioning](https://semver.org/).
   extension, so the `npm install` behind `shopware-cli extension zip` builds the
   preview against the stated `markup-carve/carve` npm version rather than
   whatever the registry resolves at build time (#21).
+- Lock the release artifact to carve-php 0.1.6 and carve-js 0.1.5, the latest
+  published engines allowed by the declared ranges at preparation time. The
+  administration package now declares `^0.1.5` instead of the historical
+  `^0.1.0` floor, so a lockfile refresh cannot silently fall back to an engine
+  predating the security release.
+- Mermaid, Chart and PlantUML hydration placeholders now carry `role="img"`
+  and an accessible name from the current engines; the plugin's integration
+  tests assert those attributes rather than the older inaccessible markup.
 
 ## [0.1.2] - 2026-08-18
 

@@ -1,8 +1,10 @@
-# Nächste Version
+# 0.1.3
 - Erfordert carve-php 0.1.5: Bei einem URL-Attribut mit Werteliste wird nun jeder Kandidat geprueft, statt dem fuehrenden Schema des Werts zu vertrauen. Aktualisieren, wenn nicht vertrauenswuerdiges Carve gerendert oder nicht vertrauenswuerdiges HTML importiert wird.
 - Konfigurierbare `:name:`-Symbol-Kurzbefehle mit vertrauenswürdigen rohen HTML-Ersatzwerten hinzugefügt.
 - Eine Kopfzelle in Listentabellen wird jetzt als `<th scope="col">` statt als blosses `<th>` gerendert. Theme-Overrides oder Tests, die auf das blosse Tag pruefen, muessen angepasst werden.
 - Die Engine der Admin-Live-Vorschau wird im Plugin-ZIP festgeschrieben, sodass ein Build die angegebene `@markup-carve/carve`-Version auflöst und nicht die jeweils aktuelle aus der Registry.
+- Das Release-ZIP wird auf carve-php 0.1.6 und carve-js 0.1.5 festgeschrieben; die JavaScript-Abhängigkeit erfordert mindestens die sicherheitskorrigierte Linie `^0.1.5`.
+- Mermaid-, Chart- und PlantUML-Platzhalter erhalten eine Bildrolle und einen zugänglichen Namen.
 
 # 0.1.2
 - Nie veröffentlicht. Diese Version wurde nie im Store bereitgestellt, kein Shop hat sie erhalten; alle Inhalte sind unter der Version darüber aufgeführt.
