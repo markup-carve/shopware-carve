@@ -1,8 +1,10 @@
-# Next version
+# 0.1.3
 - Require carve-php 0.1.5, which probes every candidate in a list-valued URL attribute instead of trusting the value's leading scheme. Upgrade if you render untrusted Carve or import untrusted HTML.
 - Add configurable `:name:` symbol shortcodes with trusted raw-HTML replacement values.
 - A list-table header cell now renders as `<th scope="col">` rather than a bare `<th>`. Theme overrides or tests matching on the bare tag need updating.
 - Pin the admin live preview's engine into the plugin ZIP, so a build resolves the stated `@markup-carve/carve` version instead of whatever the registry serves.
+- Lock the release ZIP to carve-php 0.1.6 and carve-js 0.1.5, and require the security-fixed `^0.1.5` JavaScript line.
+- Give Mermaid, Chart and PlantUML hydration placeholders an image role and accessible name.
 
 # 0.1.2
 - Never released. This version was never published to the store, so no shop received it; everything it contained is listed under the version above.

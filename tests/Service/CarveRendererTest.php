@@ -204,8 +204,8 @@ class CarveRendererTest extends TestCase
 
         $html = $renderer->toHtml("``` mermaid\ngraph LR\nA --> B\n```");
 
-        // FencedRenderExtension::mermaid() emits <pre class="mermaid">...</pre>
-        self::assertStringContainsString('<pre class="mermaid">', $html);
+        // Diagram placeholders are named images before the client hydrates them.
+        self::assertStringContainsString('<pre class="mermaid" role="img" aria-label="mermaid">', $html);
         // Must NOT fall back to a plain code block
         self::assertStringNotContainsString('<code class="language-mermaid">', $html);
     }
@@ -226,8 +226,7 @@ class CarveRendererTest extends TestCase
         $json = '{"type":"bar","data":{"labels":["A"],"datasets":[{"data":[1]}]}}';
         $html = $renderer->toHtml("``` chart\n{$json}\n```");
 
-        // FencedRenderExtension::chart() emits <div class="chart"><script type="application/json">...</script></div>
-        self::assertStringContainsString('<div class="chart">', $html);
+        self::assertStringContainsString('<div class="chart" role="img" aria-label="chart">', $html);
         self::assertStringContainsString('<script type="application/json">', $html);
         self::assertStringNotContainsString('<code class="language-chart">', $html);
     }
@@ -246,8 +245,7 @@ class CarveRendererTest extends TestCase
 
         $html = $renderer->toHtml("``` plantuml\n@startuml\nA -> B\n@enduml\n```");
 
-        // FencedRenderExtension::plantuml() emits <pre class="plantuml">...</pre>
-        self::assertStringContainsString('<pre class="plantuml">', $html);
+        self::assertStringContainsString('<pre class="plantuml" role="img" aria-label="plantuml">', $html);
         // Must NOT fall back to a plain code block
         self::assertStringNotContainsString('<code class="language-plantuml">', $html);
     }
