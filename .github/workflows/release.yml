@@ -11,6 +11,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    environment: release
     env:
       # Optional Shopware Community Store publishing. Leave the secrets unset to
       # skip the upload step; the ZIP is still built and attached to the release.
