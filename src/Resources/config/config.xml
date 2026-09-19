@@ -234,5 +234,13 @@
             <helpText>When on, storefront product review text is rendered as safe Carve HTML using the comment (UGC) profile - always hardened regardless of other settings; off by default.</helpText>
             <helpText lang="de-DE">Wenn aktiviert, wird der Bewertungstext im Storefront als sicheres Carve-HTML mit dem Kommentar-Profil (UGC) gerendert - immer gehärtet, unabhängig von anderen Einstellungen; standardmäßig deaktiviert.</helpText>
         </input-field>
+
+        <input-field type="text">
+            <name>includeRoot</name>
+            <label>Include containment root</label>
+            <label lang="de-DE">Basisverzeichnis für Includes</label>
+            <helpText>Absolute path under which Carve include directives (`{{ chapter.crv }}`) may read files. Empty (the default) keeps every directive literal everywhere. A relative path is refused rather than resolved against the working directory. Expansion applies only to the CMS element and the carve:render command; product, category and manufacturer fields keep directives literal whoever wrote them, and a CMS editor additionally needs the "Expand Carve file includes" privilege. Everything under this root is readable by every author who can edit a Carve CMS element, and included content is parsed under the same sanitizing as any other content.</helpText>
+            <helpText lang="de-DE">Absoluter Pfad, unterhalb dessen Carve-Include-Direktiven (`{{ kapitel.crv }}`) Dateien lesen dürfen. Leer (Standard) lässt jede Direktive überall wörtlich stehen. Ein relativer Pfad wird abgelehnt statt gegen das Arbeitsverzeichnis aufgelöst. Die Expansion gilt nur für das CMS-Element und den Befehl carve:render; Produkt-, Kategorie- und Herstellerfelder behalten Direktiven wörtlich, unabhängig davon, wer sie geschrieben hat, und ein CMS-Redakteur benötigt zusätzlich das Recht „Carve-Datei-Includes expandieren“. Alles unterhalb dieses Verzeichnisses ist für jeden lesbar, der ein Carve-CMS-Element bearbeiten darf, und eingebundene Inhalte werden mit derselben Bereinigung geparst wie alle anderen Inhalte.</helpText>
+        </input-field>
     </card>
 </config>

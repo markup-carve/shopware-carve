@@ -409,6 +409,43 @@ Access the plugin settings via Admin - Extensions - My extensions - Carve - Conf
 | `ShopwareCarve.config.enableCharts` | `false` | Lazy-load Chart.js from CDN and render ` ```chart ` blocks as charts. CDN must be in CSP. |
 | `ShopwareCarve.config.enablePlantuml` | `false` | Render ` ```plantuml ` (and ` ```puml `) blocks as diagrams via the external Kroki service (`https://kroki.io`). Kroki must be in CSP `connect-src`; `img` must allow `data:`. |
 | `ShopwareCarve.config.renderReviews` | `false` | Render product review text as Carve HTML (comment profile, always hardened). See Surface 9. |
+| `ShopwareCarve.config.includeRoot` | empty | Absolute containment root for file includes. Empty keeps every directive literal. See File includes below. |
+
+### File includes
+
+An include directive (`{{ chapter.crv }}`) reads a file, so it stays literal text
+until an administrator sets `includeRoot` to an absolute path. A relative path is
+refused rather than resolved against the working directory.
+
+With a root configured, two surfaces expand: the `carve:render` command, and the
+Carve CMS element together with its administration preview. On the CMS surface
+the editor needs the **Expand Carve file includes** privilege
+(`carve.include_expand`) on top of CMS editing rights; it is listed under
+additional permissions. Product, category and manufacturer fields keep directives
+literal whoever wrote them, because an import fills those fields too.
+
+The resolver refuses absolute paths, URI schemes, `..` traversal and symlink
+escapes, and caps one target at 4 MiB. Refusals name the directive as the author
+wrote it, never the server's path.
+
+The administration preview calls `/api/_action/carve/preview`, which runs the
+persisted CMS render path under the editor's own privileges, so the preview shows
+what the storefront will produce. carve-js, which draws the preview when no root
+is configured, has no filesystem and cannot resolve a directive at all.
+
+`docs/security.md` has the full trust boundary, including what the privilege does
+not cover.
+
+```bash
+# Root defaults to the document's own directory
+bin/console carve:render book/main.crv --html
+
+# Widen it; a path typed here is resolved against the working directory
+bin/console carve:render book/main.crv --include-root . --html
+```
+
+Stdin has no path context, so a directive read from `-` or `--text-input` stays
+literal unless `--include-root` names a root.
 
 ### allowRawHtml
 

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5df7d3ca7eac7d36da1b7faf415a4870",
+    "content-hash": "f81c623f3e1dc3a3a0a08b1e34966162",
     "packages": [
         {
             "name": "brick/math",
@@ -3382,16 +3382,16 @@
         },
         {
             "name": "markup-carve/carve-php",
-            "version": "0.1.6",
+            "version": "0.1.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/markup-carve/carve-php.git",
-                "reference": "d8b44f5086761a29dc9bec7e1fb8429a8375584a"
+                "reference": "d4b53388df891158c9c868177a4213a5e8b2f608"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/d8b44f5086761a29dc9bec7e1fb8429a8375584a",
-                "reference": "d8b44f5086761a29dc9bec7e1fb8429a8375584a",
+                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/d4b53388df891158c9c868177a4213a5e8b2f608",
+                "reference": "d4b53388df891158c9c868177a4213a5e8b2f608",
                 "shasum": ""
             },
             "require": {
@@ -3440,7 +3440,7 @@
             ],
             "support": {
                 "issues": "https://github.com/markup-carve/carve-php/issues",
-                "source": "https://github.com/markup-carve/carve-php/tree/0.1.6"
+                "source": "https://github.com/markup-carve/carve-php/tree/0.1.9"
             },
             "funding": [
                 {
@@ -3448,7 +3448,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-08-27T00:10:47+00:00"
+            "time": "2026-09-19T09:41:32+00:00"
         },
         {
             "name": "masterminds/html5",

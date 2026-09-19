@@ -41,8 +41,17 @@ class CarveCmsElementResolver extends AbstractCmsElementResolver
         $config = $slot->getFieldConfig();
         $content = $config->get('content');
         $source = $content?->getValue();
+        $result = $this->renderer->toHtmlWithIncludes(
+            is_string($source) ? $source : null,
+            $resolverContext->getSalesChannelContext()->getContext(),
+        );
         // setData() requires a Struct (not a plain array) on Shopware 6.7; ArrayStruct
         // keeps the template accessor `element.data.html` working via array access.
-        $slot->setData(new ArrayStruct(['html' => $this->renderer->toHtml(is_string($source) ? $source : null)]));
+        // The dependency list rides along so an HTTP-cache listener can tag the
+        // page with the files it was built from, missing ones included.
+        $slot->setData(new ArrayStruct([
+            'html' => $result->html,
+            'carveIncludeDependencies' => $result->dependencies,
+        ]));
     }
 }
