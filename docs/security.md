@@ -69,6 +69,45 @@ A naive injected `<script>` can never execute in Carve regardless of
   divs are stripped, nesting is capped, and links get `rel="nofollow ugc"`.
   Markdown on a review field is stored XSS the first time someone posts a script.
 
+## File includes
+
+Include directives (`{{ chapter.crv }}`) read files, so they are off until an
+administrator sets **`includeRoot`** to an absolute path. Empty is the default
+and keeps every directive literal on every surface.
+
+Where a configured root applies:
+
+| Surface | Expands |
+| --- | --- |
+| `carve:render` CLI | yes, rooted at the document's own directory or `--include-root` |
+| Carve CMS element and its administration preview | yes, with the `carve.include_expand` privilege |
+| Product, category, manufacturer fields | never |
+| Reviews, mail, Twig filters, string rendering | never |
+
+The entity fields stay out because an import writes them as well as a person, so
+"admin-authored" does not describe how they are filled.
+
+`carve.include_expand` is a dedicated privilege, listed under additional
+permissions. General CMS editing rights are not it: whoever holds it can make the
+storefront read any `.crv` under the root. The administration preview runs the
+same service, gate and resolver as the persisted CMS render, so what it shows is
+what the storefront produces.
+
+Shopware's `Context::isAllowed()` allows every non-administration source, so the
+storefront render of content authored under the gate expands. The privilege
+governs the administration flow; it is not enforced again at storefront render
+time, where no administration identity exists.
+
+The resolver refuses absolute include paths, URI schemes, `..` traversal and
+symlink escapes, and caps a single target at 4 MiB. A relative `includeRoot` is
+refused rather than resolved against the working directory. Refusals name the
+directive as the author wrote it and never the server's path: the resolver's own
+message rides carve-php's `detail` channel, which this plugin does not report.
+
+Inclusion is a source merge, not a privilege boundary. A child under the root is
+parsed under the same sanitizing as any other content, so keep `allowRawHtml` off
+unless every file under the root is as trusted as the page author.
+
 ## Profiles as a node-type allowlist
 
 For untrusted or semi-trusted content, the `profile` setting (or the forced
@@ -101,6 +140,13 @@ output varies by flavor, library, and version.
 - **`allowRawHtml` on.** Re-accepts raw-HTML risk for the explicit `=html` fence,
   on admin-authored content only. Deliberate, gated, trusted-author. UGC paths
   ignore it. Leave it off unless every content author is fully trusted.
+- **`includeRoot` set.** Everything under the root is readable by everyone
+  holding `carve.include_expand`, and containment stops escape rather than
+  reading. Point it at a directory that holds content and nothing else.
+- **The include privilege is an administration gate.** A CMS editor without it
+  can still store a directive, and the storefront render expands it, because no
+  administration identity reaches that render. The preview shows that editor the
+  unexpanded text, so the two disagree for them.
 - **Pre-1.0.** carve-php is corpus-pinned but pre-1.0; output/syntax can still
   move. Pin versions and review its changelog before upgrading.
 - **Not a full DOM sanitizer.** Carve hardens schemes, event handlers and script

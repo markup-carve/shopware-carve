@@ -1,8 +1,13 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/symfony/dependency-injection/7.4/Loader/schema/services.schema.json
 services:
+    MarkupCarve\Shopware\Service\CarveIncludeGate:
+        arguments:
+            - '@Shopware\Core\System\SystemConfig\SystemConfigService'
+
     MarkupCarve\Shopware\Service\CarveRenderer:
         arguments:
             - '@Shopware\Core\System\SystemConfig\SystemConfigService'
+            - '@MarkupCarve\Shopware\Service\CarveIncludeGate'
 
     MarkupCarve\Shopware\Twig\CarveExtension:
         arguments:
@@ -30,3 +35,9 @@ services:
     MarkupCarve\Shopware\Command\CarveRenderCommand:
         tags:
             - console.command
+
+    MarkupCarve\Shopware\Controller\CarvePreviewController:
+        arguments:
+            - '@MarkupCarve\Shopware\Service\CarveRenderer'
+        tags:
+            - controller.service_arguments

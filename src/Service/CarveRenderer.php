@@ -18,6 +18,8 @@ use MarkupCarve\Carve\Extension\SpoilerExtension;
 use MarkupCarve\Carve\Extension\TableOfContentsExtension;
 use MarkupCarve\Carve\Extension\TabsExtension;
 use MarkupCarve\Carve\Profile;
+use MarkupCarve\Carve\Transform\IncludeExpander;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
@@ -71,8 +73,10 @@ class CarveRenderer
      */
     private array $htmlConverters = [];
 
-    public function __construct(private readonly SystemConfigService $systemConfig)
-    {
+    public function __construct(
+        private readonly SystemConfigService $systemConfig,
+        private readonly ?CarveIncludeGate $includeGate = null,
+    ) {
         $this->text = CarveConverter::plainText();
         $this->markdown = CarveConverter::markdown();
     }
@@ -84,6 +88,53 @@ class CarveRenderer
         }
 
         return $this->getCachedHtmlConverter()->convert($source);
+    }
+
+    /**
+     * Renders CMS-authored source, expanding include directives when the gate
+     * admits this context.
+     *
+     * Only the CMS element and the administration preview reach this method.
+     * Product, category and manufacturer fields go through toHtml(), whoever
+     * wrote them, so a directive stored in one of those stays literal.
+     */
+    public function toHtmlWithIncludes(?string $source, Context $context): CarveIncludeResult
+    {
+        if ($source === null || trim($source) === '') {
+            return new CarveIncludeResult('');
+        }
+
+        $resolver = $this->includeGate?->resolver();
+        if ($this->includeGate === null || $resolver === null || !$this->includeGate->isGranted($context)) {
+            return new CarveIncludeResult($this->toHtml($source));
+        }
+
+        $converter = $this->getCachedHtmlConverter();
+        // No current path: CMS source lives in the database, so the root is the
+        // only base a relative directive can resolve against.
+        $expander = new IncludeExpander(
+            resolver: $resolver,
+            source: $source,
+            extensions: $converter->getExtensions(),
+        );
+        $document = $converter->transform($converter->parse($source), $expander);
+
+        return new CarveIncludeResult(
+            html: $converter->render($document),
+            expanded: true,
+            warnings: array_map(fn ($warning): array => [
+                'rule' => $warning->getRule(),
+                'message' => $warning->getMessage(),
+                'file' => $this->includeGate->containedIdentity($warning->getFile()),
+                'line' => $warning->getLine(),
+                'column' => $warning->getColumn(),
+            ], $expander->getWarnings()),
+            dependencies: array_map(fn ($dependency): array => [
+                'path' => $this->includeGate->containedIdentity($dependency->getTarget()) ?? CarveIncludeResult::OUTSIDE_ROOT,
+                'resolved' => $dependency->isResolved(),
+            ], $expander->getDependencies()),
+            suppressedWarnings: $expander->getSuppressedWarnings(),
+        );
     }
 
     /**
