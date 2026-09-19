@@ -35,7 +35,7 @@
         "shopware-plugin-class": "MarkupCarve\\Shopware\\ShopwareCarve",
         "label": {
             "en-GB": "Carve for Shopware",
-            "de-DE": "Carve fuer Shopware"
+            "de-DE": "Carve für Shopware"
         },
         "description": {
             "en-GB": "Render the Carve markup language to safe HTML in Shopware: Twig filters, a CMS element and block, product and category fields, mail rendering, and inline product references.",
