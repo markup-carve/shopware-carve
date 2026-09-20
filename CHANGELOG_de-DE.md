@@ -1,3 +1,10 @@
+# 0.1.4
+- Datei-Includes mit Freigabe hinzugefügt. Ein Administrator legt ein absolutes Basisverzeichnis fest, standardmäßig leer; ohne dieses bleibt jede Include-Direktive überall wörtlich stehen.
+- Mit gesetztem Basisverzeichnis lösen der Befehl carve:render und das Carve-CMS-Element Includes auf; ein CMS-Redakteur benötigt zusätzlich das Recht „Carve-Datei-Includes expandieren“. Produkt-, Kategorie- und Herstellerfelder behalten Direktiven wörtlich, unabhängig davon, wer sie geschrieben hat.
+- Die Live-Vorschau im Admin rendert jetzt über eine Server-Route mit den Rechten des jeweiligen Redakteurs und zeigt damit das Ergebnis der Storefront.
+- Erfordert carve-php 0.1.9; die Engine der Admin-Vorschau ist auf carve-js 0.1.7 festgeschrieben.
+- Die deutsche Plugin-Bezeichnung lautet wieder „Carve für Shopware“ statt einer ASCII-Umschrift.
+
 # 0.1.3
 - Erfordert carve-php 0.1.5: Bei einem URL-Attribut mit Werteliste wird nun jeder Kandidat geprüft, statt dem führenden Schema des Werts zu vertrauen. Aktualisieren, wenn nicht vertrauenswürdiges Carve gerendert oder nicht vertrauenswürdiges HTML importiert wird.
 - Konfigurierbare `:name:`-Symbol-Kurzbefehle mit vertrauenswürdigen rohen HTML-Ersatzwerten hinzugefügt.

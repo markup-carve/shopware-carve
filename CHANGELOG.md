@@ -5,6 +5,30 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-09-20
+
+### Added
+
+- Gated file includes. An administrator sets an absolute `includeRoot`, empty by
+  default, which keeps every include directive literal everywhere. With a root
+  configured, `carve:render` and the Carve CMS element expand includes; on the
+  CMS surface the editor needs the `carve.include_expand` privilege on top of
+  CMS editing rights. Product, category and manufacturer fields stay literal
+  whoever wrote them. The administration preview now renders through
+  `/api/_action/carve/preview` under the editor's own privileges. README, "File
+  includes", and `docs/security.md` carry the trust boundary (#35).
+
+### Changed
+
+- Require carve-php `^0.1.9`, the first tag carrying the include pass (#35).
+- Lock the admin live preview's engine to carve-js 0.1.7, the newest release the
+  declared `^0.1.5` range admits.
+
+### Fixed
+
+- The German plugin label reads `Carve für Shopware` again rather than an ASCII
+  transliteration, and `CHANGELOG_de-DE.md` carries real umlauts throughout (#36).
+
 ## [0.1.3] - 2026-08-27
 
 ### Changed
