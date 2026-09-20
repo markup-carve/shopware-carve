@@ -1,3 +1,10 @@
+# 0.1.4
+- Add gated file includes. An administrator sets an absolute include containment root, empty by default, which keeps every include directive literal everywhere.
+- With a root configured, the `carve:render` command and the Carve CMS element expand includes; a CMS editor additionally needs the "Expand Carve file includes" privilege. Product, category and manufacturer fields keep directives literal whoever wrote them.
+- The administration live preview now renders through a server route under the editor's own privileges, so it shows what the storefront produces.
+- Require carve-php 0.1.9, and lock the admin preview engine to carve-js 0.1.7.
+- The German plugin label reads "Carve für Shopware" again rather than an ASCII transliteration.
+
 # 0.1.3
 - Require carve-php 0.1.5, which probes every candidate in a list-valued URL attribute instead of trusting the value's leading scheme. Upgrade if you render untrusted Carve or import untrusted HTML.
 - Add configurable `:name:` symbol shortcodes with trusted raw-HTML replacement values.
