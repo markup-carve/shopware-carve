@@ -28,6 +28,7 @@ export default [
                 Error: 'readonly',
                 JSON: 'readonly',
                 Promise: 'readonly',
+                URL: 'readonly',
                 btoa: 'readonly',
                 console: 'readonly',
                 document: 'readonly',
