@@ -1,0 +1,6 @@
+{% sw_extends '@Storefront/storefront/base.html.twig' %}
+
+{% block base_body_inner %}
+    <span hidden data-carve-kroki-url="{{ config('ShopwareCarve.config.krokiUrl') ?? 'https://kroki.io/plantuml/svg' }}"></span>
+    {{ parent() }}
+{% endblock %}

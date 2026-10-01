@@ -1,0 +1,6 @@
+.carve-editor {
+    details { margin: 12px 0; }
+    summary { cursor: pointer; margin-bottom: 8px; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+    &__preview { width: 100%; min-height: 320px; border: 1px solid #d1d5db; background: #fff; }
+}

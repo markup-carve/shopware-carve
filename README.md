@@ -98,6 +98,11 @@ configuration.
 The [extension table](docs/reference.md#enabled-extensions) lists their exact
 syntax and output behavior.
 
+See [Authoring and commerce elements](docs/authoring.md) for the shared editor,
+field mapping, commerce syntax, placement, and headless components.
+[Shared content with includes](docs/includes.md) covers translated file libraries,
+publication permissions, and deployment invalidation.
+
 ## Development
 
 The [complete reference](docs/reference.md) retains the API, configuration,

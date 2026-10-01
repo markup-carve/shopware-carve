@@ -5,6 +5,30 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Shared Carve editor for CMS and product, category, and manufacturer fields,
+  with server previews, diagnostics, product/media selection, and reviewed
+  HTML/Markdown imports.
+- Sales-channel prices, stock labels, cards, grids, specification lists,
+  datasheets, media images, snippets, and internal links.
+- Include library selection, publication write checks, dependency cache tags,
+  and `carve:includes:invalidate` for deployment jobs.
+- CMS field mapping, configurable copy placement and external-link behavior,
+  automatic typography locale, literal-data escaping for mail, and headless
+  CMS component examples.
+
+### Fixed
+
+- Product references respect channel visibility and use SEO URL generation.
+  SKU lookups are batched and repeated references are memoized.
+- Renderer settings agree across ordinary and context-aware output. Preview
+  requests reject stale responses and show failures in a sandboxed iframe.
+- Fragment IDs and tab radio groups remain independent across rendered blocks.
+- Review HTML uses a block container. Images and tables adapt to narrow screens.
+- Diagram versions are pinned, Kroki is configurable, and charts retain data
+  alternatives.
+
 ## [0.1.4] - 2026-09-20
 
 ### Added

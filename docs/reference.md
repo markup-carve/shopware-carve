@@ -61,7 +61,7 @@ code execution.
 
 Add the element type `carve` from the element panel in the Shopping Experiences editor. The element
 renders its `content` field through `CarveRenderer::toHtml()` server-side. The admin config panel
-shows a live preview (Surface 6).
+shows a server preview (Surface 6).
 
 ---
 
@@ -116,21 +116,23 @@ For product references inside the manufacturer copy, use `|carve_ctx(context)` i
 
 ---
 
-### 6 - Admin live preview (carve-js)
+### 6 - Administration editor and preview
 
-**Benefit:** While typing in the CMS element or custom fields, the preview updates instantly and is
-byte-identical to the storefront output. WYSIWYG confidence via PHP/JS parity with no API roundtrip.
+CMS slots and plugin custom fields use the shared `carve-editor` component.
+Preview HTML comes from the PHP renderer, with diagnostics and include dependency
+metadata. Select a sales channel for product resolution and guest pricing.
+Requests are debounced and older responses cannot replace newer results.
+The HTML is displayed in a sandboxed iframe with basic preview styles.
 
-The admin CMS element config component (`sw-cms-el-config-carve`) imports `carveToHtml` from
-`@markup-carve/carve` and calls it on every `input` event. The shared cross-implementation test
-corpus guarantees that carve-js and carve-php produce the same bytes for the same source.
+See [Authoring](authoring.md) for field mapping, product and media selection,
+conversion, translations, and preview limits.
 
 ---
 
 ### 7 - Transactional mail rendering
 
 **Benefit:** One Carve source feeds both the HTML part and the plain-text part of a multipart mail.
-Safe interpolation of user/order data into mail bodies.
+Use `carve_escape` for literal values interpolated into mail source.
 
 See [`docs/mail.md`](mail.md) for the full setup. Short example:
 
@@ -139,7 +141,7 @@ See [`docs/mail.md`](mail.md) for the full setup. Short example:
 {% set body %}
 ## Order {{ order.orderNumber }}
 
-Dear **{{ order.orderCustomer.firstName }}**,
+Dear {{ order.orderCustomer.firstName|carve_escape }},
 
 your order is on its way.
 {% endset %}
@@ -153,7 +155,7 @@ your order is on its way.
 
 ### 8 - Commerce inline type `:product[SKU]`
 
-**Benefit:** Authors embed a live product reference (link with name and price) inline in any Carve
+**Benefit:** Authors embed a live product reference (link with translated name) inline in any Carve
 content, resolved against the current sales channel at render time. Markdown has no safe,
 first-class way to embed live commerce entities in authored copy.
 
@@ -268,12 +270,9 @@ the same pattern - set the source in the admin, render it wherever your theme sh
 
 ### Building your own elements
 
-Carve can resolve your own inline/block elements against live Shopware data
-(prices, stock, product cards, legal snippets) at render time - the same
-mechanism that powers `:product[SKU]`. See **[`docs/custom-elements.md`](custom-elements.md)**
-for the render-hook pattern, two complete worked examples (`:badge[...]` pure
-markup and `:price[SKU]` live data), how to make an element opt-in via config,
-and a catalog of commerce-specific element ideas.
+Use the [built-in commerce elements](authoring.md) for prices, stock, cards,
+media, snippets, and internal links. The [custom-element guide](custom-elements.md)
+shows render hooks and the current integration points for shop-specific behavior.
 
 ---
 
@@ -299,26 +298,16 @@ Verify the library loaded correctly:
 var_dump(class_exists('MarkupCarve\\Carve\\CarveConverter')); // bool(true)
 ```
 
-#### JS dependency: carve-js (admin live preview only)
+#### Administration build
 
 ```bash
 cd custom/plugins/ShopwareCarve/src/Resources/app/administration
 npm ci
 ```
 
-`npm ci` rather than `npm install @markup-carve/carve`: the plugin ships a
-`package-lock.json`, so `npm ci` installs the engine version CI measured, while
-`npm install <pkg>` re-resolves the range and rewrites the lockfile. The declared
-range stays `^0.1.5`, which on this org's 0.x scheme - where `0.1` is the major
-and the third digit the minor - stops at `< 0.2.0`, so it admits every engine
-minor and excludes only a release the engine itself calls breaking.
-
-> [!NOTE]
-> The two lanes render the same language. carve-php 0.1.9 and carve-js 0.1.7 both
-> implement **a heading ends at the newline**, so `# Title` followed by a plain
-> line is a heading and a paragraph rather than one folded title - the storefront
-> and the admin preview agree. Earlier releases (carve-php 0.1.3, carve-js 0.1.2)
-> predated that change and folded the two lines into one title.
+The editor calls the authenticated PHP preview endpoint. Preview and storefront
+use the same parser and converter settings, so there is no separate JavaScript
+Carve engine to install or keep in sync.
 
 ---
 
@@ -365,39 +354,16 @@ Access the plugin settings via Admin - Extensions - My extensions - Carve - Conf
 
 ### File includes
 
-An include directive (`{{ chapter.crv }}`) reads a file, so it stays literal text
-until an administrator sets `includeRoot` to an absolute path. A relative path is
-refused rather than resolved against the working directory.
+Set a global absolute `includeRoot` to enable contained file transclusion in
+static Carve CMS slots. Saving include-bearing CMS source or layout overrides
+requires `carve.include_expand`. Entity fields, mapped CMS values, and reviews
+keep directives literal. The CLI roots file input at the document's directory.
 
-With a root configured, two surfaces expand: the `carve:render` command, and the
-Carve CMS element together with its administration preview. On the CMS surface
-the editor needs the **Expand Carve file includes** privilege
-(`carve.include_expand`) on top of CMS editing rights; it is listed under
-additional permissions. Product, category and manufacturer fields keep directives
-literal whoever wrote them, because an import fills those fields too.
-
-The resolver refuses absolute paths, URI schemes, `..` traversal and symlink
-escapes, and caps one target at 4 MiB. Refusals name the directive as the author
-wrote it, never the server's path.
-
-The administration preview calls `/api/_action/carve/preview`, which runs the
-persisted CMS render path under the editor's own privileges, so the preview shows
-what the storefront will produce. carve-js, which draws the preview when no root
-is configured, has no filesystem and cannot resolve a directive at all.
-
-`docs/security.md` has the full trust boundary, including what the privilege does
-not cover.
-
-```bash
-# Root defaults to the document's own directory
-bin/console carve:render book/main.crv --html
-
-# Widen it; a path typed here is resolved against the working directory
-bin/console carve:render book/main.crv --include-root . --html
-```
-
-Stdin has no path context, so a directive read from `-` or `--text-input` stays
-literal unless `--include-root` names a root.
+The editor lists shared `.crv` files, accepts section selection and heading shift,
+and reports dependencies and warnings. Pages receive include cache tags. Run
+`bin/console carve:includes:invalidate` after deploying changes to the library.
+See [Shared content with includes](includes.md) for translated libraries,
+permissions, examples, and targeted invalidation.
 
 ### allowRawHtml
 
@@ -416,9 +382,8 @@ inject arbitrary HTML (including `<script>` tags) into the storefront.
 
 ### livePreview
 
-When `true` (the default), the CMS element config panel renders an instant storefront-identical
-preview powered by carve-js. Set to `false` to disable the preview (e.g. for performance or
-when carve-js is not installed).
+When `true` (default), the administration editor shows server-rendered preview
+HTML and diagnostics. Set it to `false` to disable preview requests.
 
 ### Symbol shortcodes
 
@@ -436,8 +401,8 @@ ASCII letters, digits, `_`, or `-`. Invalid names are ignored, and unmapped shor
 literal.
 
 **Security warning:** symbol values are trusted raw HTML. carve-php inserts them verbatim and
-unescaped, even through `|carve_ugc` / `toHtmlUgc()`; safe mode does not sanitize these configured
-values. Only administrators who understand that the values become executable storefront markup
+unescaped, in editorial content; safe mode does not sanitize these configured
+values. Reviews exclude the symbol map and leave shortcodes literal. Only administrators who understand that the values become executable storefront markup
 should edit this setting. Never populate it from user-authored content.
 
 ### smartQuotes
@@ -480,12 +445,12 @@ Supported locales:
 | `ja` | Japanese |
 | `zh` | Chinese |
 
-Note: future versions may auto-derive the locale from the Shopware sales channel language.
+Set `smartQuotesLocale` to `auto` to derive it from the sales-channel content language.
 
 ### enableMermaid
 
 When `true`, ` ```mermaid ` fenced code blocks are rendered as interactive Mermaid diagrams.
-The Mermaid.js library is lazy-loaded from jsDelivr CDN (`https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs`)
+The Mermaid.js library is lazy-loaded from jsDelivr CDN (`https://cdn.jsdelivr.net/npm/mermaid@11.17.2/dist/mermaid.esm.min.mjs`)
 only when at least one `<pre class="mermaid">` element is present on the page.
 
 Default: `false`.
@@ -493,7 +458,7 @@ Default: `false`.
 ### enableCharts
 
 When `true`, ` ```chart ` fenced code blocks (containing a Chart.js config as JSON) are rendered
-as charts. The Chart.js library is lazy-loaded from jsDelivr CDN (`https://cdn.jsdelivr.net/npm/chart.js@4/+esm`)
+as charts. The Chart.js library is lazy-loaded from jsDelivr CDN (`https://cdn.jsdelivr.net/npm/chart.js@4.5.1/+esm`)
 only when at least one `<div class="chart">` element is present on the page.
 
 Default: `false`.
@@ -510,8 +475,8 @@ needs none). On a network/service error the original code block stays visible.
 
 > [!IMPORTANT]
 > The diagram source is transmitted to the public `kroki.io` service. If your content is
-> confidential, [self-host Kroki](https://docs.kroki.io/kroki/setup/install/) and change
-> `KROKI_PLANTUML_URL` in `src/Resources/app/storefront/src/carve-diagrams.js` to your instance.
+> confidential, [self-host Kroki](https://docs.kroki.io/kroki/setup/install/) and set
+> `ShopwareCarve.config.krokiUrl` to its PlantUML endpoint.
 
 Default: `false`.
 
@@ -570,8 +535,7 @@ external Kroki service at `https://kroki.io` and inlines the returned SVG as an 
 - `https://kroki.io` to `connect-src` (the `fetch` POST), and
 - `data:` to `img-src` (the inlined SVG data URI).
 
-If you self-host Kroki, substitute your own origin for `https://kroki.io` in both the CSP and
-`KROKI_PLANTUML_URL` in `carve-diagrams.js`.
+If you self-host Kroki, substitute your own origin for `https://kroki.io` in both the CSP and set `krokiUrl`.
 
 ---
 
@@ -608,12 +572,9 @@ installed version back, so a row here is a measured claim rather than a declared
 red leg therefore means support for that line is currently unverified - including when
 the cause is upstream, such as Composer refusing a release over a security advisory.
 
-The 6.6 legs run in [`ci.yml`](../.github/workflows/ci.yml), which supplies the
-README's CI badge. The 6.7 legs run in
-[`shopware-67.yml`](../.github/workflows/shopware-67.yml) on every pull request, and are
-**expected to be red today**: no Shopware 6.7 release currently installs, because
-Composer refuses the whole line over open advisories on `shopware/core` and on the
-`dompdf/dompdf` and `mcp/sdk` it reaches. The badge therefore tracks the line a merchant
-can install; the workflow tracks the line this plugin declares.
+The 6.6 legs run in [`ci.yml`](../.github/workflows/ci.yml). The 6.7 legs run
+in [`shopware-67.yml`](../.github/workflows/shopware-67.yml) on pull requests.
+Both verify the installed Shopware line and run tests and static analysis.
+Security-advisory installation failures remain visible in the relevant leg.
 
----
+See [Authoring](authoring.md) for newer commerce syntax and configuration.

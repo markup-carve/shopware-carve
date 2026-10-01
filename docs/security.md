@@ -87,16 +87,17 @@ Where a configured root applies:
 The entity fields stay out because an import writes them as well as a person, so
 "admin-authored" does not describe how they are filled.
 
-`carve.include_expand` is a dedicated privilege, listed under additional
-permissions. General CMS editing rights are not it: whoever holds it can make the
-storefront read any `.crv` under the root. The administration preview runs the
-same service, gate and resolver as the persisted CMS render, so what it shows is
-what the storefront produces.
+`carve.include_expand` is a dedicated publication privilege. CMS editing rights
+alone cannot save static Carve slot sources or layout overrides containing
+includes. The write guard checks CMS translations, product/category/landing-page
+slot overrides, and homepage overrides. Retyping an existing slot as Carve also
+requires it, because old translations and overrides can become active.
 
-Shopware's `Context::isAllowed()` allows every non-administration source, so the
-storefront render of content authored under the gate expands. The privilege
-governs the administration flow; it is not enforced again at storefront render
-time, where no administration identity exists.
+The administration preview checks the acting editor's privilege even when a
+sales channel is selected. Storefront rendering has no administration identity;
+it renders approved stored content. Review pre-existing CMS sources before
+enabling a root after upgrading, because older directives have no approval
+record. Mapped entity content keeps includes literal.
 
 The resolver refuses absolute include paths, URI schemes, `..` traversal and
 symlink escapes, and caps a single target at 4 MiB. A relative `includeRoot` is
@@ -130,10 +131,11 @@ recommended setting for any user-authored field.
 
 ## Determinism
 
-Carve is deterministic and identical across implementations (php / js / rust,
-shared corpus). The admin carve-js live preview therefore shows exactly what the
-storefront will emit, and the security boundary is snapshot-testable. Markdown
-output varies by flavor, library, and version.
+The administration preview and storefront share the PHP converter factory.
+Selected-channel previews resolve commerce references using a guest context;
+customer-specific prices require checking that customer's storefront session.
+Preview styles differ from a storefront theme. HTML is shown in a sandboxed
+iframe, including when trusted authors enable raw HTML.
 
 ## Residual risk and honest limits
 
@@ -143,10 +145,10 @@ output varies by flavor, library, and version.
 - **`includeRoot` set.** Everything under the root is readable by everyone
   holding `carve.include_expand`, and containment stops escape rather than
   reading. Point it at a directory that holds content and nothing else.
-- **The include privilege is an administration gate.** A CMS editor without it
-  can still store a directive, and the storefront render expands it, because no
-  administration identity reaches that render. The preview shows that editor the
-  unexpanded text, so the two disagree for them.
+- **Existing include sources.** The write guard applies to new writes. Review
+  old stored directives before enabling the root on an upgraded shop.
+- **File cache lifetime.** Deployments must run `carve:includes:invalidate`;
+  external file edits do not dispatch Shopware database events.
 - **Pre-1.0.** carve-php is corpus-pinned but pre-1.0; output/syntax can still
   move. Pin versions and review its changelog before upgrading.
 - **Not a full DOM sanitizer.** Carve hardens schemes, event handlers and script

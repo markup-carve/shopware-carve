@@ -1,18 +1,13 @@
 {% sw_extends '@Storefront/storefront/page/content/index.html.twig' %}
 
-{# Render category carve_category_body above the CMS content, if present.
-   Shopware 6.7: the category/content page wraps its CMS blocks in the
-   `page_content_blocks` block (the legacy `base_content_inner` block no longer
-   exists), and the active category is exposed as `page.category`
-   (NavigationPage::getCategory) - `page.header.navigation.active` is null here. #}
 {% block page_content_blocks %}
-    {% set carveSource = page.category.translated.customFields.carve_category_body
-        ?? page.category.customFields.carve_category_body ?? null %}
-    {% if carveSource %}
-        <div class="carve-content carve-category-description">
-            {{ carveSource|carve }}
-        </div>
+    {% set carveSource = page.category.translated.customFields.carve_category_body ?? page.category.customFields.carve_category_body ?? null %}
+    {% set carvePlacement = config('ShopwareCarve.config.categoryPlacement') ?? 'before' %}
+    {% if carveSource and carvePlacement != 'after' %}
+        <div class="carve-content carve-category-description">{{ carveSource|carve_ctx(context) }}</div>
     {% endif %}
-
     {{ parent() }}
+    {% if carveSource and carvePlacement == 'after' %}
+        <div class="carve-content carve-category-description">{{ carveSource|carve_ctx(context) }}</div>
+    {% endif %}
 {% endblock %}

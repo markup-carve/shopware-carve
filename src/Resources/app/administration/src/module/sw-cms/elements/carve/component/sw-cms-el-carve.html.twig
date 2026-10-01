@@ -1,10 +1,7 @@
 {% block sw_cms_el_carve %}
     <div class="sw-cms-el-carve">
-        <template v-if="livePreviewEnabled">
-            <div class="carve-content" v-html="html"></div>
-        </template>
-        <template v-else>
-            <pre class="sw-cms-el-carve__source">{{ element.config.content.value }}</pre>
-        </template>
+        <carve-editor v-if="element.config.content.source === 'static'" :value="element.config.content.value"
+            :includes="true" :read-only="true" :namespace="'cms-' + element.id" />
+        <p v-else>Carve content comes from the mapped entity field.</p>
     </div>
 {% endblock %}

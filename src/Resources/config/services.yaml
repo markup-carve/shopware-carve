@@ -4,27 +4,43 @@ services:
         arguments:
             - '@Shopware\Core\System\SystemConfig\SystemConfigService'
 
+    MarkupCarve\Shopware\Service\CarveConverterFactory:
+        arguments: ['@Shopware\Core\System\SystemConfig\SystemConfigService']
+
+    MarkupCarve\Shopware\Service\FragmentNamespace:
+        tags:
+            - { name: kernel.reset, method: reset }
+
     MarkupCarve\Shopware\Service\CarveRenderer:
         arguments:
             - '@Shopware\Core\System\SystemConfig\SystemConfigService'
             - '@MarkupCarve\Shopware\Service\CarveIncludeGate'
+            - '@MarkupCarve\Shopware\Service\CarveConverterFactory'
 
     MarkupCarve\Shopware\Twig\CarveExtension:
         arguments:
             - '@MarkupCarve\Shopware\Service\CarveRenderer'
+            - '@Shopware\Core\System\Locale\LanguageLocaleCodeProvider'
         tags:
             - twig.extension
 
     MarkupCarve\Shopware\Core\Content\Cms\CarveCmsElementResolver:
         arguments:
             - '@MarkupCarve\Shopware\Service\CarveRenderer'
+            - '@MarkupCarve\Shopware\Service\CarveContextRenderer'
+            - '@MarkupCarve\Shopware\Service\CarveIncludeCache'
         tags:
             - shopware.cms.data_resolver
 
     MarkupCarve\Shopware\Service\CarveContextRenderer:
         arguments:
-            - '@product.repository'
-            - '@Shopware\Core\System\SystemConfig\SystemConfigService'
+            - '@MarkupCarve\Shopware\Service\CarveRenderer'
+            - '@MarkupCarve\Shopware\Service\CarveConverterFactory'
+            - '@MarkupCarve\Shopware\Service\CarveCommerce'
+            - '@Shopware\Core\System\Locale\LanguageLocaleCodeProvider'
+            - '@MarkupCarve\Shopware\Service\CarveResources'
+            - '@Shopware\Core\Content\Seo\SeoUrlPlaceholderHandler'
+            - '@request_stack'
 
     MarkupCarve\Shopware\Twig\CarveContextExtension:
         arguments:
@@ -39,5 +55,52 @@ services:
     MarkupCarve\Shopware\Controller\CarvePreviewController:
         arguments:
             - '@MarkupCarve\Shopware\Service\CarveRenderer'
+            - '@MarkupCarve\Shopware\Service\CarveIncludeGate'
+            - '@Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory'
+            - '@MarkupCarve\Shopware\Service\CarveContextRenderer'
+            - '@translator'
+            - '@Shopware\Core\System\Locale\LanguageLocaleCodeProvider'
         tags:
             - controller.service_arguments
+
+    MarkupCarve\Shopware\Service\CarveCommerce:
+        arguments:
+            - '@sales_channel.product.repository'
+            - '@Shopware\Core\Content\Seo\SeoUrlPlaceholderHandler'
+            - '@Shopware\Core\System\Currency\CurrencyFormatter'
+            - '@translator'
+            - '@twig'
+            - '@event_dispatcher'
+        tags:
+            - { name: kernel.reset, method: reset }
+
+    MarkupCarve\Shopware\Service\CarveIncludeCache:
+        arguments:
+            - '@event_dispatcher'
+            - '@MarkupCarve\Shopware\Service\CarveIncludeGate'
+
+    MarkupCarve\Shopware\Command\CarveInvalidateIncludesCommand:
+        arguments:
+            - '@Shopware\Core\Framework\Adapter\Cache\CacheInvalidator'
+            - '@MarkupCarve\Shopware\Service\CarveIncludeCache'
+        tags: [console.command]
+
+    MarkupCarve\Shopware\Subscriber\CarveIncludeWriteGuard:
+        arguments: ['@Doctrine\DBAL\Connection', '@MarkupCarve\Shopware\Service\CarveConverterFactory']
+        tags: [kernel.event_subscriber]
+
+    MarkupCarve\Shopware\Subscriber\CarveCommerceInvalidation:
+        arguments: ['@Shopware\Core\Framework\Adapter\Cache\CacheInvalidator']
+        tags: [kernel.event_subscriber]
+
+    MarkupCarve\Shopware\Service\CarveResources:
+        arguments:
+            - '@media.repository'
+            - '@product_manufacturer.repository'
+            - '@sales_channel.category.repository'
+            - '@Shopware\Core\Content\Seo\SeoUrlPlaceholderHandler'
+            - '@Shopware\Core\System\SystemConfig\SystemConfigService'
+            - '@event_dispatcher'
+
+    MarkupCarve\Shopware\Subscriber\CarveStoreApiCacheKey:
+        tags: [kernel.event_subscriber]

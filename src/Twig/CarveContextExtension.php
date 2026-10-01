@@ -16,8 +16,9 @@ use Twig\TwigFilter;
  */
 class CarveContextExtension extends AbstractExtension
 {
-    public function __construct(private readonly CarveContextRenderer $renderer)
-    {
+    public function __construct(
+        private readonly CarveContextRenderer $renderer,
+    ) {
     }
 
     public function getFilters(): array
@@ -27,8 +28,8 @@ class CarveContextExtension extends AbstractExtension
         ];
     }
 
-    public function render(?string $source, SalesChannelContext $context): string
+    public function render(?string $source, SalesChannelContext $context, ?string $namespace = null): string
     {
-        return $this->renderer->toHtml($source, $context);
+        return $this->renderer->toHtml($source, $context, $namespace);
     }
 }

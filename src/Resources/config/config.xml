@@ -33,14 +33,12 @@
             <label lang="de-DE">Live-Vorschau im Admin</label>
             <defaultValue>true</defaultValue>
             <helpText>
-                Shows an instant storefront-identical preview while editing a Carve CMS element in
-                the admin. The preview is rendered by carve-js in the browser and produces
-                byte-identical output to the PHP storefront renderer.
+                Shows the server-rendered HTML and diagnostics in the Carve editor.
+                Choose a sales channel to preview commerce references and guest prices.
             </helpText>
             <helpText lang="de-DE">
-                Zeigt eine sofortige, storefront-identische Vorschau beim Bearbeiten eines
-                Carve-CMS-Elements im Admin. Die Vorschau wird im Browser von carve-js gerendert
-                und liefert byte-identische Ausgabe wie der PHP-Storefront-Renderer.
+                Zeigt serverseitig gerendertes HTML und Diagnosen im Carve-Editor.
+                Wähle einen Verkaufskanal für Produktverweise und Gastpreise.
             </helpText>
         </input-field>
 
@@ -52,14 +50,14 @@
                 One name=value mapping per line, for example rocket=🚀. Blank lines, lines without
                 =, and invalid names are ignored. Names may contain ASCII letters, digits, _ and -
                 and must start with a letter or _. Values are trusted raw HTML and are inserted
-                unescaped, including in user-generated content. Configure only fully trusted markup.
+                unescaped in editorial content. Reviews keep symbols literal. Configure only fully trusted markup.
             </helpText>
             <helpText lang="de-DE">
                 Eine name=wert-Zuordnung pro Zeile, zum Beispiel rocket=🚀. Leerzeilen, Zeilen ohne
                 = und ungültige Namen werden ignoriert. Namen dürfen ASCII-Buchstaben, Ziffern, _
                 und - enthalten und müssen mit einem Buchstaben oder _ beginnen. Werte sind
                 vertrauenswürdiges rohes HTML und werden auch in Nutzerinhalten unmaskiert
-                eingefügt. Nur vollständig vertrauenswürdiges Markup konfigurieren.
+                eingefügt. In Bewertungen bleiben Symbole wörtlich. Nur vollständig vertrauenswürdiges Markup konfigurieren.
             </helpText>
         </input-field>
 
@@ -80,6 +78,7 @@
             <helpText>Sets the locale for typographic quotes. Only applies when smart quotes is enabled.</helpText>
             <helpText lang="de-DE">Legt das Gebietsschema für typografische Anführungszeichen fest. Gilt nur, wenn typografische Anführungszeichen aktiviert sind.</helpText>
             <options>
+                <option><id>auto</id><name>Sales channel language</name></option>
                 <option>
                     <id>en</id>
                     <name>English</name>
@@ -239,8 +238,41 @@
             <name>includeRoot</name>
             <label>Include containment root</label>
             <label lang="de-DE">Basisverzeichnis für Includes</label>
-            <helpText>Absolute path under which Carve include directives (`{{ chapter.crv }}`) may read files. Empty (the default) keeps every directive literal everywhere. A relative path is refused rather than resolved against the working directory. Expansion applies only to the CMS element and the carve:render command; product, category and manufacturer fields keep directives literal whoever wrote them, and a CMS editor additionally needs the "Expand Carve file includes" privilege. Everything under this root is readable by every author who can edit a Carve CMS element, and included content is parsed under the same sanitizing as any other content.</helpText>
-            <helpText lang="de-DE">Absoluter Pfad, unterhalb dessen Carve-Include-Direktiven (`{{ kapitel.crv }}`) Dateien lesen dürfen. Leer (Standard) lässt jede Direktive überall wörtlich stehen. Ein relativer Pfad wird abgelehnt statt gegen das Arbeitsverzeichnis aufgelöst. Die Expansion gilt nur für das CMS-Element und den Befehl carve:render; Produkt-, Kategorie- und Herstellerfelder behalten Direktiven wörtlich, unabhängig davon, wer sie geschrieben hat, und ein CMS-Redakteur benötigt zusätzlich das Recht „Carve-Datei-Includes expandieren“. Alles unterhalb dieses Verzeichnisses ist für jeden lesbar, der ein Carve-CMS-Element bearbeiten darf, und eingebundene Inhalte werden mit derselben Bereinigung geparst wie alle anderen Inhalte.</helpText>
+            <helpText>Absolute path under which Carve include directives (`{{ chapter.crv }}`) may read files. Empty (the default) keeps every directive literal everywhere. A relative path is refused rather than resolved against the working directory. Expansion applies to static Carve CMS elements and carve:render. Entity fields and mapped CMS content keep directives literal. Saving CMS sources or overrides containing directives requires the "Expand Carve file includes" privilege. Files under this root are publication content. After deployment, run carve:includes:invalidate to refresh affected cached pages.</helpText>
+            <helpText lang="de-DE">Absoluter Pfad für veröffentlichbare Carve-Dateien. Leer (Standard) lässt Includes wörtlich stehen; relative Pfade werden abgelehnt. Nur statische Carve-CMS-Elemente und carve:render expandieren Includes. Entitätsfelder und gemappte CMS-Inhalte bleiben wörtlich. Das Speichern von CMS-Quellen oder Overrides mit Includes benötigt das Recht „Carve-Datei-Includes expandieren“. Nach Änderungen an Dateien carve:includes:invalidate ausführen, um betroffene Cache-Einträge zu erneuern.</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>externalLinksNofollow</name><label>Add nofollow to external links</label>
+            <label lang="de-DE">Externe Links mit nofollow markieren</label><defaultValue>true</defaultValue>
+        </input-field>
+        <input-field type="bool">
+            <name>externalLinksNewTab</name><label>Open external links in a new tab</label>
+            <label lang="de-DE">Externe Links in neuem Tab öffnen</label><defaultValue>true</defaultValue>
+        </input-field>
+        <input-field type="single-select">
+            <name>productPlacement</name><label>Product copy placement</label>
+            <label lang="de-DE">Position der Produkttexte</label><defaultValue>append</defaultValue>
+            <options>
+                <option><id>append</id><name>After the description</name></option>
+                <option><id>before</id><name>Before the description</name></option>
+                <option><id>replace</id><name>Replace the description when Carve copy exists</name></option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>categoryPlacement</name><label>Category copy placement</label>
+            <label lang="de-DE">Position der Kategorietexte</label><defaultValue>before</defaultValue>
+            <options>
+                <option><id>before</id><name>Before the CMS layout</name></option>
+                <option><id>after</id><name>After the CMS layout</name></option>
+            </options>
+        </input-field>
+        <input-field type="text">
+            <name>krokiUrl</name><label>Kroki PlantUML endpoint</label>
+            <label lang="de-DE">Kroki-Endpunkt für PlantUML</label>
+            <defaultValue>https://kroki.io/plantuml/svg</defaultValue>
+            <helpText>Set your self-hosted HTTP or HTTPS endpoint and allow its origin in connect-src.</helpText>
+            <helpText lang="de-DE">HTTP- oder HTTPS-Endpunkt des eigenen Servers; dessen Ursprung in connect-src erlauben.</helpText>
         </input-field>
     </card>
 </config>

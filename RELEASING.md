@@ -65,14 +65,9 @@ release. `softprops/action-gh-release` sets the body from `body_path`.
 - **Store description length.** `shopware-cli extension validate` requires
   `extra.description` (en-GB and de-DE) in `composer.json` to be **150-185
   characters**. Too short/long fails the release at the validate step.
-- **JS dependency must be on npm first.** The admin live preview depends on
-  `@markup-carve/carve`. `shopware-cli extension zip` runs `npm install`, so that
-  package must be published to npm **before** a shopware-carve release, or the
-  ZIP build fails with a 404. Release carve-js first. That install now honors
-  `src/Resources/app/administration/package-lock.json`, so the ZIP carries the
-  engine CI measured rather than whatever the registry served at release time -
-  bump the lockfile (`npm install` in that directory) as a deliberate step when a
-  release should ship a newer engine.
+- **Build the administration assets.** The editor uses the PHP preview endpoint.
+  It does not depend on a separate carve-js release. Run the administration CI
+  checks before packaging the plugin.
 - **The PHP lockfile is refreshed on the floor, not on your machine.**
   `composer.lock` is committed so CI can state which `markup-carve/carve-php` a
   green run measured (the `locked-install` job installs it and reads the version

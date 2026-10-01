@@ -4,24 +4,29 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Core\Content\Cms;
 
+use MarkupCarve\Shopware\Service\CarveContextRenderer;
+use MarkupCarve\Shopware\Service\CarveIncludeCache;
+use MarkupCarve\Shopware\Service\CarveIncludeResult;
 use MarkupCarve\Shopware\Service\CarveRenderer;
 use Shopware\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
 use Shopware\Core\Content\Cms\DataResolver\CriteriaCollection;
 use Shopware\Core\Content\Cms\DataResolver\Element\AbstractCmsElementResolver;
 use Shopware\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
+use Shopware\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 
 /**
- * Resolves the `carve` CMS element. The element is self-contained: it holds a
- * `content` config field with Carve source. No data fetching is needed; the
- * storefront template renders the source through the |carve filter (server-side,
- * cached, SEO-safe).
+ * Resolves static or mapped Carve source to HTML with sales-channel references.
+ * Static CMS source can expand approved file includes.
  */
 class CarveCmsElementResolver extends AbstractCmsElementResolver
 {
-    public function __construct(private readonly CarveRenderer $renderer)
-    {
+    public function __construct(
+        private readonly CarveRenderer $renderer,
+        private readonly ?CarveContextRenderer $contextRenderer = null,
+        private readonly ?CarveIncludeCache $cache = null,
+    ) {
     }
 
     public function getType(): string
@@ -36,22 +41,29 @@ class CarveCmsElementResolver extends AbstractCmsElementResolver
 
     public function enrich(CmsSlotEntity $slot, ResolverContext $resolverContext, ElementDataCollection $result): void
     {
-        // Source stays in slot config (config.content.value); template renders it.
-        // Pre-render to data so templates can also read a ready 'html' field.
-        $config = $slot->getFieldConfig();
-        $content = $config->get('content');
+        $content = $slot->getFieldConfig()->get('content');
         $source = $content?->getValue();
-        $result = $this->renderer->toHtmlWithIncludes(
-            is_string($source) ? $source : null,
-            $resolverContext->getSalesChannelContext()->getContext(),
-        );
-        // setData() requires a Struct (not a plain array) on Shopware 6.7; ArrayStruct
-        // keeps the template accessor `element.data.html` working via array access.
-        // The dependency list rides along so an HTTP-cache listener can tag the
-        // page with the files it was built from, missing ones included.
+        $mapped = $content?->isMapped() ?? false;
+        $includes = $content?->isStatic() ?? false;
+        if ($mapped) {
+            $source = is_string($source) && $resolverContext instanceof EntityResolverContext
+                ? $this->resolveEntityValue($resolverContext->getEntity(), $source) : null;
+        }
+        $source = is_string($source) ? $source : null;
+        $namespace = 'cms-' . $slot->getUniqueIdentifier();
+        if ($this->contextRenderer !== null) {
+            $result = $this->contextRenderer->render($source, $resolverContext->getSalesChannelContext(), $includes, $namespace);
+        } else {
+            $result = !$includes
+                ? new CarveIncludeResult($this->renderer->toHtml($source))
+                : $this->renderer->toHtmlWithIncludes($source, $resolverContext->getSalesChannelContext()->getContext());
+        }
+        $this->cache?->tag($result);
         $slot->setData(new ArrayStruct([
             'html' => $result->html,
             'carveIncludeDependencies' => $result->dependencies,
+            'carveIncludeWarnings' => $result->warnings,
+            'carveSource' => $source,
         ]));
     }
 }

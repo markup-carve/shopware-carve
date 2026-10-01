@@ -1,0 +1,4 @@
+<sw-cms-inherit-wrapper v-if="hasNativeWrapper" :field="field" :element="element" :label="label">
+    <template #default="{ isInherited }"><slot :is-inherited="isInherited"></slot></template>
+</sw-cms-inherit-wrapper>
+<div v-else><slot :is-inherited="false"></slot></div>
