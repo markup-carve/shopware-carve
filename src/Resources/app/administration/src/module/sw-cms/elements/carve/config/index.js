@@ -1,44 +1,22 @@
+import inheritTemplate from './carve-inherit-wrapper.html.twig';
 import template from './sw-cms-el-config-carve.html.twig';
-import { carveToHtml } from '@markup-carve/carve';
 
-const { Component, Mixin } = Shopware;
-
-Component.register('sw-cms-el-config-carve', {
-    template,
-    mixins: [Mixin.getByName('cms-element')],
-    data() {
-        return {
-            livePreviewEnabled: true,
-            allowRawHtml: false,
-        };
-    },
-    created() {
-        this.initElementConfig('carve');
-        Shopware.Service('systemConfigApiService')
-            .getValues('ShopwareCarve.config')
-            .then((values) => {
-                const lp = values['ShopwareCarve.config.livePreview'];
-                this.livePreviewEnabled = lp === undefined ? true : Boolean(lp);
-                const raw = values['ShopwareCarve.config.allowRawHtml'];
-                this.allowRawHtml = raw === undefined ? false : Boolean(raw);
-            });
-    },
+Shopware.Component.register('carve-inherit-wrapper', {
+    template: inheritTemplate,
+    props: { field: String, element: Object, label: String },
     computed: {
-        content: {
-            get() {
-                return this.element?.config?.content?.value ?? '';
-            },
-            set(value) {
-                this.element.config.content.value = value;
-                this.$emit('element-update', this.element);
-            },
-        },
-        previewHtml() {
-            try {
-                return carveToHtml(this.content, { allowRawHtml: this.allowRawHtml });
-            } catch (e) {
-                return '';
-            }
+        hasNativeWrapper() { return Shopware.Component.getComponentRegistry().has('sw-cms-inherit-wrapper'); },
+    },
+});
+
+Shopware.Component.register('sw-cms-el-config-carve', {
+    template,
+    mixins: [Shopware.Mixin.getByName('cms-element')],
+    created() { this.initElementConfig('carve'); },
+    methods: {
+        updateContent(value) {
+            this.element.config.content.value = value;
+            this.$emit('element-update', this.element);
         },
     },
 });

@@ -23,6 +23,21 @@ class CarveIncludeRenderTest extends CarveIncludeTestCase
         self::assertSame([], $result->warnings);
     }
 
+    public function testTranslatedSectionSelectionAndHeadingShift(): void
+    {
+        $root = $this->makeRoot([
+            'en-GB/shared.crv' => "{#care}\n# Care\n\nEnglish care.\n\n{#delivery}\n# Delivery\n\nNot selected.\n",
+            'de-DE/shared.crv' => "{#care}\n# Pflege\n\nDeutsche Pflege.\n",
+        ]);
+        $renderer = $this->makeRenderer($root);
+        $english = $renderer->toHtmlWithIncludes('{{ en-GB/shared.crv #care @shift:1 }}', $this->privilegedAdmin());
+        $german = $renderer->toHtmlWithIncludes('{{ de-DE/shared.crv #care @shift:1 }}', $this->privilegedAdmin());
+        self::assertStringContainsString('<h2>Care</h2>', $english->html);
+        self::assertStringNotContainsString('Not selected', $english->html);
+        self::assertStringContainsString('Deutsche Pflege.', $german->html);
+        self::assertStringNotContainsString('English care.', $german->html);
+    }
+
     public function testTraversalAndSymlinkEscapeStayLiteralAndReportNoPath(): void
     {
         $root = $this->makeRoot();

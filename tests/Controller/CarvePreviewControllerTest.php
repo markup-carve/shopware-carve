@@ -6,17 +6,23 @@ namespace MarkupCarve\Shopware\Tests\Controller;
 
 use MarkupCarve\Shopware\Controller\CarvePreviewController;
 use MarkupCarve\Shopware\Core\Content\Cms\CarveCmsElementResolver;
+use MarkupCarve\Shopware\Service\CarveIncludeGate;
 use MarkupCarve\Shopware\Service\CarveRenderer;
 use MarkupCarve\Shopware\Tests\Service\CarveIncludeTestCase;
 use Shopware\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
 use Shopware\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
+use Shopware\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopware\Core\Content\Product\ProductDefinition;
+use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class CarvePreviewControllerTest extends CarveIncludeTestCase
 {
@@ -63,6 +69,83 @@ class CarvePreviewControllerTest extends CarveIncludeTestCase
         );
     }
 
+    public function testOnlyStaticCmsSourceExpandsIncludes(): void
+    {
+        $root = $this->makeRoot(['secret.crv' => 'Do not expand']);
+        foreach (['default', 'product_stream', 'unknown'] as $sourceType) {
+            $slot = $this->resolveSlot($this->makeRenderer($root), '{{ secret.crv }}', $this->privilegedAdmin(), $sourceType);
+            self::assertStringContainsString('{{ secret.crv }}', $this->slotData($slot)['html']);
+            self::assertSame([], $this->slotData($slot)['carveIncludeDependencies']);
+        }
+    }
+
+    public function testJsonPreviewUsesSourceAndReturnsDiagnostics(): void
+    {
+        $request = new Request(content: json_encode(['source' => '**Markdown bold**'], JSON_THROW_ON_ERROR));
+        $request->headers->set('Content-Type', 'application/json');
+        $response = (new CarvePreviewController($this->makeRenderer(null)))->preview($request, $this->cmsOnlyAdmin());
+        $payload = json_decode((string)$response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertStringContainsString('Markdown bold', $payload['html']);
+        self::assertNotEmpty($payload['diagnostics']);
+    }
+
+    public function testImportReturnsConvertedSourceWithoutPersistence(): void
+    {
+        $request = new Request(content: '{"source":"<p><strong>Imported</strong></p>","format":"html"}');
+        $request->headers->set('Content-Type', 'application/json');
+        $response = (new CarvePreviewController($this->makeRenderer(null)))->import($request, $this->cmsOnlyAdmin());
+        $payload = json_decode((string)$response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertStringContainsString('*Imported*', $payload['source']);
+        self::assertArrayHasKey('diagnostics', $payload['report']);
+    }
+
+    public function testOversizedPreviewIsRejectedBeforeParsing(): void
+    {
+        $this->expectException(HttpException::class);
+        (new CarvePreviewController($this->makeRenderer(null)))->preview(
+            new Request(content: str_repeat('a', 262145)),
+            $this->cmsOnlyAdmin(),
+        );
+    }
+
+    public function testCmsReadPermissionDoesNotGrantLibraryAccess(): void
+    {
+        $this->expectException(MissingPrivilegeException::class);
+        (new CarvePreviewController($this->makeRenderer(null)))->includes($this->cmsOnlyAdmin());
+    }
+
+    public function testLibraryOnlyListsContainedCarveFiles(): void
+    {
+        $root = $this->makeRoot(['en-GB/shared.crv' => 'Shared', 'ignored.txt' => 'ignored']);
+        symlink($this->makeOutsideFile('secret'), $root . '/outside.crv');
+        $gate = new CarveIncludeGate($this->makeConfig($root));
+        $response = (new CarvePreviewController($this->makeRenderer($root), $gate))->includes($this->privilegedAdmin());
+        self::assertSame(['paths' => ['en-GB/shared.crv'], 'limit' => 500], json_decode((string)$response->getContent(), true));
+    }
+
+    public function testMappedCmsContentReadsEntityValueAndKeepsIncludesLiteral(): void
+    {
+        $root = $this->makeRoot(['one.crv' => 'Do not expand']);
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('mapped-slot');
+        $slot->setFieldConfig(new FieldConfigCollection([
+            new FieldConfig('content', FieldConfig::SOURCE_MAPPED, 'product.description'),
+        ]));
+        $entity = new ProductEntity();
+        $entity->setDescription('*Mapped* {{ one.crv }}');
+        $salesChannelContext = $this->createStub(SalesChannelContext::class);
+        $resolverContext = new EntityResolverContext(
+            $salesChannelContext,
+            new Request(),
+            new ProductDefinition(),
+            $entity,
+        );
+        (new CarveCmsElementResolver($this->makeRenderer($root)))->enrich($slot, $resolverContext, new ElementDataCollection());
+        self::assertStringContainsString('<strong>Mapped</strong>', $this->slotData($slot)['html']);
+        self::assertStringContainsString('{{ one.crv }}', $this->slotData($slot)['html']);
+        self::assertStringNotContainsString('Do not expand', $this->slotData($slot)['html']);
+    }
+
     /**
      * @param \Symfony\Component\HttpFoundation\JsonResponse $response
      *
@@ -92,12 +175,12 @@ class CarvePreviewControllerTest extends CarveIncludeTestCase
         return $data->all();
     }
 
-    private function resolveSlot(CarveRenderer $renderer, string $source, Context $context): CmsSlotEntity
+    private function resolveSlot(CarveRenderer $renderer, string $source, Context $context, string $sourceType = FieldConfig::SOURCE_STATIC): CmsSlotEntity
     {
         $slot = new CmsSlotEntity();
         $slot->setUniqueIdentifier('slot-1');
         $slot->setFieldConfig(new FieldConfigCollection([
-            new FieldConfig('content', FieldConfig::SOURCE_STATIC, $source),
+            new FieldConfig('content', $sourceType, $source),
         ]));
 
         $salesChannelContext = $this->createStub(SalesChannelContext::class);

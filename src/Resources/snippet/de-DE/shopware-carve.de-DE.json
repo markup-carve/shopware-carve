@@ -1,0 +1,6 @@
+{
+    "shopware-carve": {
+        "inStock": "Auf Lager",
+        "outOfStock": "Nicht auf Lager"
+    }
+}

@@ -1,56 +1,8 @@
 name: Shopware 6.7
 
-# THIS WORKFLOW IS EXPECTED TO BE RED TODAY. DO NOT "FIX" IT BY DELETING IT,
-# BY ADDING `continue-on-error`, BY TURNING OFF THE ADVISORY BLOCK, OR BY LETTING
-# A LEG NAMED 6.7 RESOLVE 6.6. Every one of those recreates the exact defect
-# this workflow was split out of (markup-carve/shopware-carve#20), one layer up
-# and harder to see, because then a job name asserts coverage that nothing has.
-#
-# WHY IT IS RED. `composer.json` declares `shopware/core: ~6.6.0 || ~6.7.0`, and as
-# of 2026-08-21 no 6.7 installs at all. Composer refuses to load a release under an
-# open security advisory by default - the setting is `policy.advisories.block` from
-# 2.10 and was `audit.block-insecure` before it, and this repository changes neither.
-# The line is refused by two stacked mechanisms: 20 open advisories on
-# `shopware/core` itself cap the line below v6.7.10.1, and the v6.7.10.1 - v6.7.13.0
-# pool that leaves then reaches either `dompdf/dompdf 3.1.4` (six advisories) or
-# `mcp/sdk` (PKSA-p9gd-j6gr-6f9t), directly or through `symfony/mcp-bundle`.
-# Measured against a clean COMPOSER_HOME, `composer update --with
-# shopware/core:~6.7.0` reports:
-#
-#     Root composer.json requires shopware/core ~6.6.0 || ~6.7.0 -> satisfiable by
-#     shopware/core[v6.7.10.1, ..., v6.7.13.0].
-#     - shopware/core[v6.7.10.1, ..., v6.7.12.1] require dompdf/dompdf 3.1.4 ...
-#       affected by security advisories
-#     - shopware/core v6.7.13.0 requires mcp/sdk ^0.6.0 ... affected by security
-#       advisories
-#
-# A plugin declaring support for a line it cannot even install is a real,
-# reportable state, and the red says so with Composer's own reasoning attached.
-# It needs no commit here to clear: when the advisory window closes these legs go
-# green on their own.
-#
-# WHY IT IS A SEPARATE FILE. `README.md` line 4 carries a public `ci.yml` badge on
-# a Packagist-published package that merchants evaluate. The badge should track
-# the line a merchant can actually install, so 6.6 and the lint/JS lanes stay in
-# `ci.yml` and the 6.7 legs live here - measured on every pull request, just not
-# summarized into that badge. Splitting the file is the only thing that changed;
-# the install and the read-back below are byte-identical to the ones in `ci.yml`,
-# and if you edit one you must edit both.
-#
-# NO LOCKFILE REACHES THIS LANE, and that is a consequence of the red rather than
-# a gap. `composer.lock` landed for markup-carve/shopware-carve#18 so a run can
-# state which engine it measured, and it is necessarily solved for ONE
-# `shopware/core`. Solving it for 6.7 would require installing 6.7, which is the
-# thing that does not work here - Composer refuses the whole pool before a lock
-# can be written. So the lock holds the 6.6 line, `ci.yml`'s `locked-install` job
-# is the only job that installs it, and these legs keep resolving. When the
-# advisory window closes, these legs go green on their own and a 6.7 lockfile
-# becomes possible; neither is a reason to touch anything below.
-#
-# `pull_request` only, deliberately. A red push run on `main` would sit permanently
-# on the default branch's commit list with nothing a commit here could do about it.
-#
-# See `ci.yml`'s own header for the axis this pair of legs belongs to.
+# Resolve the declared 6.7 line independently of the 6.6 lockfile.
+# Advisory-blocked installs remain failures. Do not suppress them or allow
+# a lane named 6.7 to resolve 6.6.
 
 on:
   pull_request:

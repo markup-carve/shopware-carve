@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
+use MarkupCarve\Shopware\Service\CarveConverterFactory;
 use MarkupCarve\Shopware\Service\CarveRenderer;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
@@ -69,8 +70,9 @@ class CarveRendererTest extends TestCase
             symbols: "bad name=<script>alert(1)</script>\n9lead=x\n<img src=x>=y\nok_one=A\n  spaced  =  B  ",
         ));
 
-        $method = new ReflectionMethod($renderer, 'configuredSymbols');
-        $symbols = $method->invoke($renderer);
+        $factory = new CarveConverterFactory($this->makeConfigMock(null, symbols: "bad name=<script>alert(1)</script>\n9lead=x\n<img src=x>=y\nok_one=A\n  spaced  =  B  "));
+        $method = new ReflectionMethod($factory, 'symbols');
+        $symbols = $method->invoke($factory, null);
 
         self::assertSame(['ok_one' => 'A', 'spaced' => 'B'], $symbols);
     }
@@ -79,9 +81,10 @@ class CarveRendererTest extends TestCase
     {
         $renderer = new CarveRenderer($this->makeConfigMock(null, symbols: "\n   \nnoequals\nrocket=X\n"));
 
-        $method = new ReflectionMethod($renderer, 'configuredSymbols');
+        $factory = new CarveConverterFactory($this->makeConfigMock(null, symbols: "\n   \nnoequals\nrocket=X\n"));
+        $method = new ReflectionMethod($factory, 'symbols');
 
-        self::assertSame(['rocket' => 'X'], $method->invoke($renderer));
+        self::assertSame(['rocket' => 'X'], $method->invoke($factory, null));
     }
 
     public function testNeutralizesJavascriptScheme(): void

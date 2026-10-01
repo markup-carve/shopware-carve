@@ -6,44 +6,9 @@ on:
   pull_request:
     branches: [main]
 
-# THE SHOPWARE AXIS, and why the jobs below install rather than resolve freely.
-#
-# `composer.json` declares `shopware/core: ~6.6.0 || ~6.7.0` - two majors. Before
-# this axis existed the matrix varied only PHP and let Composer pick the Shopware
-# version, which meant BOTH legs resolved v6.6.10.22 and the declared 6.7 support
-# was exercised by no job at all (markup-carve/shopware-carve#20). The direction of
-# that silence is the bad one: support looked tested, because the suite was green.
-#
-# So each declared line gets its own leg, installed by name. `--with` narrows the
-# root constraint for one run without editing composer.json, and every leg then
-# READS THE INSTALLED VERSION BACK and refuses when it is not on the line the leg
-# claims. That read-back is the load-bearing part. Without it a leg labelled 6.7
-# that silently resolved 6.6 passes - which is this defect again, one layer up,
-# and harder to see because now there is a job name asserting otherwise.
-#
-# 6.7 IS MEASURED, BUT NOT FROM THIS FILE. The 6.7 half of the axis lives in
-# `shopware-67.yml`, on the same `pull_request` trigger, running the same install
-# and the same read-back. It is expected to be red: no 6.7 currently installs,
-# because Composer refuses by default to load a release under an open security
-# advisory, and every 6.7 candidate is refused - either for an advisory on
-# `shopware/core` itself, or for one on a package it requires. That red is a true
-# statement about this plugin's declared support and is meant to stay visible; see
-# that file's header before touching it.
-#
-# The split is about ONE reader. `README.md` line 4 carries a public `ci.yml` badge
-# on a Packagist-published package that merchants evaluate, and that badge should
-# track the line a merchant can actually install. Nothing about the split reduces
-# what is measured per commit; it changes only which result the badge summarizes.
-# If you edit the install or the read-back here, edit the copy there too - they are
-# byte-identical on purpose, and a drift between them is invisible until a leg
-# stops discriminating.
-#
-# Note these legs are `composer update`, not `composer install`, and that stays
-# true now that a `composer.lock` exists. A lock pins ONE `shopware/core`, so
-# installing it here would make every leg measure that one version and collapse
-# the axis into the single-line silence it was split out of. The axis resolves per
-# line on purpose; reproducibility lives in the `locked-install` job below, which
-# is the only job that reads the lockfile. If you add a leg here, it resolves.
+# Resolve 6.6 here and 6.7 in shopware-67.yml. Each lane verifies the
+# installed line. The locked-install lane checks reproducibility separately.
+
 jobs:
   test:
     name: Test (PHP ${{ matrix.php-version }}, Shopware ${{ matrix.shopware }})
@@ -205,8 +170,7 @@ jobs:
   # resolution, `composer install` reproduces it, and the read-back below refuses
   # when what is installed is not what the lock names - a dropped lockfile, a
   # hand-edited vendor tree, or a `composer update` whose lock nobody committed.
-  # A lockfile nothing reads back is not a pin, which is the same rule the
-  # `admin-js` job states for the npm half.
+  # The administration build verifies the editor separately.
   #
   # PHP 8.2, because that is the floor `composer.json` declares and the platform
   # this lock was solved against. A lock installs only where it was solved:
@@ -316,120 +280,28 @@ jobs:
       - name: Test
         run: composer test
 
-  # The JS lane. Before this job existed nothing in CI installed npm at all:
-  # the two jobs above are `composer install`, `engine-drift.yml` is
-  # `composer update`, and `release.yml` installs no dependencies. So
-  # `@markup-carve/carve` was declared in the admin module and exercised by
-  # nothing, and a change that broke the admin bundle went green
-  # (markup-carve/shopware-carve#19).
-  #
-  # Worse than unmeasured: `shopware-cli extension zip` runs `npm install`, so
-  # before this job the FIRST run that resolved this dependency was the one
-  # producing the release artifact (RELEASING.md). A lockfile plus this job move
-  # that resolve to a pull request, where a failure is cheap.
+  # Preview requests are rendered by PHP; this lane checks the editor bundle.
   admin-js:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: src/Resources/app/administration
     steps:
-      - name: Checkout shopware-carve
-        uses: actions/checkout@v7
-
-      - name: Set up Node
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          # The engine declares `engines.node >= 20`; 22 is the current LTS.
           node-version: '22'
-          cache: npm
-          cache-dependency-path: src/Resources/app/administration/package-lock.json
-
-      # `ci`, not `install`: it installs the lockfile exactly and fails when the
-      # lockfile and package.json disagree, so this run measures a stated engine
-      # rather than whatever the registry serves at the moment it runs.
-      - name: Install from the lockfile
-        run: npm ci --no-audit --no-fund
-
-      # A lockfile nothing reads back is not a pin. This step reports the engine
-      # behind the result, and refuses when the lock names none or when what is
-      # installed is not what the lock names - a dropped lockfile, a hand-edited
-      # tree, or an `npm install` that quietly re-resolved.
-      - name: Verify the engine this run measures
+      - name: Test administration preview requests
+        run: node --test --experimental-default-type=module tests/Administration/*.test.mjs
+      - name: Build the admin bundle
+        working-directory: src/Resources/app/administration
         run: |
           set -euo pipefail
-          pkg='@markup-carve/carve'
-          locked="$(node -e '
-            const lock = require("./package-lock.json");
-            const entry = (lock.packages || {})["node_modules/@markup-carve/carve"];
-            process.stdout.write(entry && entry.version ? entry.version : "");
-          ')"
-          if [ -z "${locked}" ]; then
-            echo "::error::package-lock.json pins no ${pkg}, so this run measured an unstated engine"
-            exit 1
-          fi
-          # By path, deliberately. The engine's `exports` map does not expose
-          # ./package.json, so `require('@markup-carve/carve/package.json')`
-          # throws ERR_PACKAGE_PATH_NOT_EXPORTED and would read as the package
-          # being absent.
-          installed="$(node -e '
-            const fs = require("fs");
-            const p = "./node_modules/@markup-carve/carve/package.json";
-            process.stdout.write(fs.existsSync(p) ? (JSON.parse(fs.readFileSync(p, "utf8")).version || "") : "");
-          ')"
-          if [ -z "${installed}" ]; then
-            echo "::error::${pkg} is not installed, so nothing here exercises the admin engine"
-            exit 1
-          fi
-          echo "${pkg} locked=${locked} installed=${installed}"
-          if [ "${installed}" != "${locked}" ]; then
-            echo "::error::installed ${pkg} ${installed} is not the locked ${locked}"
-            exit 1
-          fi
-
-      # Installing the engine proves it downloads. Building the entry proves the
-      # admin module graph still resolves against it and that the named export
-      # the components import is really there: esbuild fails on an unresolved
-      # import AND on `No matching export`, so an engine that renamed
-      # `carveToHtml` fails here rather than in a merchant's admin panel.
-      #
-      # esbuild is pinned and run through npx rather than added to the admin
-      # package.json: `shopware-cli extension zip` runs `npm install` in that
-      # directory at release time, so a devDependency there would ship a build
-      # tool inside the plugin ZIP.
-      - name: Build the admin bundle
+          npm ci --no-audit --no-fund
+          out="$(mktemp -d)"
+          npx --yes esbuild@0.28.2 --bundle src/main.js \
+            --loader:.twig=text --loader:.scss=text --format=esm \
+            --outfile="${out}/admin.js"
+      - name: Compile administration templates
         run: |
           set -euo pipefail
           out="$(mktemp -d)"
-          npx --yes esbuild@0.28.2 --bundle src/main.js \
-            --loader:.twig=text --format=esm \
-            --outfile="${out}/admin.js" --metafile="${out}/meta.json"
-          # Structural, not a size heuristic: the engine's files must actually be
-          # inputs of the bundle. Without this, aliasing or externalizing the
-          # engine would still produce a bundle and still pass, which is the same
-          # measures-nothing shape this job exists to remove.
-          node -e '
-            const meta = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
-            const engine = Object.keys(meta.inputs)
-              .filter((p) => p.includes("node_modules/@markup-carve/carve/"));
-            if (engine.length === 0) {
-              console.error("::error::the admin bundle pulled in no @markup-carve/carve file, so the build did not exercise the engine");
-              process.exit(1);
-            }
-            console.log("engine files in the bundle: " + engine.join(", "));
-          ' "${out}/meta.json"
-
-      # The artifact, not the version string. A version that matches the lock
-      # says nothing about what the engine does; this renders one document
-      # through the export the admin components actually call.
-      - name: Render one document through the installed engine
-        run: |
-          set -euo pipefail
-          node --input-type=module -e '
-            import { carveToHtml } from "@markup-carve/carve";
-            const html = carveToHtml("*bold* and /italic/");
-            console.log(html);
-            if (!html.includes("<strong>bold</strong>") || !html.includes("<em>italic</em>")) {
-              console.error("::error::the installed engine did not render Carve emphasis as expected: " + html);
-              process.exit(1);
-            }
-          '
+          npm install --prefix "${out}" --no-audit --no-fund @vue/compiler-dom@3.5.22
+          node tests/Administration/compile-templates.cjs "${out}/node_modules/@vue/compiler-dom"

@@ -1,10 +1,17 @@
 .carve-content {
     line-height: 1.6;
+    overflow-wrap: anywhere;
+    img { max-width: 100%; height: auto; }
+    .carve-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 1rem; }
+    .carve-product-card { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+    .carve-product-card img { max-width: 72px; }
+    .carve-chart-data { white-space: pre-wrap; }
+
 
     // -------------------------------------------------------------------------
     // Tables (pipe-table and list-table both render as <table>)
     // -------------------------------------------------------------------------
-    table { width: 100%; border-collapse: collapse; }
+    table { display: block; overflow-x: auto; max-width: 100%; width: 100%; border-collapse: collapse; }
     th, td { border: 1px solid #ddd; padding: .4rem .6rem; }
     thead th { background: #f0f0f0; font-weight: 600; }
 

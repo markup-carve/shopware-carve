@@ -1,0 +1,54 @@
+<div class="carve-editor">
+    <template v-if="!readOnly">
+        <component :is="textareaComponent" :value="source" :model-value="source"
+            :label="label" :disabled="disabled" :error="error"
+            @update:value="updateSource" @update:model-value="updateSource" />
+        <details>
+            <summary>Formatting help and insert tools</summary>
+            <p><code>*bold*</code>, <code>/italic/</code>, <code>_underline_</code>, <code>[label](url)</code>.
+                Use a blank line before lists. Headings start with <code>#</code>.</p>
+            <sw-entity-single-select v-if="acl.can('product.viewer')" v-model:value="productId" entity="product"
+                label="Product" :disabled="disabled" />
+            <sw-button :disabled="disabled || !productId" @click="insertProduct">Insert product link</sw-button>
+            <sw-entity-single-select v-if="acl.can('media.viewer')" v-model:value="mediaId" entity="media"
+                label="Image from media library" :disabled="disabled" />
+            <sw-button :disabled="disabled || !mediaId" @click="insertMedia">Insert image</sw-button>
+            <template v-if="canInclude">
+                <sw-single-select v-model:value="includePath" :options="includeOptions" label="Shared Carve file" :disabled="disabled" />
+                <sw-text-field v-model:value="includeSection" label="Section ID (optional)" :disabled="disabled" />
+                <sw-text-field v-model:value="includeShift" label="Heading shift (optional)" :disabled="disabled" />
+                <sw-button :disabled="disabled || !includePath" @click="insertInclude">Insert shared content</sw-button>
+            </template>
+        </details>
+        <details>
+            <summary>Import existing copy</summary>
+            <sw-single-select v-model:value="importFormat" :options="importOptions" label="Source format" :disabled="disabled" />
+            <component :is="textareaComponent" :value="importSource" :model-value="importSource" label="Content to convert" :disabled="disabled"
+                @update:value="importSource = $event" @update:model-value="importSource = $event" />
+            <sw-button :disabled="disabled || !importSource" @click="convertImport">Convert for review</sw-button>
+            <p v-if="importError" role="alert">{{ importError }}</p>
+            <template v-if="imported">
+                <pre>{{ imported.source }}</pre>
+                <ul><li v-for="(item, index) in imported.report.diagnostics" :key="index">{{ item.message }}</li></ul>
+                <sw-button :disabled="disabled" @click="applyImport">Replace with converted source</sw-button>
+            </template>
+        </details>
+    </template>
+    <pre v-if="readOnly && !previewEnabled">{{ source }}</pre>
+    <template v-if="previewEnabled">
+        <sw-entity-single-select v-if="acl.can('sales_channel.viewer') && acl.can('product.viewer')" v-model:value="salesChannelId" entity="sales_channel"
+            label="Preview sales channel (guest prices)" />
+        <p v-if="!salesChannelId">Select a sales channel to resolve commerce references.</p>
+        <p v-if="loading" role="status">Updating preview...</p>
+        <p v-if="previewError" role="alert">{{ previewError }} <sw-button @click="refreshPreview">Retry</sw-button></p>
+        <iframe v-if="preview" class="carve-editor__preview" title="Carve content preview" sandbox="" :srcdoc="previewDocument"></iframe>
+        <ul v-if="diagnostics.length"><li v-for="(item, index) in diagnostics" :key="index">
+            {{ item.rule }} ({{ item.line }}:{{ item.column }}): {{ item.message }}
+        </li></ul>
+        <p v-if="preview?.suppressedWarnings">{{ preview.suppressedWarnings }} additional warnings were omitted.</p>
+        <details v-if="preview?.dependencies?.length">
+            <summary>Included files</summary>
+            <ul><li v-for="(item, index) in preview.dependencies" :key="index">{{ item.path }}: {{ item.resolved ? 'resolved' : 'missing' }}</li></ul>
+        </details>
+    </template>
+</div>
