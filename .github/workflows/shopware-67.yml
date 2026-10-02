@@ -8,10 +8,14 @@ on:
   pull_request:
     branches: [main]
 
+# Every job declares timeout-minutes so a hung step fails in minutes
+# rather than inheriting the 360-minute GitHub default.
+
 jobs:
   test:
     name: Test (PHP ${{ matrix.php-version }}, Shopware ${{ matrix.shopware }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -72,6 +76,7 @@ jobs:
   static-analysis:
     name: PHPStan (Shopware ${{ matrix.shopware }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
