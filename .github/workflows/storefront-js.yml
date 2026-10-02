@@ -34,9 +34,13 @@ on:
   pull_request:
     branches: [main]
 
+# Every job declares timeout-minutes so a hung step fails in minutes
+# rather than inheriting the 360-minute GitHub default.
+
 jobs:
   storefront-js:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: src/Resources/app/storefront

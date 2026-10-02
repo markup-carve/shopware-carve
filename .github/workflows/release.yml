@@ -8,9 +8,13 @@ on:
 permissions:
   contents: write
 
+# Every job declares timeout-minutes so a hung step fails in minutes
+# rather than inheriting the 360-minute GitHub default.
+
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: release
     env:
       # Optional Shopware Community Store publishing. Leave the secrets unset to

@@ -9,10 +9,14 @@ on:
 # Resolve 6.6 here and 6.7 in shopware-67.yml. Each lane verifies the
 # installed line. The locked-install lane checks reproducibility separately.
 
+# Every job declares timeout-minutes so a hung step fails in minutes
+# rather than inheriting the 360-minute GitHub default.
+
 jobs:
   test:
     name: Test (PHP ${{ matrix.php-version }}, Shopware ${{ matrix.shopware }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -74,6 +78,7 @@ jobs:
   static-analysis:
     name: PHPStan (Shopware ${{ matrix.shopware }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -137,6 +142,7 @@ jobs:
   # than a style check is worth.
   coding-standards:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout shopware-carve
         uses: actions/checkout@v7
@@ -191,6 +197,7 @@ jobs:
   locked-install:
     name: Locked install (PHP 8.2)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout shopware-carve
         uses: actions/checkout@v7
@@ -283,6 +290,7 @@ jobs:
   # Preview requests are rendered by PHP; this lane checks the editor bundle.
   admin-js:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
