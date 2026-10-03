@@ -2,14 +2,14 @@
 
 The release is driven by a **git tag**. Pushing a tag `X.Y.Z` on `main` runs
 `.github/workflows/release.yml`, which checks its inputs, builds the installable
-ZIP with `shopware-cli`, uploads it to the store, and publishes a GitHub release
-with the ZIP attached and the notes from `.github/release-notes/X.Y.Z.md`.
+ZIP with `shopware-cli`, uploads it to the store, and publishes the release draft
+for that tag with the ZIP attached.
 
 The job runs in this order, and the order is load-bearing:
 
 1. **Preflight** - every input that can be missing, checked before PHP is even
-   installed: the notes file, `composer.json`'s `version` against the tag, and a
-   `# X.Y.Z` section in both store changelogs. A release that cannot succeed is
+   installed: a draft release carrying the notes, `composer.json`'s `version`
+   against the tag, and a `# X.Y.Z` section in both store changelogs. A release that cannot succeed is
    refused here, in seconds, with nothing built and nothing published.
 2. Validate and build the ZIP.
 3. **Upload to the store**, then **publish the GitHub release** - in that order,
@@ -25,9 +25,14 @@ The job runs in this order, and the order is load-bearing:
    - `CHANGELOG_en-GB.md` and `CHANGELOG_de-DE.md` - add a `# X.Y.Z` entry
      (store format; the store validator requires a `CHANGELOG*.md` with the
      released version).
-2. **Write the release notes** at `.github/release-notes/X.Y.Z.md`. This is the
-   GitHub release body. Preflight **fails** if the file is missing or empty, so
-   it can never publish an empty release.
+2. **Write the release notes into a GitHub draft release**, which is the
+   release body:
+   ```bash
+   gh release create X.Y.Z --draft --notes-file /tmp/notes.md
+   ```
+   The notes are never committed to the repository. The release job refuses to
+   build unless a release for the tag exists and has a non-empty body, so it can
+   never publish an empty release.
    **Roll `composer.json`'s `version` to `X.Y.Z` in the same PR.** Shopware reads
    that field as the plugin version - the tag is not consulted - so a mismatch
    ships a plugin that reports itself as the previous release, with every step
@@ -46,10 +51,14 @@ The job runs in this order, and the order is load-bearing:
 
 ## Notes source of truth
 
-Release notes live **in the repo** (`.github/release-notes/`), not only on the
-GitHub release object. This is deliberate: a release that is deleted or rebuilt
-is always reproducible from git, and the tag alone yields a fully-populated
-release. `softprops/action-gh-release` sets the body from `body_path`.
+The **draft release** holds the notes. They are not committed to the repository:
+a file in git is a second copy of what GitHub already stores on the release
+object, the two drift, and the copy nobody reads is the one in git. The draft is
+also the review surface, so the notes get read before they are public rather
+than after a merge.
+
+The release job reads the draft's body and hands it to
+`softprops/action-gh-release` as `body_path`, via a file under `RUNNER_TEMP`.
 
 ## Special cases and gotchas
 
@@ -185,9 +194,8 @@ page, and name it in `superseded_releases`. Leaving a published release that
 ships nothing, with nothing recording that, is the failure itself and not a
 cosmetic one.
 
-## Draft-first alternative
+## The draft is required, not optional
 
-If you prefer to review the rendered notes before publishing, create a **draft**
-release for the tag first (`gh release create X.Y.Z --draft --notes-file
-.github/release-notes/X.Y.Z.md`), then push the tag. `softprops` updates the
-existing release and publishes it - it does not create a duplicate.
+The draft release for the tag has to exist before the tag is pushed; the job
+refuses to build without one. `softprops` updates that existing release and
+publishes it rather than creating a duplicate.

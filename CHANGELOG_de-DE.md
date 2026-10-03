@@ -1,3 +1,12 @@
+# 0.1.5
+- Ein gemeinsamer Carve-Editor für das CMS-Element sowie Produkt-, Kategorie- und Herstellerfelder, mit serverseitiger Vorschau, Diagnosen, Produkt- und Medienauswahl sowie geprüftem HTML- und Markdown-Import.
+- Neue Commerce-Elemente für die Redaktion: Verkaufskanalpreise, Bestandsangaben, Karten, Raster, Spezifikationslisten, Datenblätter, Medienbilder, Textbausteine und interne Links.
+- Gemeinsam genutzte Inhalts-Includes: Auswahl aus einer Include-Bibliothek, Prüfungen beim Veröffentlichen, Cache-Tags für Abhängigkeiten und der Befehl `carve:includes:invalidate` für Deployment-Jobs.
+- Konfigurierbare Zuordnung von CMS-Feldern, Platzierung von Kopien und Verhalten externer Links, automatische Typografie-Locale sowie Maskierung literaler Daten für den Mailversand.
+- Produktreferenzen berücksichtigen jetzt die Sichtbarkeit im Verkaufskanal und verwenden SEO-URLs. Abfragen werden gebündelt, sodass eine Seite mit vielen Referenzen deutlich weniger Datenbankabfragen auslöst.
+- Die Vorschau im Administrationsbereich verwirft veraltete Antworten und zeigt Fehler in einem abgeschotteten Rahmen, statt die vorherige Darstellung beizubehalten.
+- Fragment-IDs und Tab-Radiogruppen bleiben unabhängig, wenn mehrere Carve-Blöcke auf einer Seite stehen.
+
 # 0.1.4
 - Datei-Includes mit Freigabe hinzugefügt. Ein Administrator legt ein absolutes Basisverzeichnis fest, standardmäßig leer; ohne dieses bleibt jede Include-Direktive überall wörtlich stehen.
 - Mit gesetztem Basisverzeichnis lösen der Befehl carve:render und das Carve-CMS-Element Includes auf; ein CMS-Redakteur benötigt zusätzlich das Recht „Carve-Datei-Includes expandieren“. Produkt-, Kategorie- und Herstellerfelder behalten Direktiven wörtlich, unabhängig davon, wer sie geschrieben hat.
