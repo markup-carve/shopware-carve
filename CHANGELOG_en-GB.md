@@ -1,3 +1,12 @@
+# 0.1.5
+- One shared Carve editor across the CMS element and the product, category and manufacturer fields, with server-side preview, diagnostics, product and media selection, and reviewed HTML and Markdown import.
+- New commerce elements for authoring: sales-channel prices, stock labels, cards, grids, specification lists, datasheets, media images, snippets and internal links.
+- Shared content includes: pick from an include library, write checks on publication, dependency cache tags, and the `carve:includes:invalidate` command for deployment jobs.
+- Configurable CMS field mapping, copy placement and external-link behavior, automatic typography locale, and literal-data escaping for mail.
+- Product references now respect sales-channel visibility and use SEO URLs. Lookups are batched, so a page with many references issues far fewer queries.
+- The administration preview rejects stale responses and shows failures in a sandboxed frame instead of keeping the previous render.
+- Fragment ids and tab radio groups stay independent when several Carve blocks appear on one page.
+
 # 0.1.4
 - Add gated file includes. An administrator sets an absolute include containment root, empty by default, which keeps every include directive literal everywhere.
 - With a root configured, the `carve:render` command and the Carve CMS element expand includes; a CMS editor additionally needs the "Expand Carve file includes" privilege. Product, category and manufacturer fields keep directives literal whoever wrote them.

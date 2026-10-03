@@ -5,6 +5,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-10-03
+
 ### Added
 
 - Shared Carve editor for CMS and product, category, and manufacturer fields,
