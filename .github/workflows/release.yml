@@ -47,6 +47,11 @@ jobs:
             || { echo "::error::the release for $GITHUB_REF_NAME has no notes"; exit 1; }
           printf '%s' "$release" | jq -r '"draft=\(.draft) tag=\(.tag_name)"'
 
+          # The draft's body IS the release body. Carried to a file here only
+          # because the publish action takes a path, never committed.
+          printf '%s' "$release" | jq -r '.body' > "${RUNNER_TEMP}/release-notes.md"
+          echo "NOTES_FILE=${RUNNER_TEMP}/release-notes.md" >> "${GITHUB_ENV}"
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
@@ -78,16 +83,6 @@ jobs:
           set -euo pipefail
           version="${GITHUB_REF_NAME}"
           failed=0
-
-          # 1. The release body. This is the one that failed for 0.1.2.
-          notes=".github/release-notes/${version}.md"
-          if [ ! -s "${notes}" ]; then
-            echo "::error::missing or empty release notes file ${notes} - create it before tagging ${version} (RELEASING.md step 2)"
-            failed=1
-          else
-            echo "NOTES_FILE=${notes}" >> "${GITHUB_ENV}"
-            echo "ok  release notes  ${notes}"
-          fi
 
           # 2. The plugin version. Shopware reads composer.json's `version` as
           #    THE plugin version - the tag is not consulted - so a mismatch
