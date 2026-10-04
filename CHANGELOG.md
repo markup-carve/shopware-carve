@@ -5,6 +5,18 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-10-04
+
+### Fixed
+
+- Install and update no longer abort on `config.xml`, and the service container
+  compiles: the symbols field type and the SEO URL handler id now match what
+  Shopware defines (#42).
+- The editor's preview, import, and shared-file endpoints are registered, and
+  the preview works with debug mode on (#42).
+- `:legal[...]` links the layout configured under basic information (#42).
+- A single `product-card` block keeps a card-sized width (#42).
+
 ## [0.1.5] - 2026-10-03
 
 ### Added

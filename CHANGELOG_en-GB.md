@@ -1,3 +1,9 @@
+# 0.1.6
+- Installing or updating the plugin no longer aborts while reading its configuration, and the service container compiles on a stock shop.
+- The editor's preview, import and shared-file endpoints are now registered, so the administration preview renders. It also works with debug mode on.
+- `:legal[privacy]`, `tos`, `imprint` and `withdrawal` link the layout configured under basic information. They previously stayed plain text.
+- A single product card keeps a card-sized width.
+
 # 0.1.5
 - One shared Carve editor across the CMS element and the product, category and manufacturer fields, with server-side preview, diagnostics, product and media selection, and reviewed HTML and Markdown import.
 - New commerce elements for authoring: sales-channel prices, stock labels, cards, grids, specification lists, datasheets, media images, snippets and internal links.
