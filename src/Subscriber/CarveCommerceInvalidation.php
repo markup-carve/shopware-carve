@@ -28,7 +28,7 @@ class CarveCommerceInvalidation implements EventSubscriberInterface
                 $tags[] = 'carve-products-missing';
             }
         }
-        foreach (['category', 'category_translation', 'product_manufacturer', 'product_manufacturer_translation', 'media', 'media_translation', 'media_thumbnail'] as $entity) {
+        foreach (['category', 'category_translation', 'product_manufacturer', 'product_manufacturer_translation', 'media', 'media_translation', 'media_thumbnail', 'cms_page', 'cms_page_translation'] as $entity) {
             if ($event->getEventByEntityName($entity) !== null) {
                 $tags[] = 'carve-resources';
             }

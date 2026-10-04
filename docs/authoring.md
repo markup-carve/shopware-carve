@@ -45,7 +45,7 @@ through theme integration.
 | `:datasheet[SKU]` | First public PDF attached to the product. |
 | `:category[UUID]` | Active page category within the channel's navigation, footer, or service tree. |
 | `:manufacturer[UUID]` | Translated brand name linked to storefront search. Core has no manufacturer detail route. |
-| `:legal[privacy]` | Link to the channel's configured privacy page. Also accepts `tos`, `imprint`, and `withdrawal`. |
+| `:legal[privacy]` | Link to the layout configured as the channel's privacy page under basic information, opened in a modal like core's own legal links. Also accepts `tos`, `imprint`, and `withdrawal`. |
 | `:snippet[key]` | Escaped translation snippet text. |
 | `:media[UUID]{alt="Description"}` | Public image with thumbnails in `srcset`, lazy loading, and alternative text. |
 
