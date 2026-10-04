@@ -42,7 +42,7 @@
             </helpText>
         </input-field>
 
-        <input-field type="text-area">
+        <input-field type="textarea">
             <name>symbols</name>
             <label>Symbol shortcodes</label>
             <label lang="de-DE">Symbol-Kurzbefehle</label>

@@ -34,6 +34,7 @@ class CarveResources
      * @param \Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface $seo
      * @param \Shopware\Core\Framework\DataAbstractionLayer\EntityRepository<\Shopware\Core\Content\Media\MediaCollection> $mediaRepository
      * @param \Shopware\Core\Framework\DataAbstractionLayer\EntityRepository<\Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerCollection> $manufacturers
+     * @param \Shopware\Core\Framework\DataAbstractionLayer\EntityRepository<\Shopware\Core\Content\Cms\CmsPageCollection> $cmsPages
      */
     public function __construct(
         private readonly EntityRepository $mediaRepository,
@@ -42,6 +43,7 @@ class CarveResources
         private readonly SeoUrlPlaceholderHandlerInterface $seo,
         private readonly SystemConfigService $config,
         private readonly EventDispatcherInterface $cacheTags,
+        private readonly EntityRepository $cmsPages,
     ) {
     }
 
@@ -72,35 +74,42 @@ class CarveResources
                     $html = $this->link($this->seo->generate('frontend.search.page', ['search' => $name]), $name);
                 }
             }
-            $categoryId = $argument;
             if ($type === 'legal') {
                 $setting = match ($argument) {
                     'privacy' => 'privacyPage', 'tos' => 'tosPage', 'imprint' => 'imprintPage',
                     'withdrawal' => 'revocationPage', default => null,
                 };
-                $categoryId = $setting === null ? null : $this->config->get('core.basicInformation.' . $setting, $context->getSalesChannelId());
+                // These settings hold CMS layout ids, which core opens through its widget route.
+                $pageId = $setting === null ? null : $this->config->get('core.basicInformation.' . $setting, $context->getSalesChannelId());
+                $page = is_string($pageId) && Uuid::isValid($pageId)
+                    ? $this->cmsPages->search(new Criteria([$pageId]), $context->getContext())->first()
+                    : null;
+                if ($page !== null) {
+                    $url = $this->escape($this->seo->generate('frontend.cms.page', ['id' => $pageId]));
+                    $name = (string)($page->getTranslation('name') ?? $page->getName() ?? $argument);
+                    $html = '<a href="' . $url . '" data-ajax-modal="true" data-url="' . $url . '">' . $this->escape($name) . '</a>';
+                }
             }
-            if (in_array($type, ['category', 'legal'], true) && is_string($categoryId) && Uuid::isValid($categoryId)) {
+            $categoryId = $argument;
+            if ($type === 'category' && Uuid::isValid($categoryId)) {
                 $criteria = new Criteria([$categoryId]);
                 $criteria->addFilter(new EqualsFilter('active', true));
                 $criteria->addFilter(new EqualsFilter('type', CategoryDefinition::TYPE_PAGE));
-                if ($type === 'category') {
-                    $roots = array_filter([
-                        $context->getSalesChannel()->getNavigationCategoryId(),
-                        $context->getSalesChannel()->getFooterCategoryId(), $context->getSalesChannel()->getServiceCategoryId(),
-                    ]);
-                    $allowed = [];
-                    foreach ($roots as $root) {
-                        $allowed[] = new EqualsFilter('id', $root);
-                        $allowed[] = new ContainsFilter('path', '|' . $root . '|');
-                    }
-                    if ($allowed === []) {
-                        $event->setHtml($html);
-
-                        return;
-                    }
-                    $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, $allowed));
+                $roots = array_filter([
+                    $context->getSalesChannel()->getNavigationCategoryId(),
+                    $context->getSalesChannel()->getFooterCategoryId(), $context->getSalesChannel()->getServiceCategoryId(),
+                ]);
+                $allowed = [];
+                foreach ($roots as $root) {
+                    $allowed[] = new EqualsFilter('id', $root);
+                    $allowed[] = new ContainsFilter('path', '|' . $root . '|');
                 }
+                if ($allowed === []) {
+                    $event->setHtml($html);
+
+                    return;
+                }
+                $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, $allowed));
                 $category = $this->categories->search($criteria, $context)->first();
                 if ($category !== null) {
                     $html = $this->link(
