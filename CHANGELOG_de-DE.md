@@ -1,3 +1,9 @@
+# 0.1.6
+- Installation und Update des Plugins brechen nicht mehr beim Lesen der Konfiguration ab, und der Service-Container kompiliert in einem Standard-Shop.
+- Die Endpunkte des Editors für Vorschau, Import und gemeinsam genutzte Dateien sind jetzt registriert, sodass die Vorschau im Administrationsbereich rendert. Sie funktioniert auch bei aktivem Debug-Modus.
+- `:legal[privacy]`, `tos`, `imprint` und `withdrawal` verlinken das in den Stammdaten hinterlegte Layout. Bisher blieben sie reiner Text.
+- Eine einzelne Produktkarte behält eine kartengerechte Breite.
+
 # 0.1.5
 - Ein gemeinsamer Carve-Editor für das CMS-Element sowie Produkt-, Kategorie- und Herstellerfelder, mit serverseitiger Vorschau, Diagnosen, Produkt- und Medienauswahl sowie geprüftem HTML- und Markdown-Import.
 - Neue Commerce-Elemente für die Redaktion: Verkaufskanalpreise, Bestandsangaben, Karten, Raster, Spezifikationslisten, Datenblätter, Medienbilder, Textbausteine und interne Links.
