@@ -16,6 +16,10 @@ This project follows [Semantic Versioning](https://semver.org/).
   the preview works with debug mode on (#42).
 - `:legal[...]` links the layout configured under basic information (#42).
 - A single `product-card` block keeps a card-sized width (#42).
+- Category copy sits inside the page container instead of running edge to
+  edge, and cards and grids keep space before the next block (#45).
+- The editor's media picker shows file names instead of blank rows (#45).
+- Specification lists render as a two-column list (#45).
 
 ## [0.1.5] - 2026-10-03
 

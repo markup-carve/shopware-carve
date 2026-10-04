@@ -3,6 +3,9 @@
 - Die Endpunkte des Editors für Vorschau, Import und gemeinsam genutzte Dateien sind jetzt registriert, sodass die Vorschau im Administrationsbereich rendert. Sie funktioniert auch bei aktivem Debug-Modus.
 - `:legal[privacy]`, `tos`, `imprint` und `withdrawal` verlinken das in den Stammdaten hinterlegte Layout. Bisher blieben sie reiner Text.
 - Eine einzelne Produktkarte behält eine kartengerechte Breite.
+- Kategorietexte stehen bündig mit dem Rest der Seite, statt von Rand zu Rand zu laufen, und Karten sowie Raster halten Abstand zum nächsten Block.
+- Die Bildauswahl im Editor zeigt Dateinamen. Bisher waren die Einträge leer.
+- Spezifikationslisten erscheinen als zweispaltige Liste mit Trennlinien.
 
 # 0.1.5
 - Ein gemeinsamer Carve-Editor für das CMS-Element sowie Produkt-, Kategorie- und Herstellerfelder, mit serverseitiger Vorschau, Diagnosen, Produkt- und Medienauswahl sowie geprüftem HTML- und Markdown-Import.
