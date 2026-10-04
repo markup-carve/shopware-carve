@@ -3,6 +3,9 @@
 - The editor's preview, import and shared-file endpoints are now registered, so the administration preview renders. It also works with debug mode on.
 - `:legal[privacy]`, `tos`, `imprint` and `withdrawal` link the layout configured under basic information. They previously stayed plain text.
 - A single product card keeps a card-sized width.
+- Category copy lines up with the rest of the page instead of running edge to edge, and cards and grids keep space before the next block.
+- The editor's image picker shows file names. It previously listed blank rows.
+- Specification lists render as a two-column list with row separators.
 
 # 0.1.5
 - One shared Carve editor across the CMS element and the product, category and manufacturer fields, with server-side preview, diagnostics, product and media selection, and reviewed HTML and Markdown import.
