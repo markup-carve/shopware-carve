@@ -10,7 +10,7 @@
             <sw-entity-single-select v-if="acl.can('product.viewer')" v-model:value="productId" entity="product"
                 label="Product" :disabled="disabled" />
             <sw-button :disabled="disabled || !productId" @click="insertProduct">Insert product link</sw-button>
-            <sw-entity-single-select v-if="acl.can('media.viewer')" v-model:value="mediaId" entity="media"
+            <sw-entity-single-select v-if="acl.can('media.viewer')" v-model:value="mediaId" entity="media" label-property="fileName"
                 label="Image from media library" :disabled="disabled" />
             <sw-button :disabled="disabled || !mediaId" @click="insertMedia">Insert image</sw-button>
             <template v-if="canInclude">

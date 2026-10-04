@@ -4,10 +4,10 @@
     {% set carveSource = page.category.translated.customFields.carve_category_body ?? page.category.customFields.carve_category_body ?? null %}
     {% set carvePlacement = config('ShopwareCarve.config.categoryPlacement') ?? 'before' %}
     {% if carveSource and carvePlacement != 'after' %}
-        <div class="carve-content carve-category-description">{{ carveSource|carve_ctx(context) }}</div>
+        <div class="container carve-content carve-category-description">{{ carveSource|carve_ctx(context) }}</div>
     {% endif %}
     {{ parent() }}
     {% if carveSource and carvePlacement == 'after' %}
-        <div class="carve-content carve-category-description">{{ carveSource|carve_ctx(context) }}</div>
+        <div class="container carve-content carve-category-description">{{ carveSource|carve_ctx(context) }}</div>
     {% endif %}
 {% endblock %}
