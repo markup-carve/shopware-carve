@@ -2,9 +2,14 @@
     line-height: 1.6;
     overflow-wrap: anywhere;
     img { max-width: 100%; height: auto; }
-    .carve-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 1rem; }
+    .carve-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 1rem; margin-block: 1.5rem; }
+    .carve-specs {
+        display: grid; grid-template-columns: max-content 1fr; max-width: 40rem; margin-block: 1rem;
+        dt, dd { margin: 0; padding: .4rem 0; border-bottom: 1px solid rgba(0, 0, 0, .1); }
+        dt { padding-right: 2rem; }
+    }
     // A lone card would otherwise stretch to the full content width.
-    > .product-box, section > .product-box { max-width: 24rem; }
+    > .product-box, section > .product-box { max-width: 24rem; margin-block: 1.5rem; }
     .carve-product-card { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
     .carve-product-card img { max-width: 72px; }
     .carve-chart-data { white-space: pre-wrap; }
