@@ -98,6 +98,15 @@ jobs:
             exit 1
           fi
 
+      # Without the profiler, `translator` in the dev container is still
+      # Shopware's own translator, so the dev leg could not see a controller
+      # typed for `AbstractTranslator` and wired to `translator` - which is the
+      # fourth defect 0.1.5 shipped. A demo shop installed with the documented
+      # dev setup has these, so the leg installs them too.
+      - name: Add the dev tools, so dev really is a debug container
+        working-directory: shop
+        run: composer require --dev shopware/dev-tools:'*' --no-interaction --no-progress
+
       - name: Write the environment
         working-directory: shop
         run: |
@@ -138,6 +147,20 @@ jobs:
           set -euo pipefail
           APP_ENV=prod timeout 10m php bin/console cache:clear --no-interaction
           APP_ENV=dev timeout 10m php bin/console cache:clear --no-interaction
+
+      # A gate on the gate: if `translator` in the dev container is not
+      # Symfony's collector, then the dev leg is compiling the same container
+      # as prod and cannot see a debug-only wiring defect at all.
+      - name: The dev container carries the debug decorators
+        working-directory: shop
+        run: |
+          set -euo pipefail
+          described="$(APP_ENV=dev php bin/console debug:container translator --show-private --no-interaction)"
+          echo "${described}"
+          if ! printf '%s' "${described}" | grep -q 'DataCollectorTranslator'; then
+            echo "::error::the dev container resolves translator to something other than Symfony's collector, so this leg cannot detect a debug-only wiring defect"
+            exit 1
+          fi
 
       # `debug:router <name>` exits non-zero on an unknown route, so this is an
       # exit status and not a log grep. Without a routes file importing the
