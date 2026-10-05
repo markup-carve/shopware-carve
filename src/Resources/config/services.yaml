@@ -39,7 +39,7 @@ services:
             - '@MarkupCarve\Shopware\Service\CarveCommerce'
             - '@Shopware\Core\System\Locale\LanguageLocaleCodeProvider'
             - '@MarkupCarve\Shopware\Service\CarveResources'
-            - '@Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface'
+            - '@Shopware\Core\Content\Seo\SeoUrlPlaceholderHandler'
             - '@request_stack'
 
     MarkupCarve\Shopware\Twig\CarveContextExtension:
@@ -66,7 +66,7 @@ services:
     MarkupCarve\Shopware\Service\CarveCommerce:
         arguments:
             - '@sales_channel.product.repository'
-            - '@Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface'
+            - '@Shopware\Core\Content\Seo\SeoUrlPlaceholderHandler'
             - '@Shopware\Core\System\Currency\CurrencyFormatter'
             - '@translator'
             - '@twig'
@@ -98,7 +98,7 @@ services:
             - '@media.repository'
             - '@product_manufacturer.repository'
             - '@sales_channel.category.repository'
-            - '@Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface'
+            - '@Shopware\Core\Content\Seo\SeoUrlPlaceholderHandler'
             - '@Shopware\Core\System\SystemConfig\SystemConfigService'
             - '@event_dispatcher'
             - '@cms_page.repository'
