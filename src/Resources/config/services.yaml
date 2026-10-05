@@ -58,7 +58,7 @@ services:
             - '@MarkupCarve\Shopware\Service\CarveIncludeGate'
             - '@Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory'
             - '@MarkupCarve\Shopware\Service\CarveContextRenderer'
-            - '@Shopware\Core\Framework\Adapter\Translation\Translator'
+            - '@translator'
             - '@Shopware\Core\System\Locale\LanguageLocaleCodeProvider'
         tags:
             - controller.service_arguments
