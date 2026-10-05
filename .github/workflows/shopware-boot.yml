@@ -155,7 +155,7 @@ jobs:
         working-directory: shop
         run: |
           set -euo pipefail
-          described="$(APP_ENV=dev php bin/console debug:container translator --show-private --no-interaction)"
+          described="$(APP_ENV=dev php bin/console debug:container translator --no-interaction)"
           echo "${described}"
           if ! printf '%s' "${described}" | grep -q 'DataCollectorTranslator'; then
             echo "::error::the dev container resolves translator to something other than Symfony's collector, so this leg cannot detect a debug-only wiring defect"
