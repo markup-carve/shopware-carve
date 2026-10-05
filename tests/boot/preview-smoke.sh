@@ -60,9 +60,12 @@ for env in prod dev; do
         tail -n 80 "/tmp/server-${env}.log"
         fail "the preview endpoint answered ${code} in ${env}"
     fi
-    if ! grep -q '<strong>bold<\\/strong>\|<strong>bold</strong>' "${body}"; then
-        fail "the preview response in ${env} carries no rendered HTML"
-    fi
+    # The body is JSON, so `<` arrives as \u003C. Decode before asserting.
+    html="$(php -r '$d = json_decode(file_get_contents($argv[1]), true); echo $d["html"] ?? "";' "${body}")"
+    case "${html}" in
+        *'<strong>bold</strong>'*) ;;
+        *) fail "the preview response in ${env} carries no rendered HTML: ${html}" ;;
+    esac
 
     # The catalog endpoint is a GET through the same controller, so it proves
     # the route resolves to a callable service and not only that it is listed.
