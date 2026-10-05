@@ -1,0 +1,200 @@
+name: Shopware boot
+
+# Installs the plugin into a real Shopware and exercises it. The unit suite
+# constructs services by hand, so it cannot see a config.xml the core schema
+# rejects, a services.yaml id core does not register, a missing routes file or a
+# controller wired to the wrong translator in debug mode - the four defects
+# 0.1.5 shipped. Each of those surfaces in one of the steps below.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Every job declares timeout-minutes so a hung step fails in minutes rather
+# than inheriting the 360-minute GitHub default. A boot leg is the slowest job
+# in this repository, hence the wider bound.
+
+jobs:
+  boot:
+    name: Boot Shopware ${{ matrix.line }} with the plugin installed
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - line: '6.6'
+            template: '6.6.*'
+            php: '8.2'
+          - line: '6.7'
+            template: '6.7.*'
+            php: '8.3'
+
+    services:
+      database:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    env:
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/shopware
+      APP_URL: http://127.0.0.1:8000
+      APP_SECRET: 0123456789abcdef0123456789abcdef
+      SHOPWARE_ES_ENABLED: '0'
+      SHOPWARE_SKIP_ASSET_COPY: '1'
+      ADMIN_USER: admin
+      ADMIN_PASSWORD: shopware
+
+    steps:
+      - name: Checkout shopware-carve
+        uses: actions/checkout@v7
+        with:
+          path: plugin
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: gd, intl, zip, pdo_mysql, bcmath, sodium
+          ini-values: memory_limit=-1
+          coverage: none
+
+      # The project template, not a hand-assembled stack: it is what the
+      # Shopware documentation installs for a production shop, so a failure
+      # here is a failure a shop owner would also hit.
+      - name: Create a shopware/production project (${{ matrix.template }})
+        run: |
+          set -euo pipefail
+          composer create-project shopware/production shop '${{ matrix.template }}' \
+            --no-interaction --no-progress --no-scripts
+
+      # A path repository is canonical and is consulted before packagist.org,
+      # so the checkout wins the tie on its own version number. The read-back
+      # refuses when Packagist served the release instead, which would make the
+      # whole leg a statement about the last tag rather than about this commit.
+      - name: Require the plugin from the checkout
+        working-directory: shop
+        run: |
+          set -euo pipefail
+          composer config repositories.shopware-carve \
+            '{"type":"path","url":"../plugin","options":{"symlink":false}}'
+          composer require markup-carve/shopware-carve:'*' --no-interaction --no-progress
+          installed='vendor/markup-carve/shopware-carve/src/ShopwareCarve.php'
+          if [ ! -f "${installed}" ]; then
+            echo "::error::the plugin is not installed into the project, so nothing below boots it"
+            exit 1
+          fi
+          if ! diff -q "${installed}" ../plugin/src/ShopwareCarve.php >/dev/null; then
+            echo "::error::the installed plugin does not match the checkout, so this leg measures a published release and not this commit"
+            exit 1
+          fi
+
+      # Without the profiler, `translator` in the dev container is still
+      # Shopware's own translator, so the dev leg could not see a controller
+      # typed for `AbstractTranslator` and wired to `translator` - which is the
+      # fourth defect 0.1.5 shipped. A demo shop installed with the documented
+      # dev setup has these, so the leg installs them too.
+      - name: Add the dev tools, so dev really is a debug container
+        working-directory: shop
+        run: composer require --dev shopware/dev-tools:'*' --no-interaction --no-progress
+
+      - name: Write the environment
+        working-directory: shop
+        run: |
+          set -euo pipefail
+          cat > .env.local <<ENV
+          APP_ENV=prod
+          APP_SECRET=${APP_SECRET}
+          APP_URL=${APP_URL}
+          DATABASE_URL=${DATABASE_URL}
+          SHOPWARE_ES_ENABLED=0
+          ENV
+
+      # --basic-setup also creates the admin user and a sales channel, which
+      # the API steps below need. This is where a config.xml the core schema
+      # rejects stops the run.
+      - name: Install Shopware
+        working-directory: shop
+        run: |
+          set -euo pipefail
+          timeout 20m php bin/console system:install \
+            --create-database --basic-setup --force --no-interaction
+
+      - name: Install and activate the plugin
+        working-directory: shop
+        run: |
+          set -euo pipefail
+          php bin/console plugin:refresh --no-interaction
+          php bin/console plugin:list --no-interaction
+          timeout 10m php bin/console plugin:install --activate ShopwareCarve --no-interaction
+
+      # Both environments, because the defect that answered 500 on a preview
+      # only exists with debug decorators in the container: `translator` is
+      # Symfony's DataCollectorTranslator in dev and Shopware's own translator
+      # in prod.
+      - name: Compile the container in prod and in dev
+        working-directory: shop
+        run: |
+          set -euo pipefail
+          APP_ENV=prod APP_DEBUG=0 timeout 10m php bin/console cache:clear --no-interaction
+          APP_ENV=dev APP_DEBUG=1 timeout 10m php bin/console cache:clear --no-interaction
+
+      # A gate on the gate: if `translator` in the dev container is not
+      # Symfony's collector, then the dev leg is compiling the same container
+      # as prod and cannot see a debug-only wiring defect at all.
+      - name: The dev container carries the debug decorators
+        working-directory: shop
+        run: |
+          set -euo pipefail
+          described="$(APP_ENV=dev APP_DEBUG=1 php bin/console debug:container translator --no-interaction)"
+          echo "${described}"
+          if ! printf '%s' "${described}" | grep -q 'DataCollectorTranslator'; then
+            echo "::error::the dev container resolves translator to something other than Symfony's collector, so this leg cannot detect a debug-only wiring defect"
+            exit 1
+          fi
+
+      # `debug:router <name>` exits non-zero on an unknown route, so this is an
+      # exit status and not a log grep. Without a routes file importing the
+      # controller directory, all three are unknown.
+      - name: The admin API routes are registered
+        working-directory: shop
+        run: |
+          set -euo pipefail
+          for env in prod dev; do
+            for route in api.action.carve.preview api.action.carve.import api.action.carve.includes; do
+              debug=0
+              [ "${env}" = 'dev' ] && debug=1
+              APP_ENV="${env}" APP_DEBUG="${debug}" php bin/console debug:router "${route}" >/dev/null
+              echo "${env}: ${route} ok"
+            done
+          done
+
+      - name: Render a document through the console command
+        working-directory: shop
+        run: |
+          set -euo pipefail
+          html="$(php bin/console carve:render ../plugin/tests/boot/smoke.crv)"
+          echo "${html}"
+          case "${html}" in
+            *'<strong>bold</strong>'*) ;;
+            *)
+              echo "::error::carve:render did not render Carve emphasis in a booted shop"
+              exit 1
+              ;;
+          esac
+
+      # A real request through the kernel in both environments. The preview
+      # controller's dependencies are only resolved when a request reaches it,
+      # which is the one check none of the static guards can make.
+      - name: Preview a document over the admin API in prod and in dev
+        working-directory: shop
+        run: bash "${GITHUB_WORKSPACE}/plugin/tests/boot/preview-smoke.sh"
