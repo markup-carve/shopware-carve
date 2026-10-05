@@ -145,8 +145,8 @@ jobs:
         working-directory: shop
         run: |
           set -euo pipefail
-          APP_ENV=prod timeout 10m php bin/console cache:clear --no-interaction
-          APP_ENV=dev timeout 10m php bin/console cache:clear --no-interaction
+          APP_ENV=prod APP_DEBUG=0 timeout 10m php bin/console cache:clear --no-interaction
+          APP_ENV=dev APP_DEBUG=1 timeout 10m php bin/console cache:clear --no-interaction
 
       # A gate on the gate: if `translator` in the dev container is not
       # Symfony's collector, then the dev leg is compiling the same container
@@ -155,7 +155,7 @@ jobs:
         working-directory: shop
         run: |
           set -euo pipefail
-          described="$(APP_ENV=dev php bin/console debug:container translator --no-interaction)"
+          described="$(APP_ENV=dev APP_DEBUG=1 php bin/console debug:container translator --no-interaction)"
           echo "${described}"
           if ! printf '%s' "${described}" | grep -q 'DataCollectorTranslator'; then
             echo "::error::the dev container resolves translator to something other than Symfony's collector, so this leg cannot detect a debug-only wiring defect"
@@ -171,7 +171,9 @@ jobs:
           set -euo pipefail
           for env in prod dev; do
             for route in api.action.carve.preview api.action.carve.import api.action.carve.includes; do
-              APP_ENV="${env}" php bin/console debug:router "${route}" >/dev/null
+              debug=0
+              [ "${env}" = 'dev' ] && debug=1
+              APP_ENV="${env}" APP_DEBUG="${debug}" php bin/console debug:router "${route}" >/dev/null
               echo "${env}: ${route} ok"
             done
           done

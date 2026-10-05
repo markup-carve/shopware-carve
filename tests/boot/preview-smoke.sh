@@ -22,7 +22,14 @@ fail() {
 
 for env in prod dev; do
     echo "--- ${env}"
-    APP_ENV="${env}" php -S "${host}:${port}" -t public public/index.php \
+    # APP_DEBUG explicitly, not inferred. Symfony Runtime defaults it from the
+    # environment per PROCESS, so a dev container compiled on the CLI with debug
+    # on would otherwise be rebuilt without debug for the request, and the
+    # request - the only check that can see a debug-only wiring defect - would
+    # run against the prod container under a dev name.
+    debug=0
+    [ "${env}" = 'dev' ] && debug=1
+    APP_ENV="${env}" APP_DEBUG="${debug}" php -S "${host}:${port}" -t public public/index.php \
         >"/tmp/server-${env}.log" 2>&1 &
     server=$!
     trap 'kill "${server}" 2>/dev/null || true' EXIT
