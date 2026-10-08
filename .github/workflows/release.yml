@@ -273,7 +273,11 @@ jobs:
     needs: tag
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: release
+    # NO `environment:` here. GitHub asks for an approval once per gated JOB, so
+    # declaring the environment on both tag and publish asks twice for one
+    # decision, and the second prompt arrives after the tag already exists, where
+    # it cannot withhold anything. Measured on carve-grammars run 37767870312.
+    # `needs: [tag]` already makes this unreachable without the approval.
     env:
       # Optional Shopware Community Store publishing. Leave the secrets unset to
       # skip the upload step; the ZIP is still built and attached to the release.
