@@ -258,8 +258,19 @@ jobs:
             exit 1
           fi
           target="$(printf '%s' "$release" | jq -r '.target_commitish')"
-          if [ "$target" != "$GITHUB_SHA" ]; then
-            echo "::error::The draft for $VERSION now targets $target, not the approved commit $GITHUB_SHA. Re-run the workflow."
+          # Accept the SHA or a branch name whose head IS this commit, the same
+          # pair the verify job accepts. A draft pinned to a SHA goes stale every
+          # time the branch moves, so the branch form is the one that survives a
+          # busy repository - and it is only accepted while the branch really
+          # points here, so a draft written for an older commit is still refused.
+          # Without this the two checks disagreed and 0.1.7 was refused under its
+          # own approval for targeting `main`.
+          branch_head=""
+          case "$target" in
+            *[!0-9a-f]*|"") branch_head="$(gh api "repos/$GITHUB_REPOSITORY/branches/$target" --jq '.commit.sha' 2>/dev/null || true)" ;;
+          esac
+          if [ "$target" != "$GITHUB_SHA" ] && [ "${branch_head:-}" != "$GITHUB_SHA" ]; then
+            echo "::error::The draft for $VERSION targets $target, this run is on $GITHUB_SHA, and that branch's head is ${branch_head:-not a branch}. Re-run the workflow."
             exit 1
           fi
 
