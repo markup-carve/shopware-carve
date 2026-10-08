@@ -1,53 +1,48 @@
 # Releasing
 
-The release is driven by a **git tag**. Pushing a tag `X.Y.Z` on `main` runs
-`.github/workflows/release.yml`, which checks its inputs, builds the installable
-ZIP with `shopware-cli`, uploads it to the store, and publishes the release draft
-for that tag with the ZIP attached.
+Release preparation starts from a reviewed commit on `main`. The
+`release.yml` workflow runs its checks before creating a tag. Pull requests
+also run `shopware-cli extension validate` using the same CLI version, pinned
+in `.github/actions/shopware-cli/action.yml`.
 
-The job runs in this order, and the order is load-bearing:
+The workflow runs in this order:
 
-1. **Preflight** - every input that can be missing, checked before PHP is even
-   installed: a draft release carrying the notes, `composer.json`'s `version`
-   against the tag, and a `# X.Y.Z` section in both store changelogs. A release that cannot succeed is
-   refused here, in seconds, with nothing built and nothing published.
-2. Validate and build the ZIP.
-3. **Upload to the store**, then **publish the GitHub release** - in that order,
-   because a failed store upload is invisible and a GitHub release with no ZIP
-   is not. See "Why the store upload goes first" below.
-4. **Verify the published release carries its ZIP**, by asking the API rather
-   than trusting the publish step.
+1. Verify the requested version, changelogs and unpublished GitHub draft. The
+   draft must have notes and target the exact commit running the workflow.
+2. Validate the extension and build its ZIP.
+3. Wait for approval in the `release` environment. Recheck the version, draft
+   and dispatched commit, then create the tag.
+4. Build from that tag, upload to the Store when configured, and publish the
+   GitHub release with its ZIP.
+5. Read the release back and verify that its ZIP exists.
 
 ## Steps
 
-1. **Roll the changelogs** to the new version:
-   - `CHANGELOG.md` - move the `[Unreleased]` section under `## [X.Y.Z] - <date>`.
-   - `CHANGELOG_en-GB.md` and `CHANGELOG_de-DE.md` - add a `# X.Y.Z` entry
-     (store format; the store validator requires a `CHANGELOG*.md` with the
-     released version).
-2. **Write the release notes into a GitHub draft release**, which is the
-   release body:
+1. Roll `composer.json`'s version and the three changelogs in a PR. The Store
+   changelogs need a `# X.Y.Z` section. Merge after the checks pass.
+2. Resolve the intended full commit SHA from `main` and prepare the GitHub
+   draft with its release notes:
+
    ```bash
-   gh release create X.Y.Z --draft --notes-file /tmp/notes.md
+   gh release create X.Y.Z --draft --target COMMIT_SHA --notes-file /tmp/notes.md
    ```
-   The notes are never committed to the repository. The release job refuses to
-   build unless a release for the tag exists and has a non-empty body, so it can
-   never publish an empty release.
-   **Roll `composer.json`'s `version` to `X.Y.Z` in the same PR.** Shopware reads
-   that field as the plugin version - the tag is not consulted - so a mismatch
-   ships a plugin that reports itself as the previous release, with every step
-   green. Preflight refuses the tag rather than let that out.
-3. Open a PR with 1 and 2, merge to `main`.
-4. **Tag on `main` and push:**
+
+   Read it back through the API and verify `tag_name`, `draft: true`, the notes
+   and `target_commitish`. Updating a draft must explicitly retain the intended
+   tag name. Release notes stay on the draft rather than in the repository.
+3. When publication is authorized, dispatch from `main` while it still points
+   at that commit:
+
    ```bash
-   git checkout main && git pull
-   git tag X.Y.Z
-   git push origin X.Y.Z
+   gh workflow run release.yml --ref main -f version=X.Y.Z
    ```
-5. Watch the run: `gh run list --workflow=release.yml`. On success the release
-   is published with `ShopwareCarve-X.Y.Z.zip` attached and the notes body.
-   You do not have to keep watching: `.github/workflows/release-audit.yml` runs
-   daily and fails if any published release is missing its ZIP.
+
+   Verify the run's `head_sha` against the intended commit. Leave tag creation
+   to the workflow. It refuses an existing tag. Later changes to `main` do
+   not change the dispatched commit; dispatch a fresh run to release newer code.
+4. Watch `gh run list --workflow=release.yml` and approve the pending release
+   environment when ready. On success, verify the published notes and
+   `ShopwareCarve-X.Y.Z.zip`. The daily asset audit checks published releases too.
 
 ## Notes source of truth
 
@@ -62,15 +57,10 @@ The release job reads the draft's body and hands it to
 
 ## Special cases and gotchas
 
-- **Never `gh release delete` mid-flow.** The workflow's publish step attaches to
-  (or creates) the release for the tag. If a run fails, **fix and re-run**
-  (`gh run rerun <id>`) or move the tag - do not delete the release. Deleting it
-  loses anything that lived only on the release object. (Notes are safe now that
-  they live in the repo, but assets/state are not.)
-- **The tag must point at a commit that already contains the fixes.** Re-running
-  a failed run replays the workflow *as of the tagged commit*. If the fix landed
-  after the tag, move the tag: delete it (`git push origin :refs/tags/X.Y.Z`),
-  re-tag on the updated `main`, push again.
+- **Preserve a failed release's notes and assets.** Re-run a failed job when its
+  inputs are still correct. If its tag points at old code, choose a correction
+  or a new version explicitly before changing the published tag or release.
+  A new release dispatch cannot repair an existing tag automatically.
 - **Store description length.** `shopware-cli extension validate` requires
   `extra.description` (en-GB and de-DE) in `composer.json` to be **150-185
   characters**. Too short/long fails the release at the validate step.
@@ -92,8 +82,8 @@ The release job reads the draft's body and hands it to
   PR - it changes when the maintainer cuts a release, in the same PR as the
   changelogs and the notes. It is not optional at that point: Shopware reads
   this field as the plugin version (unlike plain Composer libs where the tag
-  drives it), so a tag ahead of it ships a mislabeled plugin. Preflight compares
-  the two and refuses the tag.
+  drives it), so a tag ahead of it ships a mislabeled plugin. Verification compares
+  the requested version with this field before creating the tag.
 - **Store upload is optional.** The `Upload to Shopware Community Store` step runs
   only when `SHOPWARE_CLI_ACCOUNT_EMAIL` / `SHOPWARE_CLI_ACCOUNT_PASSWORD` repo
   secrets are set; otherwise it self-skips and only the GitHub release is produced.
@@ -118,7 +108,7 @@ page.
 
 **What that costs, and the lever for it.** A store submission is not
 idempotent. If the upload succeeds and the publish step then fails, re-running
-the tag would try to submit the same version again and can be rejected as a
+the publish job would try to submit the same version again and can be rejected as a
 duplicate - so the run would never reach the publish step, and the release could
 not be completed by re-running. No ordering fixes that; it is a property of the
 external submission. So when you hit it, set the repository variable
@@ -187,8 +177,8 @@ going from 0.1.1 to 0.1.3 misses nothing. Do not re-run the 0.1.2 tag: it would
 attach an artifact under a body stating none was ever attached, and leave the
 audit's exemption describing something untrue.
 
-If it fails, the release is not installable. Re-run the release workflow for that
-tag (see the re-run note above), unpublish the release, or - as with 0.1.2 -
+If it fails, the release is not installable. Re-run the failed publish job with its original
+inputs (see the retry note above), unpublish the release, or - as with 0.1.2 -
 supersede it deliberately: fold its content into the next version, say so on its
 page, and name it in `superseded_releases`. Leaving a published release that
 ships nothing, with nothing recording that, is the failure itself and not a
@@ -196,6 +186,6 @@ cosmetic one.
 
 ## The draft is required, not optional
 
-The draft release for the tag has to exist before the tag is pushed; the job
-refuses to build without one. `softprops` updates that existing release and
+The draft release must exist before dispatch; verification refuses to build
+without one. `softprops` updates that existing release and
 publishes it rather than creating a duplicate.
