@@ -1,99 +1,167 @@
 name: Release
 
+# THE TAG IS CREATED BY THIS WORKFLOW, AFTER THE GATES PASS AND AFTER A HUMAN
+# APPROVES. It used to be the trigger, and that ordering is what this file
+# inverts.
+#
+# Packagist is pull-based: it reads this repository's tags and serves the new
+# stable version within minutes, with no approval anywhere in the path. So on a
+# tag-triggered workflow every gate below ran AFTER the only irreversible act in
+# the release, and the `environment: release` approval that used to sit on the
+# single job held back the ZIP and the store upload while Packagist had already
+# shipped the code. carve-grammars v0.1.12 is the measured case: tagged,
+# Packagist served it inside two minutes, and the gates then refused the tag over
+# four uncited merges, which skipped the second registry. A published version's
+# source reference on Packagist is immutable, so 0.1.13 had to supersede
+# identical code; the same shape cost v0.1.10 an outright withdrawal on
+# 2026-09-30.
+#
+# Now: `workflow_dispatch` runs the gates against `main`, the approval sits
+# between them and the tag, and the tag is created only after both.
+#
+# THE PUBLISH RUNS IN THIS RUN, not on the new tag. A ref created with
+# `github.token` does not trigger other workflows, so a tag-triggered publish
+# job would simply never fire. The publish job checks out `ref: <version>`, the
+# tag the job above created.
+#
+# Every job declares timeout-minutes so a hung step fails in minutes rather than
+# inheriting the 360-minute GitHub default.
+
 on:
-  push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, without a leading v (e.g. 0.1.7)'
+        required: true
+        type: string
 
 permissions:
+  # `write`, not `read`, and the draft check below is the reason: a DRAFT
+  # release is invisible to a caller without push access, so under
+  # `contents: read` the listing comes back empty and the gate reports "no
+  # release" for a draft that is sitting right there with notes in it. The tag
+  # and publish jobs also need it.
   contents: write
 
-# Every job declares timeout-minutes so a hung step fails in minutes
-# rather than inheriting the 360-minute GitHub default.
+concurrency:
+  # Two runs creating the same tag is a race with an irreversible loser.
+  group: release-${{ inputs.version }}
+  cancel-in-progress: false
 
 jobs:
-  release:
+  # EVERYTHING CHECKABLE BEFORE ANYONE IS ASKED TO APPROVE, and before any
+  # irreversible act, so a release that cannot succeed is refused in minutes
+  # while nothing has been tagged, published or uploaded anywhere.
+  #
+  # This is deliberately a JOB rather than steps of the publish job. A gate
+  # folded into the job it guards gets skipped on an early failure while the job
+  # still reports green, which is how a vulnerable carve-py shipped.
+  verify:
+    name: Verify ${{ inputs.version }} is releasable
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: release
-    env:
-      # Optional Shopware Community Store publishing. Leave the secrets unset to
-      # skip the upload step; the ZIP is still built and attached to the release.
-      SHOPWARE_CLI_ACCOUNT_EMAIL: ${{ secrets.SHOPWARE_CLI_ACCOUNT_EMAIL }}
-      SHOPWARE_CLI_ACCOUNT_PASSWORD: ${{ secrets.SHOPWARE_CLI_ACCOUNT_PASSWORD }}
     steps:
-      # GATE: the notes are not the workflow's to write. A CHANGELOG entry is
-      # deliberately one or two lines for a contributor, which makes poor
-      # release notes for a reader deciding whether to upgrade. A human writes
-      # the draft first and this refuses to publish without one.
-      #
-      # Found by listing rather than `gh release view <tag>`: a draft's tag is
-      # not a git ref, so addressing one by tag can match nothing, change
-      # nothing and still exit 0.
-      - name: A release draft for this tag exists and has notes
-        if: github.event_name != 'workflow_dispatch'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          release="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
-            --jq "[.[] | select(.tag_name == \"$GITHUB_REF_NAME\")] | first")"
-          if [ -z "$release" ]; then
-            echo "::error::no release for $GITHUB_REF_NAME. Write the notes first:" \
-                 "gh release create $GITHUB_REF_NAME --draft --notes-file NOTES.md"
-            exit 1
-          fi
-          body="$(printf '%s' "$release" | jq -r '.body // ""' | tr -d '[:space:]')"
-          [ -n "$body" ] \
-            || { echo "::error::the release for $GITHUB_REF_NAME has no notes"; exit 1; }
-          printf '%s' "$release" | jq -r '"draft=\(.draft) tag=\(.tag_name)"'
-
-          # The draft's body IS the release body. Carried to a file here only
-          # because the publish action takes a path, never committed.
-          printf '%s' "$release" | jq -r '.body' > "${RUNNER_TEMP}/release-notes.md"
-          echo "NOTES_FILE=${RUNNER_TEMP}/release-notes.md" >> "${GITHUB_ENV}"
-
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      # EVERYTHING THAT CAN BE MISSING IS CHECKED HERE, FIRST, before PHP is
-      # installed, before the CLI exists and before anything is built - so a
-      # release that cannot succeed is refused in seconds, while nothing has
-      # been published and nothing has been uploaded anywhere.
+      # FIRST, before anything else: refuse a version that already exists. On
+      # the tag-triggered workflow this was impossible by construction; now it
+      # is the first thing that can go wrong, and it is the expensive failure.
+      - name: No tag of this name exists yet
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$VERSION" >/dev/null 2>&1; then
+            echo "::error::A tag $VERSION already exists. A published version cannot be moved on Packagist; supersede it with a new version instead."
+            exit 1
+          fi
+          echo "No tag $VERSION yet."
+
+      # This repository tags X.Y.Z with no leading v, and the draft's tag_name
+      # has to match that spelling or the release page and the tag diverge.
+      - name: The version is a plain X.Y.Z
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::$VERSION is not a plain X.Y.Z version. A -dev or other prerelease version never releases; cut the release first."
+            exit 1
+          fi
+
+      # GATE: the notes are not the workflow's to write. A CHANGELOG entry is
+      # deliberately one or two lines for a contributor, which makes poor
+      # release notes for a reader deciding whether to upgrade. A human writes
+      # the draft first and this refuses to release without one.
       #
-      # This step used to sit at position 7, behind `Validate extension` and
-      # `Build extension ZIP`. On 2026-08-19 that cost the 0.1.2 release: the
-      # notes file was missing, the run got as far as building the ZIP, failed
-      # here, and skipped both publish steps. The release object had already
-      # been created by hand ten hours earlier via the draft-first path in
-      # RELEASING.md, so what was left behind was a published release page with
-      # a tag and a body and no ZIP - which looks exactly like a release that
-      # shipped. Nobody noticed for eight weeks.
+      # Found by listing rather than `gh release view <tag>`: a draft's tag is
+      # not a git ref, so addressing one by tag can match nothing, change
+      # nothing and still exit 0.
+      - name: A release draft for this version exists, has notes, and targets this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          release="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+            --jq "[.[] | select(.tag_name == \"$VERSION\")] | first // empty")"
+          if [ -z "$release" ]; then
+            echo "::error::no release for $VERSION. Write the notes first:" \
+                 "gh release create $VERSION --draft --notes-file NOTES.md"
+            echo "::error::If a draft DOES exist, this job could not see it - check that the workflow still declares contents: write."
+            exit 1
+          fi
+          if [ "$(printf '%s' "$release" | jq -r '.draft')" != "true" ]; then
+            echo "::error::The release for $VERSION is already published."
+            exit 1
+          fi
+          body="$(printf '%s' "$release" | jq -r '.body // ""' | tr -d '[:space:]')"
+          [ -n "$body" ] \
+            || { echo "::error::the release for $VERSION has no notes"; exit 1; }
+          target="$(printf '%s' "$release" | jq -r '.target_commitish')"
+          if [ "$target" != "$GITHUB_SHA" ]; then
+            echo "::error::The draft for $VERSION targets $target, but this run is on $GITHUB_SHA. Point the draft at the commit being released, or dispatch from the commit it targets."
+            exit 1
+          fi
+          printf '%s' "$release" | jq -r '"draft=\(.draft) tag=\(.tag_name)"'
+
+      # EVERYTHING THAT CAN BE MISSING IS CHECKED HERE, before PHP is
+      # installed, before the CLI exists and before anything is built.
       #
-      # Moving this to the front does not fix that case on its own, and it is
-      # important not to believe it does: the workflow does not own the path
+      # This step used to sit at position 7 of a tag-triggered job, behind
+      # `Validate extension` and `Build extension ZIP`. On 2026-08-19 that cost
+      # the 0.1.2 release: the notes file was missing, the run got as far as
+      # building the ZIP, failed here, and skipped both publish steps. The
+      # release object had already been created by hand ten hours earlier via
+      # the draft-first path in RELEASING.md, so what was left behind was a
+      # published release page with a tag and a body and no ZIP - which looks
+      # exactly like a release that shipped. Nobody noticed for eight weeks.
+      #
+      # Running in front of the tag does not fix that case on its own, and it
+      # is important not to believe it does: the workflow does not own the path
       # that created that release object, so it cannot refuse before a hand-made
       # release exists. What it does is make the workflow's own failures cheap
-      # and early. The check that actually catches the 0.1.2 shape is
+      # and early, and now also free: a refusal here happens while no tag
+      # exists at all. The check that actually catches the 0.1.2 shape is
       # .github/scripts/check-release-assets.sh, run on a schedule by
-      # release-audit.yml and again at the end of this job.
+      # release-audit.yml and again at the end of the publish job.
       - name: Preflight
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME}"
+          version="${VERSION}"
           failed=0
 
           # 2. The plugin version. Shopware reads composer.json's `version` as
           #    THE plugin version - the tag is not consulted - so a mismatch
           #    publishes an installable ZIP that reports itself as some other
-          #    release, with every step green and nothing to look at. At the
-          #    time of writing composer.json says 0.1.2 while release notes for
-          #    0.1.3 already exist, so this is not hypothetical.
+          #    release, with every step green and nothing to look at.
           declared="$(php -r 'echo json_decode(file_get_contents("composer.json"), true)["version"] ?? "";' 2>/dev/null \
             || sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' composer.json | head -1)"
           if [ "${declared}" != "${version}" ]; then
-            echo "::error::composer.json declares version ${declared:-<none>} but the tag is ${version}. Shopware reads that field as the plugin version, so this would ship a ${declared:-?} plugin under a ${version} tag. Roll composer.json to ${version} and re-tag."
+            echo "::error::composer.json declares version ${declared:-<none>} but this run asks to release ${version}. Shopware reads that field as the plugin version, so this would ship a ${declared:-?} plugin under a ${version} tag. Roll composer.json to ${version} and dispatch again."
             failed=1
           else
             echo "ok  plugin version ${declared}"
@@ -109,7 +177,7 @@ jobs:
           #    the kind that quietly stops checking.
           for file in CHANGELOG_en-GB.md CHANGELOG_de-DE.md; do
             if ! awk -v v="${version}" '$1 == "#" && $2 == v { hit = 1 } END { exit !hit }' "${file}"; then
-              echo "::error::${file} has no '# ${version}' section - roll it before tagging (RELEASING.md step 1). A merchant reads this file in the store listing."
+              echo "::error::${file} has no '# ${version}' section - roll it before releasing (RELEASING.md step 1). A merchant reads this file in the store listing."
               failed=1
             else
               echo "ok  store changelog ${file}"
@@ -117,9 +185,122 @@ jobs:
           done
 
           [ "${failed}" -eq 0 ] || {
-            echo "::error::preflight refused ${version}. Nothing has been built, published or uploaded."
+            echo "::error::preflight refused ${version}. Nothing has been tagged, built, published or uploaded."
             exit 1
           }
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install Shopware CLI
+        uses: shopware/shopware-cli-action@v3
+
+      - name: Validate extension
+        run: shopware-cli extension validate .
+
+      # Built here as a gate, and built again in the publish job from the tag.
+      # A ZIP that cannot be produced is a release that cannot ship, and finding
+      # that out before the tag exists is the entire point of this file.
+      - name: Build extension ZIP
+        run: shopware-cli extension zip .
+
+  # After approval, and only then. The `release` environment carries a required
+  # reviewer, so this job waits for a human before its first step runs, and
+  # `needs:` makes it unreachable until the gate above is green - so whoever
+  # approves is looking at a passing gate rather than at nothing.
+  tag:
+    name: Tag ${{ inputs.version }}
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # RE-CHECKED UNDER THE APPROVAL. `main` can move while a run waits for a
+      # reviewer, and the gate measured the repository as it was at dispatch, so
+      # the gate result may no longer describe what would be tagged.
+      - name: The gate result still describes this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          declared="$(php -r 'echo json_decode(file_get_contents("composer.json"), true)["version"] ?? "";')"
+          if [ "${declared}" != "${VERSION}" ]; then
+            echo "::error::composer.json now declares ${declared:-<none>}, not ${VERSION}. main moved while this run waited for approval, so the gate result no longer describes it. Re-run the workflow."
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$VERSION" >/dev/null 2>&1; then
+            echo "::error::Tag $VERSION appeared while this run waited. Stopping."
+            exit 1
+          fi
+          release="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+            --jq "[.[] | select(.tag_name == \"$VERSION\" and .draft)] | first // empty")"
+          if [ -z "$release" ]; then
+            echo "::error::The draft for $VERSION is gone or is no longer a draft since the dispatch."
+            exit 1
+          fi
+          target="$(printf '%s' "$release" | jq -r '.target_commitish')"
+          if [ "$target" != "$GITHUB_SHA" ]; then
+            echo "::error::The draft for $VERSION now targets $target, not the approved commit $GITHUB_SHA. Re-run the workflow."
+            exit 1
+          fi
+
+      # This is the irreversible act, and it is behind the approval: Packagist
+      # learns about the version from this ref and nothing else.
+      - name: Create the tag at the approved commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/tags/$VERSION" -f sha="$GITHUB_SHA" --jq '.ref'
+          # Read it back: exit status does not tell you what landed.
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$VERSION" --jq '"\(.ref) -> \(.object.sha)"'
+
+  # The ZIP, the store, and the release page. Runs in THIS run against the tag
+  # the job above created, because a ref created with `github.token` does not
+  # trigger other workflows.
+  publish:
+    name: Publish ${{ inputs.version }}
+    needs: tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    env:
+      # Optional Shopware Community Store publishing. Leave the secrets unset to
+      # skip the upload step; the ZIP is still built and attached to the release.
+      SHOPWARE_CLI_ACCOUNT_EMAIL: ${{ secrets.SHOPWARE_CLI_ACCOUNT_EMAIL }}
+      SHOPWARE_CLI_ACCOUNT_PASSWORD: ${{ secrets.SHOPWARE_CLI_ACCOUNT_PASSWORD }}
+    steps:
+      - name: Checkout the tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.version }}
+          fetch-depth: 0
+
+      - name: Read the draft notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          release="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+            --jq "[.[] | select(.tag_name == \"$VERSION\")] | first")"
+          if [ -z "$release" ]; then
+            echo "::error::the release for $VERSION vanished between the tag and the publish."
+            exit 1
+          fi
+          # The draft's body IS the release body. Carried to a file here only
+          # because the publish action takes a path, never committed.
+          printf '%s' "$release" | jq -r '.body' > "${RUNNER_TEMP}/release-notes.md"
+          echo "NOTES_FILE=${RUNNER_TEMP}/release-notes.md" >> "${GITHUB_ENV}"
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -136,7 +317,7 @@ jobs:
       - name: Build extension ZIP
         run: shopware-cli extension zip .
 
-      # THE ORDER OF THE NEXT TWO STEPS IS DELIBERATE AND IS PART OF THIS FIX.
+      # THE ORDER OF THE NEXT TWO STEPS IS DELIBERATE.
       #
       # The store upload used to run AFTER the GitHub release was published,
       # which is the same failure shape one layer up: a store upload that fails
@@ -169,11 +350,16 @@ jobs:
         if: ${{ env.SHOPWARE_CLI_ACCOUNT_EMAIL != '' && vars.SKIP_STORE_UPLOAD != 'true' }}
         run: shopware-cli account producer extension upload *.zip
 
+      # `tag_name` goes with every write of a release for the same reason it
+      # does on a PATCH: a draft's tag is a string on the object rather than a
+      # git ref, so a write that omits it can leave an `untagged-*` placeholder.
       - name: Publish GitHub release with ZIP
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.version }}
           files: "*.zip"
           body_path: ${{ env.NOTES_FILE }}
+          draft: false
           fail_on_unmatched_files: true
 
       # Assert the outcome rather than trusting the step above to have produced
@@ -187,17 +373,18 @@ jobs:
       - name: Verify the release carries its ZIP
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           # Bounded, never unbounded: the release was created moments ago and
           # the list endpoint can lag it by a second or two. Three tries and
           # then the failure stands.
           for attempt in 1 2 3; do
-            if .github/scripts/check-release-assets.sh --tag "${GITHUB_REF_NAME}"; then
+            if .github/scripts/check-release-assets.sh --tag "${VERSION}"; then
               exit 0
             fi
             echo "attempt ${attempt} did not see the asset yet"
             [ "${attempt}" -eq 3 ] || sleep 5
           done
-          echo "::error::${GITHUB_REF_NAME} was published without its ZIP. The release page exists and is not installable - fix it before anyone reads it as shipped."
+          echo "::error::${VERSION} was published without its ZIP. The release page exists and is not installable - fix it before anyone reads it as shipped."
           exit 1
