@@ -196,7 +196,7 @@ jobs:
           coverage: none
 
       - name: Install Shopware CLI
-        uses: shopware/shopware-cli-action@v3
+        uses: ./.github/actions/shopware-cli
 
       - name: Validate extension
         run: shopware-cli extension validate .
@@ -309,7 +309,7 @@ jobs:
           coverage: none
 
       - name: Install Shopware CLI
-        uses: shopware/shopware-cli-action@v3
+        uses: ./.github/actions/shopware-cli
 
       - name: Validate extension
         run: shopware-cli extension validate .

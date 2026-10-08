@@ -1,0 +1,8 @@
+name: Install pinned Shopware CLI
+description: Install the CLI version checked by pull requests and releases.
+runs:
+  using: composite
+  steps:
+    - uses: shopware/shopware-cli-action@v3
+      with:
+        version: '0.19.1'
