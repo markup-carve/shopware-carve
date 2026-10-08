@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1f5444e6d7b16ae3598cd9a74c7c89ef",
+    "content-hash": "ec3f50c07b0ea6122edf80dc4a91f4b2",
     "packages": [
         {
             "name": "brick/math",
@@ -3382,16 +3382,16 @@
         },
         {
             "name": "markup-carve/carve-php",
-            "version": "0.1.9",
+            "version": "0.1.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/markup-carve/carve-php.git",
-                "reference": "d4b53388df891158c9c868177a4213a5e8b2f608"
+                "reference": "61a3519ef97c6cd1721cd93c66d96f4222ee8a95"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/d4b53388df891158c9c868177a4213a5e8b2f608",
-                "reference": "d4b53388df891158c9c868177a4213a5e8b2f608",
+                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/61a3519ef97c6cd1721cd93c66d96f4222ee8a95",
+                "reference": "61a3519ef97c6cd1721cd93c66d96f4222ee8a95",
                 "shasum": ""
             },
             "require": {
@@ -3405,6 +3405,7 @@
                 "phpunit/phpunit": "^11.0 || ^12.0 || ^13.0"
             },
             "suggest": {
+                "ext-dom": "Required for HTML import and HTML heading-ID conversion.",
                 "ext-intl": "Recommended for heading-ID transliteration: enables ICU romanization of non-Latin scripts (e.g. CJK, Arabic). Without it, a baked map covers Latin/Cyrillic/punctuation identically and other scripts fall back to the generated `section` id."
             },
             "bin": [
@@ -3430,7 +3431,7 @@
                     "homepage": "https://github.com/php-collective"
                 }
             ],
-            "description": "PHP parser for Carve, a human-centered lightweight markup language derived from Markdown and Djot.",
+            "description": "PHP parser for Carve, a lightweight markup language for documents and the web.",
             "homepage": "https://markup-carve.github.io/carve/",
             "keywords": [
                 "carve",
@@ -3440,7 +3441,7 @@
             ],
             "support": {
                 "issues": "https://github.com/markup-carve/carve-php/issues",
-                "source": "https://github.com/markup-carve/carve-php/tree/0.1.9"
+                "source": "https://github.com/markup-carve/carve-php/tree/0.1.11"
             },
             "funding": [
                 {
@@ -3448,7 +3449,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-09-19T09:41:32+00:00"
+            "time": "2026-10-07T12:11:20+00:00"
         },
         {
             "name": "masterminds/html5",

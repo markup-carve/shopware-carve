@@ -7,8 +7,6 @@ namespace MarkupCarve\Shopware\Controller;
 use FilesystemIterator;
 use MarkupCarve\Carve\Converter\HtmlToCarve;
 use MarkupCarve\Carve\Converter\MarkdownToCarve;
-use MarkupCarve\Carve\Lint\MarkdownHabitLinter;
-use MarkupCarve\Carve\Lint\RetiredSpellingLinter;
 use MarkupCarve\Shopware\Service\CarveContextRenderer;
 use MarkupCarve\Shopware\Service\CarveIncludeGate;
 use MarkupCarve\Shopware\Service\CarveIncludeResult;
@@ -54,6 +52,8 @@ class CarvePreviewController
         $namespace = $payload->get('namespace');
         $namespace = is_string($namespace) ? $namespace : null;
         $includes = $payload->getBoolean('includes', true);
+        $diagnosticChannelId = null;
+        $locale = null;
         if (is_string($channelId) && $channelId !== '' && $this->contexts !== null && $this->contextRenderer !== null) {
             if (!$context->isAllowed('sales_channel:read')) {
                 throw new MissingPrivilegeException(['sales_channel:read']);
@@ -75,6 +75,8 @@ class CarvePreviewController
 
                 throw $exception;
             }
+            $diagnosticChannelId = $previewContext->getSalesChannelId();
+            $locale = $this->locales?->getLocaleForLanguageId($previewContext->getLanguageId());
             // The guest channel context supplies prices, but the acting admin decides file access.
             $includes = $includes && ($this->gate?->isGranted($context) ?? false);
             if ($this->translator !== null && $this->locales !== null) {
@@ -96,10 +98,12 @@ class CarvePreviewController
                 : new CarveIncludeResult($this->renderer->toHtml($source, locale: $locale, namespace: $namespace));
         }
         $resultData = $result->toArray();
-        $resultData['diagnostics'] = array_map(static fn ($warning): array => $warning->toArray(), array_merge(
-            (new MarkdownHabitLinter())->lint($source),
-            (new RetiredSpellingLinter())->lint($source),
-        ));
+        // Included files can supply references missing from the editor's source.
+        $referenceChecks = !array_filter($result->dependencies, static fn (array $dependency): bool => $dependency['resolved']);
+        $resultData['diagnostics'] = array_map(
+            static fn ($warning): array => $warning->toArray(),
+            $this->renderer->lint($source, $diagnosticChannelId, $locale, $referenceChecks, $result->html),
+        );
         $resultData['commercePreview'] = is_string($channelId) && $channelId !== '';
 
         return new JsonResponse($resultData);

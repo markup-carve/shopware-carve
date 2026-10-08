@@ -89,6 +89,34 @@ class CarvePreviewControllerTest extends CarveIncludeTestCase
         self::assertNotEmpty($payload['diagnostics']);
     }
 
+    public function testPreviewIncludesStructuralAndReferenceWarnings(): void
+    {
+        foreach (
+            [
+                ['![alt][missing]', 'unresolved-reference-link'],
+                ["# Alpha\n\n[a](#nope)", 'broken-fragment-link'],
+                ['{.a}', 'unattached-block-attribute'],
+                ['>no space', 'blockquote-marker-without-space'],
+            ] as [$source, $rule]
+        ) {
+            $request = new Request([], ['source' => $source]);
+            $payload = $this->decode((new CarvePreviewController($this->makeRenderer(null)))
+                ->preview($request, $this->cmsOnlyAdmin()));
+            self::assertContains($rule, array_column($payload['diagnostics'], 'rule'));
+        }
+    }
+
+    public function testIncludedHeadingDoesNotBecomeAFalseBrokenReferenceWarning(): void
+    {
+        $root = $this->makeRoot(['one.crv' => "# Included\n"]);
+        $source = "{{ one.crv }}\n\n[read](#Included)";
+        $payload = $this->decode((new CarvePreviewController($this->makeRenderer($root)))
+            ->preview(new Request([], ['source' => $source]), $this->privilegedAdmin()));
+        self::assertTrue($payload['expanded']);
+        self::assertStringContainsString('id="Included"', $payload['html']);
+        self::assertNotContains('broken-fragment-link', array_column($payload['diagnostics'], 'rule'));
+    }
+
     public function testImportReturnsConvertedSourceWithoutPersistence(): void
     {
         $request = new Request(content: '{"source":"<p><strong>Imported</strong></p>","format":"html"}');
@@ -149,11 +177,11 @@ class CarvePreviewControllerTest extends CarveIncludeTestCase
     /**
      * @param \Symfony\Component\HttpFoundation\JsonResponse $response
      *
-     * @return array{html: string, expanded: bool}
+     * @return array{html: string, expanded: bool, diagnostics: list<array{rule: string, line: int, column: int, message: string, start: int, end: int}>}
      */
     private function decode(object $response): array
     {
-        /** @var array{html: string, expanded: bool} $payload */
+        /** @var array{html: string, expanded: bool, diagnostics: list<array{rule: string, line: int, column: int, message: string, start: int, end: int}>} $payload */
         $payload = json_decode((string)$response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         return $payload;

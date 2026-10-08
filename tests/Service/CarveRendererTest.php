@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
+use MarkupCarve\Carve\CarveConverter;
+use MarkupCarve\Carve\Extension\AsciiHeadingIdsExtension;
 use MarkupCarve\Shopware\Service\CarveConverterFactory;
 use MarkupCarve\Shopware\Service\CarveRenderer;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +20,16 @@ class CarveRendererTest extends TestCase
     protected function setUp(): void
     {
         $this->renderer = new CarveRenderer($this->makeConfigMock(null));
+    }
+
+    public function testReferenceLintUsesTheRenderingFactoryExtensionsAndContext(): void
+    {
+        $factory = $this->createMock(CarveConverterFactory::class);
+        $factory->expects(self::once())->method('create')->with('channel', 'de')
+            ->willReturn((new CarveConverter())->addExtension(new AsciiHeadingIdsExtension()));
+        $renderer = new CarveRenderer($this->makeConfigMock(null), factory: $factory);
+        $warnings = $renderer->lint("# Café\n\n[read](#Cafe)", 'channel', 'de');
+        self::assertNotContains('broken-fragment-link', array_map(static fn ($warning): string => $warning->rule, $warnings));
     }
 
     public function testBlankReturnsEmpty(): void

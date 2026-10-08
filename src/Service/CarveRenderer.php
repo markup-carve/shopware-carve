@@ -38,6 +38,16 @@ class CarveRenderer
         $this->markdown = CarveConverter::markdown();
     }
 
+    /**
+     * @return list<\MarkupCarve\Carve\Lint\LintWarning>
+     */
+    public function lint(string $source, ?string $salesChannelId = null, ?string $locale = null, bool $referenceChecks = true, ?string $html = null): array
+    {
+        $converter = $this->factory->create($salesChannelId, $locale);
+
+        return (new CarvePreviewLinter())->lint($source, $converter, $html ?? $converter->convert($source), $referenceChecks);
+    }
+
     public function toHtml(?string $source, ?string $salesChannelId = null, ?string $locale = null, ?string $namespace = null): string
     {
         if ($source === null || trim($source) === '') {
