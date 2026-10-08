@@ -1,4 +1,4 @@
-name: Release
+name: Release packages and assets
 
 # THE TAG IS CREATED BY THIS WORKFLOW, AFTER THE GATES PASS AND AFTER A HUMAN
 # APPROVES. It used to be the trigger, and that ordering is what this file
@@ -28,13 +28,32 @@ name: Release
 # inheriting the 360-minute GitHub default.
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      version:
-        description: 'Version to release, without a leading v (e.g. 0.1.7)'
+      publish:
+        required: true
+        type: boolean
+      tag:
         required: true
         type: string
-
+      version:
+        required: true
+        type: string
+      release_tag:
+        required: true
+        type: string
+      source_sha:
+        required: true
+        type: string
+      release_id:
+        required: true
+        type: string
+      release_body:
+        required: true
+        type: string
+      notes_digest:
+        required: true
+        type: string
 permissions:
   # `write`, not `read`, and the draft check below is the reason: a DRAFT
   # release is invisible to a caller without push access, so under
@@ -42,12 +61,8 @@ permissions:
   # release" for a draft that is sitting right there with notes in it. The tag
   # and publish jobs also need it.
   contents: write
-
-concurrency:
-  # Two runs creating the same tag is a race with an irreversible loser.
-  group: release-${{ inputs.version }}
-  cancel-in-progress: false
-
+  actions: read
+  id-token: write
 jobs:
   # EVERYTHING CHECKABLE BEFORE ANYONE IS ASKED TO APPROVE, and before any
   # irreversible act, so a release that cannot succeed is refused in minutes
@@ -69,19 +84,24 @@ jobs:
       # FIRST, before anything else: refuse a version that already exists. On
       # the tag-triggered workflow this was impossible by construction; now it
       # is the first thing that can go wrong, and it is the expensive failure.
-      - name: No tag of this name exists yet
+          ref: ${{ inputs.source_sha }}
+      - name: Verify approval and checked tag before publishing
+        working-directory: ${{ github.workspace }}
+        if: ${{ inputs.publish }}
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ inputs.version }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_SHA: ${{ inputs.source_sha }}
+          RELEASE_NOTES_DIGEST: ${{ inputs.notes_digest }}
+        run: python .github/scripts/release-lane.py permit
+      - name: Expose the candidate tag locally
+        if: ${{ !inputs.publish }}
+        shell: bash
+        env:
+          CANDIDATE_TAG: ${{ inputs.tag }}
         run: |
-          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$VERSION" >/dev/null 2>&1; then
-            echo "::error::A tag $VERSION already exists. A published version cannot be moved on Packagist; supersede it with a new version instead."
-            exit 1
-          fi
-          echo "No tag $VERSION yet."
-
-      # This repository tags X.Y.Z with no leading v, and the draft's tag_name
-      # has to match that spelling or the release page and the tag diverge.
+          git tag "$CANDIDATE_TAG" "${{ inputs.source_sha }}"
       - name: The version is a plain X.Y.Z
         env:
           VERSION: ${{ inputs.version }}
@@ -156,6 +176,7 @@ jobs:
       # exists at all. The check that actually catches the 0.1.2 shape is
       # .github/scripts/check-release-assets.sh, run on a schedule by
       # release-audit.yml and again at the end of the publish job.
+        if: ${{ inputs.publish }}
       - name: Preflight
         env:
           VERSION: ${{ inputs.version }}
@@ -228,6 +249,7 @@ jobs:
       # here, so POST /git/refs answered 403 "Resource not accessible by
       # integration" and the release stopped after the maintainer's approval.
       contents: write
+      actions: read
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -241,59 +263,14 @@ jobs:
       # RE-CHECKED UNDER THE APPROVAL. `main` can move while a run waits for a
       # reviewer, and the gate measured the repository as it was at dispatch, so
       # the gate result may no longer describe what would be tagged.
-      - name: The gate result still describes this commit
+          ref: ${{ inputs.source_sha }}
+      - name: Expose the candidate tag locally
+        if: ${{ !inputs.publish }}
+        shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ inputs.version }}
+          CANDIDATE_TAG: ${{ inputs.tag }}
         run: |
-          set -euo pipefail
-          declared="$(php -r 'echo json_decode(file_get_contents("composer.json"), true)["version"] ?? "";')"
-          if [ "${declared}" != "${VERSION}" ]; then
-            echo "::error::composer.json now declares ${declared:-<none>}, not ${VERSION}. main moved while this run waited for approval, so the gate result no longer describes it. Re-run the workflow."
-            exit 1
-          fi
-          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$VERSION" >/dev/null 2>&1; then
-            echo "::error::Tag $VERSION appeared while this run waited. Stopping."
-            exit 1
-          fi
-          release="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
-            --jq "[.[] | select(.tag_name == \"$VERSION\" and .draft)] | first // empty")"
-          if [ -z "$release" ]; then
-            echo "::error::The draft for $VERSION is gone or is no longer a draft since the dispatch."
-            exit 1
-          fi
-          target="$(printf '%s' "$release" | jq -r '.target_commitish')"
-          # Accept the SHA or a branch name whose head IS this commit, the same
-          # pair the verify job accepts. A draft pinned to a SHA goes stale every
-          # time the branch moves, so the branch form is the one that survives a
-          # busy repository - and it is only accepted while the branch really
-          # points here, so a draft written for an older commit is still refused.
-          # Without this the two checks disagreed and 0.1.7 was refused under its
-          # own approval for targeting `main`.
-          branch_head=""
-          case "$target" in
-            *[!0-9a-f]*|"") branch_head="$(gh api "repos/$GITHUB_REPOSITORY/branches/$target" --jq '.commit.sha' 2>/dev/null || true)" ;;
-          esac
-          if [ "$target" != "$GITHUB_SHA" ] && [ "${branch_head:-}" != "$GITHUB_SHA" ]; then
-            echo "::error::The draft for $VERSION targets $target, this run is on $GITHUB_SHA, and that branch's head is ${branch_head:-not a branch}. Re-run the workflow."
-            exit 1
-          fi
-
-      # This is the irreversible act, and it is behind the approval: Packagist
-      # learns about the version from this ref and nothing else.
-      - name: Create the tag at the approved commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ inputs.version }}
-        run: |
-          gh api "repos/$GITHUB_REPOSITORY/git/refs" \
-            -f ref="refs/tags/$VERSION" -f sha="$GITHUB_SHA" --jq '.ref'
-          # Read it back: exit status does not tell you what landed.
-          gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$VERSION" --jq '"\(.ref) -> \(.object.sha)"'
-
-  # The ZIP, the store, and the release page. Runs in THIS run against the tag
-  # the job above created, because a ref created with `github.token` does not
-  # trigger other workflows.
+          git tag "$CANDIDATE_TAG" "${{ inputs.source_sha }}"
   publish:
     name: Publish ${{ inputs.version }}
     needs: tag
@@ -313,9 +290,26 @@ jobs:
       - name: Checkout the tag
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.version }}
+          ref: ${{ inputs.source_sha }}
           fetch-depth: 0
 
+      - name: Verify approval and checked tag before publishing
+        working-directory: ${{ github.workspace }}
+        if: ${{ inputs.publish }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_SHA: ${{ inputs.source_sha }}
+          RELEASE_NOTES_DIGEST: ${{ inputs.notes_digest }}
+        run: python .github/scripts/release-lane.py permit
+      - name: Expose the candidate tag locally
+        if: ${{ !inputs.publish }}
+        shell: bash
+        env:
+          CANDIDATE_TAG: ${{ inputs.tag }}
+        run: |
+          git tag "$CANDIDATE_TAG" "${{ inputs.source_sha }}"
       - name: Read the draft notes
         env:
           GH_TOKEN: ${{ github.token }}
@@ -377,7 +371,7 @@ jobs:
       # it self-skipped on every release including both successful ones, because
       # the account secrets are not configured on this repository.
       - name: Upload to Shopware Community Store
-        if: ${{ env.SHOPWARE_CLI_ACCOUNT_EMAIL != '' && vars.SKIP_STORE_UPLOAD != 'true' }}
+        if: ${{ inputs.publish && (env.SHOPWARE_CLI_ACCOUNT_EMAIL != '' && vars.SKIP_STORE_UPLOAD != 'true') }}
         run: shopware-cli account producer extension upload *.zip
 
       # `tag_name` goes with every write of a release for the same reason it
@@ -386,10 +380,9 @@ jobs:
       - name: Publish GitHub release with ZIP
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.version }}
+          tag_name: ${{ inputs.tag }}
           files: "*.zip"
-          body_path: ${{ env.NOTES_FILE }}
-          draft: false
+          draft: true
           fail_on_unmatched_files: true
 
       # Assert the outcome rather than trusting the step above to have produced
@@ -400,6 +393,9 @@ jobs:
       #
       # Same script the scheduled audit runs, scoped to this tag: one definition
       # of "shipped", used both at release time and forever after.
+          target_commitish: ${{ inputs.source_sha }}
+          generate_release_notes: false
+        if: ${{ inputs.publish }}
       - name: Verify the release carries its ZIP
         env:
           GH_TOKEN: ${{ github.token }}
@@ -418,3 +414,9 @@ jobs:
           done
           echo "::error::${VERSION} was published without its ZIP. The release page exists and is not installable - fix it before anyone reads it as shipped."
           exit 1
+        if: ${{ inputs.publish }}
+env:
+  LANE_TAG: ${{ inputs.tag }}
+  LANE_REF: ${{ format('refs/tags/{0}', inputs.tag) }}
+  LANE_REF_TYPE: tag
+  LANE_PUBLISH: ${{ inputs.publish }}
