@@ -297,14 +297,11 @@
 
     // -------------------------------------------------------------------------
     // Spoiler (SpoilerExtension)
-    //
     // Block:  <details class="spoiler"><summary>Title</summary>...</details>
     //   Natively collapsed by the browser - no JS needed. Styled like details
     //   but with a teal left-border accent.
-    //
     // Inline: <span class="spoiler">text</span>
     //   CSS-only blur until hover/focus - no JS needed.
-    //
     // Fallback (extension off): <span class="ext-spoiler"> / <div class="spoiler">
     //   .ext-spoiler keeps its blur; block .spoiler inside details is already
     //   handled above, plain div fallback gets a neutral border box.
@@ -344,11 +341,9 @@
 
     // -------------------------------------------------------------------------
     // Code groups (CodeGroupExtension) and tabs (TabsExtension)
-    //
     // Both extensions emit a CSS radio-tab pattern - all inputs+labels come first,
     // then all panels as siblings. The Kth radio controls the Kth panel via
     // nth-of-type selectors. No JavaScript required.
-    //
     // CodeGroupExtension emits:
     //   <div class="code-group">
     //     <input type="radio" name="codegroup-N" id="codegroup-N-tab-K"
@@ -358,7 +353,6 @@
     //     <div class="code-group-panel"><pre>...</pre></div>
     //     ... (more panels) ...
     //   </div>
-    //
     // TabsExtension emits the same shape with classes:
     //   tabs / tabs-radio / tabs-label / tabs-panel
     //   and name="tabset-N".

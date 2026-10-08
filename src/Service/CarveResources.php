@@ -61,13 +61,13 @@ class CarveResources
             if ($type === 'media' && Uuid::isValid($argument)) {
                 $criteria = new Criteria([$argument]);
                 $criteria->addAssociation('thumbnails');
-                $media = $this->mediaRepository->search($criteria, $context->getContext())->first();
+                $media = $this->mediaRepository->search($criteria, $context->getContext())->getEntities()->first();
                 if ($media !== null && !$media->isPrivate() && str_starts_with($media->getMimeType() ?? '', 'image/')) {
                     $html = $this->image($media, $node->getAttribute('alt'));
                 }
             }
             if ($type === 'manufacturer' && Uuid::isValid($argument)) {
-                $manufacturer = $this->manufacturers->search(new Criteria([$argument]), $context->getContext())->first();
+                $manufacturer = $this->manufacturers->search(new Criteria([$argument]), $context->getContext())->getEntities()->first();
                 if ($manufacturer !== null) {
                     // Core has no manufacturer detail route. Link to storefront search by brand name.
                     $name = (string)($manufacturer->getTranslation('name') ?? $manufacturer->getName());
@@ -82,7 +82,7 @@ class CarveResources
                 // These settings hold CMS layout ids, which core opens through its widget route.
                 $pageId = $setting === null ? null : $this->config->get('core.basicInformation.' . $setting, $context->getSalesChannelId());
                 $page = is_string($pageId) && Uuid::isValid($pageId)
-                    ? $this->cmsPages->search(new Criteria([$pageId]), $context->getContext())->first()
+                    ? $this->cmsPages->search(new Criteria([$pageId]), $context->getContext())->getEntities()->first()
                     : null;
                 if ($page !== null) {
                     $url = $this->escape($this->seo->generate('frontend.cms.page', ['id' => $pageId]));
@@ -110,7 +110,7 @@ class CarveResources
                     return;
                 }
                 $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, $allowed));
-                $category = $this->categories->search($criteria, $context)->first();
+                $category = $this->categories->search($criteria, $context)->getEntities()->first();
                 if ($category !== null) {
                     $html = $this->link(
                         $this->seo->generate('frontend.navigation.page', ['navigationId' => $categoryId]),
