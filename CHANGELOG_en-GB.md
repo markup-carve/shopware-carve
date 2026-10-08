@@ -1,3 +1,7 @@
+# 0.1.7
+- The editor's preview now flags structural problems and broken references while you write, next to the Markdown-habit warnings it already showed: an undefined reference, or a link pointing at a fragment that does not exist on the rendered page.
+- Requires carve-php 0.1.11.
+
 # 0.1.6
 - Installing or updating the plugin no longer aborts while reading its configuration, and the service container compiles on a stock shop.
 - The editor's preview, import and shared-file endpoints are now registered, so the administration preview renders. It also works with debug mode on.

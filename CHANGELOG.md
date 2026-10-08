@@ -5,6 +5,19 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-10-08
+
+### Added
+
+- The editor's preview reports structural problems and broken references
+  alongside the Markdown-habit warnings it already showed: an undefined
+  reference, a link that points at a fragment the rendered page has no anchor
+  for, and a retired spelling (#59).
+
+### Changed
+
+- Require carve-php 0.1.11 (#59).
+
 ## [0.1.6] - 2026-10-04
 
 ### Fixed

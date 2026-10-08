@@ -1,3 +1,7 @@
+# 0.1.7
+- Die Vorschau im Editor weist jetzt beim Schreiben auf strukturelle Probleme und ungültige Verweise hin, zusätzlich zu den bisherigen Hinweisen auf Markdown-Gewohnheiten: etwa ein nicht definierter Verweis oder ein Link auf einen Anker, den die gerenderte Seite nicht enthält.
+- Erfordert carve-php 0.1.11.
+
 # 0.1.6
 - Installation und Update des Plugins brechen nicht mehr beim Lesen der Konfiguration ab, und der Service-Container kompiliert in einem Standard-Shop.
 - Die Endpunkte des Editors für Vorschau, Import und gemeinsam genutzte Dateien sind jetzt registriert, sodass die Vorschau im Administrationsbereich rendert. Sie funktioniert auch bei aktivem Debug-Modus.
