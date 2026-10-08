@@ -85,6 +85,9 @@ jobs:
       # the tag-triggered workflow this was impossible by construction; now it
       # is the first thing that can go wrong, and it is the expensive failure.
           ref: ${{ inputs.source_sha }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
       - name: Verify approval and checked tag before publishing
         working-directory: ${{ github.workspace }}
         if: ${{ inputs.publish }}
@@ -293,6 +296,9 @@ jobs:
           ref: ${{ inputs.source_sha }}
           fetch-depth: 0
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
       - name: Verify approval and checked tag before publishing
         working-directory: ${{ github.workspace }}
         if: ${{ inputs.publish }}
