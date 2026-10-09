@@ -15,6 +15,7 @@
 /phpstan.neon export-ignore
 /phpunit.xml.dist export-ignore
 /tests export-ignore
+/scripts export-ignore
 /docs export-ignore
 /DEMO.md export-ignore
 /GALLERY.md export-ignore
