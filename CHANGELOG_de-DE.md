@@ -1,3 +1,8 @@
+# 0.1.8
+- Erfordert carve-php 0.1.12 mit korrigierten Tabellenspannen, Fußnoten und Aufgabenlisten.
+- Markdown-Abkürzungen und einfache HTML-Container mit der Klasse line-block werden beim Import anders gelesen. Prüfen Sie die Vorschau vor dem Speichern.
+- Verdoppeln Sie Backslashes im Alternativtext von Bildern und in Anführungszeichen gesetzten Include-Pfaden, wenn sie wörtlich erhalten bleiben sollen.
+
 # 0.1.7
 - Die Vorschau im Editor weist jetzt beim Schreiben auf strukturelle Probleme und ungültige Verweise hin, zusätzlich zu den bisherigen Hinweisen auf Markdown-Gewohnheiten: etwa ein nicht definierter Verweis oder ein Link auf einen Anker, den die gerenderte Seite nicht enthält.
 - Erfordert carve-php 0.1.11.

@@ -285,7 +285,7 @@ repository and no local clone.
 
 #### PHP dependency: carve-php
 
-Pulled in by the plugin's own `composer.json` (`markup-carve/carve-php: ^0.1.9`):
+Pulled in by the plugin's own `composer.json` (`markup-carve/carve-php: ^0.1.12`):
 
 ```bash
 composer require markup-carve/shopware-carve
