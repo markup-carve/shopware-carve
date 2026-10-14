@@ -5,6 +5,16 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-10-14
+
+### Changed
+
+- Require carve-php 0.1.12. Its import and table fixes reach the editor and
+  storefront renderer; authored HTML continues to use the same safety settings.
+- Package checks now compare declared corpus pairs with the full specification
+  examples and exclude local development files from distribution archives.
+
+
 ## [0.1.7] - 2026-10-08
 
 ### Added
