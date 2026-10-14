@@ -7,13 +7,18 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [0.1.8] - 2026-10-14
 
+### Breaking
+
+- Markdown import reads `*[TERM]: expansion` as an abbreviation, and HTML
+  import reads a bare `<div class="line-block">` as an admonition. Review these
+  forms in the editor's import preview before saving (#68).
+- Image alt text and quoted include paths decode punctuation escapes. Double
+  a backslash in stored content when it must remain literal (#68).
+
 ### Changed
 
-- Require carve-php 0.1.12. Its import and table fixes reach the editor and
-  storefront renderer; authored HTML continues to use the same safety settings.
-- Package checks now compare declared corpus pairs with the full specification
-  examples and exclude local development files from distribution archives.
-
+- Require carve-php 0.1.12. Its table and footnote fixes reach the storefront;
+  task lists carry the `task-list` class (#68).
 
 ## [0.1.7] - 2026-10-08
 

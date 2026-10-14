@@ -256,7 +256,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // Task lists (core): <li><input type="checkbox" disabled> ... (no class emitted)
+    // Task lists (core): <li><input type="checkbox" disabled> ...
     // Drop the list marker so the checkbox is not shown next to a bullet.
     // -------------------------------------------------------------------------
     li:has(> input[type="checkbox"]) {

@@ -1,3 +1,8 @@
+# 0.1.8
+- Requires carve-php 0.1.12, with updated table spans, footnotes and task-list markup.
+- Markdown abbreviation definitions and bare HTML line-block containers import differently. Review the editor's import preview before saving.
+- To keep literal backslashes in image alt text or quoted include paths, double them in the source.
+
 # 0.1.7
 - The editor's preview now flags structural problems and broken references while you write, next to the Markdown-habit warnings it already showed: an undefined reference, or a link pointing at a fragment that does not exist on the rendered page.
 - Requires carve-php 0.1.11.
