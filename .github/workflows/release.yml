@@ -384,7 +384,7 @@ jobs:
       # does on a PATCH: a draft's tag is a string on the object rather than a
       # git ref, so a write that omits it can leave an `untagged-*` placeholder.
       - name: Publish GitHub release with ZIP
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ inputs.version }}
           files: "*.zip"
