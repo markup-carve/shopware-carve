@@ -11,6 +11,8 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 
 #[AsCommand(name: 'carve:fmt', description: 'Print Carve files in canonical form, or rewrite or check them')]
 class CarveFormatCommand extends Command
@@ -61,7 +63,11 @@ class CarveFormatCommand extends Command
                 continue;
             }
             if ($write) {
-                if ($formatted !== $source && @file_put_contents($path, $formatted) === false) {
+                try {
+                    if ($formatted !== $source) {
+                        (new Filesystem())->dumpFile($path, $formatted);
+                    }
+                } catch (IOException) {
                     $failed = true;
                     $output->writeln(sprintf('<error>File "%s" could not be written.</error>', $path));
                 }
