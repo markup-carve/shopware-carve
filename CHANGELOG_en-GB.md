@@ -1,3 +1,10 @@
+# 0.1.9
+- New console commands: carve:lint checks the Carve in products, categories, manufacturers and CMS elements, carve:fmt formats Carve files and can align tables, and carve:convert migrates existing HTML descriptions into Carve fields (dry run by default).
+- New setting "Reject saves with Carve lint findings", off by default.
+- The editor preview reports every Carve lint rule, including list, continuation and table problems.
+- Includes can select a named region or insert a file as a code block.
+- Requires carve-php 0.1.14.
+
 # 0.1.8
 - Requires carve-php 0.1.12, with updated table spans, footnotes and task-list markup.
 - Markdown abbreviation definitions and bare HTML line-block containers import differently. Review the editor's import preview before saving.

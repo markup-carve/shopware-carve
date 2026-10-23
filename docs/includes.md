@@ -47,7 +47,18 @@ The engine also supports physical line selection:
 {{ shared/guide.crv @lines:3-8 }}
 ```
 
-Use either a section ID or a line range in one directive. Section IDs survive
+A named region selects the lines between `%% #region name` and
+`%% #endregion` in a Carve file. With `@code`, the include inserts a file or
+one of its regions as a code block, and the region markers use the file's own
+comment syntax (`// #region demo` in PHP):
+
+```carve
+{{ shared/guide.crv @region:care }}
+
+{{ snippets/setup.php @region:demo @code:php }}
+```
+
+Use one of a section ID, a line range or a region in one directive. Section IDs survive
 edits elsewhere in the file better than line numbers. The editor accepts a
 section ID and heading shift; line ranges remain available in source.
 

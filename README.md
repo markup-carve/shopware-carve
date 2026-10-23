@@ -59,7 +59,10 @@ The plugin supplies:
 - HTML and plain-text transactional mail rendering;
 - `:product[SKU]` inline references resolved in the sales-channel context;
 - a restricted comment profile for product reviews;
-- `carve:render` for HTML, text, Markdown, and terminal output.
+- `carve:render` for HTML, text, Markdown, and terminal output;
+- `carve:lint` over stored fields and CMS elements, `carve:fmt` (with
+  `--align-tables`), and `carve:convert` to migrate HTML descriptions;
+- an opt-in lint check that rejects saves with findings (`lintOnSave`).
 
 The [surface reference](docs/reference.md#surfaces) documents each integration
 point and includes template examples. The [gallery](GALLERY.md) shows the CMS,

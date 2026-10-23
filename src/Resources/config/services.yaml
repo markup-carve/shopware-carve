@@ -105,3 +105,30 @@ services:
 
     MarkupCarve\Shopware\Subscriber\CarveStoreApiCacheKey:
         tags: [kernel.event_subscriber]
+
+    MarkupCarve\Shopware\Service\CarveStoredSources:
+        arguments:
+            - '@Doctrine\DBAL\Connection'
+            - product: '@product.repository'
+              category: '@category.repository'
+              product_manufacturer: '@product_manufacturer.repository'
+
+    MarkupCarve\Shopware\Command\CarveLintCommand:
+        arguments:
+            - '@MarkupCarve\Shopware\Service\CarveRenderer'
+            - '@MarkupCarve\Shopware\Service\CarveStoredSources'
+        tags: [console.command]
+
+    MarkupCarve\Shopware\Command\CarveFormatCommand:
+        tags: [console.command]
+
+    MarkupCarve\Shopware\Command\CarveConvertCommand:
+        arguments: ['@MarkupCarve\Shopware\Service\CarveStoredSources']
+        tags: [console.command]
+
+    MarkupCarve\Shopware\Subscriber\CarveLintWriteGuard:
+        arguments:
+            - '@Shopware\Core\System\SystemConfig\SystemConfigService'
+            - '@MarkupCarve\Shopware\Service\CarveRenderer'
+            - '@Doctrine\DBAL\Connection'
+        tags: [kernel.event_subscriber]

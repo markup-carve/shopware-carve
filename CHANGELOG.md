@@ -5,6 +5,29 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-10-23
+
+### Added
+
+- `carve:lint` lints the Carve stored in products, categories, manufacturers
+  and static Carve CMS elements, or given files, and exits non-zero on a
+  finding. `--include-root` also lints included files (#69).
+- `carve:fmt` prints, rewrites (`--write`) or checks (`--check`) Carve files;
+  `--align-tables` lines up pipe-table columns (#69).
+- `carve:convert` migrates HTML descriptions of products, categories and
+  manufacturers into their Carve fields. Dry run by default; conversions that
+  lose content are skipped unless `--accept-losses` is passed. It also
+  converts a single Markdown or HTML file (#69).
+- The `lintOnSave` setting, off by default, rejects admin and API saves whose
+  Carve source has lint findings (#69).
+
+### Changed
+
+- The editor preview runs every `DocumentLinter` rule, so list-column,
+  continuation, consumed-key, table and figure findings reach authors (#69).
+- Require carve-php 0.1.14: aligned tables, `@region` and code includes, and
+  its parser fixes (#69).
+
 ## [0.1.8] - 2026-10-14
 
 ### Breaking

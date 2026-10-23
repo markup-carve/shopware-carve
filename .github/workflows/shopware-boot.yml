@@ -198,3 +198,7 @@ jobs:
       - name: Preview a document over the admin API in prod and in dev
         working-directory: shop
         run: bash "${GITHUB_WORKSPACE}/plugin/tests/boot/preview-smoke.sh"
+
+      - name: Lint, convert and format stored content, and gate a save
+        working-directory: shop
+        run: bash "${GITHUB_WORKSPACE}/plugin/tests/boot/commands-smoke.sh"
