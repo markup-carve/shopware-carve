@@ -5,6 +5,10 @@
 - Includes can select a named region or insert a file as a code block.
 - Requires carve-php 0.1.14.
 
+- Carve content can show native badges, calls to action, FAQ and accordion sections, coupons, countdowns, product sale and image views.
+- Storefront layouts include trust badges, gallery rows, sparklines, CSV tables, contextual prices, shipping notes, selected options, review ratings and standalone product cards.
+- YouTube videos load after visitor action. Named app blocks, public configuration, bundled assets and theme icons are available in Carve content.
+
 # 0.1.8
 - Requires carve-php 0.1.12, with updated table spans, footnotes and task-list markup.
 - Markdown abbreviation definitions and bare HTML line-block containers import differently. Review the editor's import preview before saving.
