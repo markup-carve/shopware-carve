@@ -18,6 +18,18 @@
     .carve-badge--warning { background: #fffaf0; color: #8a4b12; }
     .carve-badge--danger { background: #fff5f5; color: #9b2c2c; }
 
+    a.button, .cta a { display: inline-block; padding: .5rem 1rem; border-radius: .25rem; background: #155e75; color: #fff; font-weight: 600; text-decoration: none; }
+    a.button:hover, .cta a:hover { background: #104a5c; color: #fff; }
+    a.button:focus-visible, .cta a:focus-visible { outline: 3px solid #155e75; outline-offset: 3px; }
+    .cta { margin-block: 1.5rem; }
+    .cta p { margin: 0; }
+    .columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 1rem; margin-block: 1.5rem; }
+    .columns > .card, > .card { padding: 1rem; border: 1px solid #d3d9dc; border-radius: .25rem; }
+    .columns > .card > :last-child, > .card > :last-child { margin-bottom: 0; }
+    .usp { margin-block: 1.5rem; }
+    .usp li { margin-block: .4rem; padding-left: .25rem; }
+    .usp li::marker { color: #155e75; }
+
 
     // -------------------------------------------------------------------------
     // Tables (pipe-table and list-table both render as <table>)

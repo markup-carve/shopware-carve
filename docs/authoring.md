@@ -86,6 +86,35 @@ CMS fragments namespace IDs by slot to keep repeated tabs and anchors separate.
 Twig filters preserve existing heading IDs by default. Pass an optional namespace
 to `carve` or `carve_ctx` when rendering repeated fragments in a custom template.
 
+## Calls to action and layout
+
+Use `[Shop now](https://example.com){.button}` for a button-style link. A
+`::: cta` block styles the links inside it the same way. Use real links so the
+destination remains available to keyboard and screen-reader users.
+
+```carve
+::: cta
+[Shop now](/category/new)
+:::
+
+::: columns
+::: card
+Fast delivery
+:::
+::: card
+Easy returns
+:::
+:::
+
+::: usp
+- Free returns
+- Repairable parts
+:::
+```
+
+Columns collapse to one per row when the available width is narrow. Cards and
+USP lists also work outside a columns block.
+
 ## Placement and links
 
 `productPlacement` accepts `append` (default), `before`, or `replace`. Replacement
