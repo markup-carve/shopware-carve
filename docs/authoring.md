@@ -40,7 +40,7 @@ through theme integration.
 | Source | Output |
 |---|---|
 | `:product[SKU]` | Translated product name linked through Shopware's SEO URL handler. |
-| `:product[SKU]{.card}` | Compact inline card with the product name, current or sale price, and public cover image when available. |
+| `:product[SKU]{.card}` | When alone in its own paragraph, the Shopware storefront product card, including the theme's price, availability, and purchase controls. In running text, a compact card is used. Previews without the Storefront runtime use a product link. |
 | `:price[SKU]` | Formatted unit price for the first advanced-price tier, or the calculated base price. |
 | `:was-now[SKU]` | List price and current price when a sale is active; current price otherwise. |
 | `:discount[SKU]` | Percentage off when the selected price has a higher list price. |

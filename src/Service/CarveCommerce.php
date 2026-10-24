@@ -7,6 +7,7 @@ namespace MarkupCarve\Shopware\Service;
 use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Carve\Event\RenderEvent;
 use MarkupCarve\Carve\Node\Block\Div;
+use MarkupCarve\Carve\Node\Block\Paragraph;
 use MarkupCarve\Carve\Node\Document;
 use MarkupCarve\Carve\Node\Inline\InlineExtension;
 use MarkupCarve\Carve\Node\Node;
@@ -210,6 +211,24 @@ class CarveCommerce implements ResetInterface
                     . $html . ' ' . $this->salePrice($product, $context) . '</span></span>';
             }
             $event->setHtml($html);
+        });
+        $converter->on('render.paragraph', function (RenderEvent $event) use ($context): void {
+            $node = $event->getNode();
+            if (!$node instanceof Paragraph) {
+                return;
+            }
+            $children = $node->getChildren();
+            if (
+                $node->getAttributes() !== [] || count($children) !== 1 || !$children[0] instanceof InlineExtension
+                || $children[0]->getExtensionType() !== 'product' || !$children[0]->hasClass('card')
+            ) {
+                return;
+            }
+            $sku = $this->argument($children[0]);
+            $product = ($this->products[$context] ?? [])[$sku] ?? null;
+            if ($product !== null && $product->getAvailable()) {
+                $event->setHtml($this->card($product, $context));
+            }
         });
         $converter->on('render.div', function (RenderEvent $event) use ($context): void {
             $node = $event->getNode();
