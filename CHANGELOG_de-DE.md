@@ -3,7 +3,7 @@
 - Neue Einstellung „Speichern bei Carve-Lint-Befunden ablehnen“, standardmäßig deaktiviert.
 - Die Vorschau im Editor meldet jetzt alle Carve-Lint-Regeln, auch Probleme mit Listen, Fortsetzungen und Tabellen.
 - Includes können einen benannten Bereich auswählen oder eine Datei als Codeblock einfügen.
-- Erfordert carve-php 0.1.14.
+- Erfordert carve-php 0.1.15.
 
 - Carve-Inhalte zeigen native Badges, Handlungsaufrufe, FAQ- und Akkordeonbereiche, Gutscheine, Countdowns sowie Produktangebote und Bilder.
 - Die Storefront bietet Vertrauenssiegel, Galerien, Sparklines, CSV-Tabellen, Preise und Versandhinweise im Kontext, ausgewählte Optionen, Bewertungen und einzelne Produktkarten.
