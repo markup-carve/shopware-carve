@@ -13,6 +13,7 @@ Authors can check and convert stored Carve, while storefront content gains comme
 
 - Console commands check stored content, format files, and migrate HTML; optional save validation catches problems before publication (#69).
 - The editor preview reports all Carve diagnostics, and includes can select named regions or code files through carve-php 0.1.14 (#69).
+- Storefront, preview, and command rendering follow carve-php 0.1.15 for table spans, wrapped attributes, and lone `+` markers.
 - Content can show native badges, bounded inline values, calls to action, and layout elements (#72, #74, #76).
 - FAQ and accordion sections, coupons, countdowns, product sale views, and image views render in the storefront (#78, #80, #82).
 - Trust badges, gallery rows, sparklines, and CSV tables have storefront presentation (#84, #86).

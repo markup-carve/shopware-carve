@@ -3,7 +3,7 @@
 - New setting "Reject saves with Carve lint findings", off by default.
 - The editor preview reports every Carve lint rule, including list, continuation and table problems.
 - Includes can select a named region or insert a file as a code block.
-- Requires carve-php 0.1.14.
+- Requires carve-php 0.1.15.
 
 - Carve content can show native badges, calls to action, FAQ and accordion sections, coupons, countdowns, product sale and image views.
 - Storefront layouts include trust badges, gallery rows, sparklines, CSV tables, contextual prices, shipping notes, selected options, review ratings and standalone product cards.
