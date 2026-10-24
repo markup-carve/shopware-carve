@@ -105,6 +105,7 @@ services:
             - '@event_dispatcher'
             - '@cms_page.repository'
             - '@assets.packages'
+            - '@twig'
 
     MarkupCarve\Shopware\Subscriber\CarveStoreApiCacheKey:
         tags: [kernel.event_subscriber]

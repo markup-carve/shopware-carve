@@ -26,6 +26,8 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Asset\Packages;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Twig\Environment;
+use Twig\Error\Error as TwigError;
 
 class CarveResources
 {
@@ -38,6 +40,7 @@ class CarveResources
      * @param \Shopware\Core\Framework\DataAbstractionLayer\EntityRepository<\Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerCollection> $manufacturers
      * @param \Shopware\Core\Framework\DataAbstractionLayer\EntityRepository<\Shopware\Core\Content\Cms\CmsPageCollection> $cmsPages
      * @param \Symfony\Component\Asset\Packages|null $assets
+     * @param \Twig\Environment|null $twig
      */
     public function __construct(
         private readonly EntityRepository $mediaRepository,
@@ -48,6 +51,7 @@ class CarveResources
         private readonly EventDispatcherInterface $cacheTags,
         private readonly EntityRepository $cmsPages,
         private readonly ?Packages $assets = null,
+        private readonly ?Environment $twig = null,
     ) {
     }
 
@@ -55,13 +59,20 @@ class CarveResources
     {
         $converter->on('render.inline_extension', function (RenderEvent $event) use ($context): void {
             $node = $event->getNode();
-            if (!$node instanceof InlineExtension || !in_array($node->getExtensionType(), ['media', 'category', 'manufacturer', 'legal', 'config', 'asset'], true)) {
+            if (!$node instanceof InlineExtension || !in_array($node->getExtensionType(), ['media', 'category', 'manufacturer', 'legal', 'config', 'asset', 'icon'], true)) {
                 return;
             }
             $this->cacheTags->dispatch(new AddCacheTagEvent('carve-resources'));
             $type = $node->getExtensionType();
             $argument = $this->argument($node);
             $html = $this->escape($argument);
+            if ($type === 'icon' && $this->twig !== null && preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $argument) === 1) {
+                try {
+                    $html = $this->twig->render('@ShopwareCarve/storefront/utilities/carve-icon.html.twig', ['name' => $argument]);
+                } catch (TwigError) {
+                    // Preview and core-only contexts may not have the Storefront icon tag.
+                }
+            }
             if ($type === 'config' && $argument === 'core.shopName') {
                 $name = $this->config->get('core.basicInformation.shopName', $context->getSalesChannelId());
                 if (is_string($name) && $name !== '') {

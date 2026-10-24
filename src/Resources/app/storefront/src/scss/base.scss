@@ -13,6 +13,7 @@
     .carve-product-card { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
     .carve-product-card img { max-width: 72px; }
     .carve-product-card__body { display: inline-flex; flex-direction: column; }
+    .carve-icon { display: inline-flex; vertical-align: middle; }
     .carve-product-image { max-width: 8rem; height: auto; vertical-align: middle; }
     .carve-review-rating, .carve-reviews-summary { display: inline-flex; align-items: center; gap: .25rem; }
     .carve-variants { display: inline-flex; flex-wrap: wrap; gap: .35rem; vertical-align: middle; }
