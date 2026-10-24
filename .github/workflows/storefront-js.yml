@@ -118,6 +118,8 @@ jobs:
               "kroki.io/plantuml/svg",
               "carve-coupon__copy",
               "carve-countdown[data-target]",
+              "carve-video__load",
+              "youtube-nocookie.com/embed/",
             ];
             const missing = required.filter((s) => !bundle.includes(s));
             if (missing.length > 0) {
