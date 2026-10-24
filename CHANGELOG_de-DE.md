@@ -5,6 +5,10 @@
 - Includes können einen benannten Bereich auswählen oder eine Datei als Codeblock einfügen.
 - Erfordert carve-php 0.1.14.
 
+- Carve-Inhalte zeigen native Badges, Handlungsaufrufe, FAQ- und Akkordeonbereiche, Gutscheine, Countdowns sowie Produktangebote und Bilder.
+- Die Storefront bietet Vertrauenssiegel, Galerien, Sparklines, CSV-Tabellen, Preise und Versandhinweise im Kontext, ausgewählte Optionen, Bewertungen und einzelne Produktkarten.
+- YouTube-Videos laden nach einer Aktion der Besucher. Benannte App-Blöcke, öffentliche Konfiguration, gebündelte Assets und Theme-Icons stehen in Carve-Inhalten zur Verfügung.
+
 # 0.1.8
 - Erfordert carve-php 0.1.12 mit korrigierten Tabellenspannen, Fußnoten und Aufgabenlisten.
 - Markdown-Abkürzungen und einfache HTML-Container mit der Klasse line-block werden beim Import anders gelesen. Prüfen Sie die Vorschau vor dem Speichern.

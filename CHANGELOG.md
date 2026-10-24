@@ -5,28 +5,22 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.1.9] - 2026-10-23
+## [0.1.9] - 2026-10-24
 
-### Added
+Authors can check and convert stored Carve, while storefront content gains commerce details, interactive sections, and theme-aware presentation.
 
-- `carve:lint` lints the Carve stored in products, categories, manufacturers
-  and static Carve CMS elements, or given files, and exits non-zero on a
-  finding. `--include-root` also lints included files (#69).
-- `carve:fmt` prints, rewrites (`--write`) or checks (`--check`) Carve files;
-  `--align-tables` lines up pipe-table columns (#69).
-- `carve:convert` migrates HTML descriptions of products, categories and
-  manufacturers into their Carve fields. Dry run by default; conversions that
-  lose content are skipped unless `--accept-losses` is passed. It also
-  converts a single Markdown or HTML file (#69).
-- The `lintOnSave` setting, off by default, rejects admin and API saves whose
-  Carve source has lint findings (#69).
+### Improvements
 
-### Changed
+- Console commands check stored content, format files, and migrate HTML; optional save validation catches problems before publication (#69).
+- The editor preview reports all Carve diagnostics, and includes can select named regions or code files through carve-php 0.1.14 (#69).
+- Content can show native badges, bounded inline values, calls to action, and layout elements (#72, #74, #76).
+- FAQ and accordion sections, coupons, countdowns, product sale views, and image views render in the storefront (#78, #80, #82).
+- Trust badges, gallery rows, sparklines, and CSV tables have storefront presentation (#84, #86).
+- Product pages can show contextual prices, shipping notes, selected options, review ratings, and standalone product cards (#88, #96, #98, #100).
+- YouTube videos load after visitor action, and named app blocks can render through storefront events (#91, #95).
+- Public configuration and bundled assets are available to content, and theme icons render in Carve (#93, #102).
 
-- The editor preview runs every `DocumentLinter` rule, so list-column,
-  continuation, consumed-key, table and figure findings reach authors (#69).
-- Require carve-php 0.1.14: aligned tables, `@region` and code includes, and
-  its parser fixes (#69).
+**Full Changelog**: https://github.com/markup-carve/shopware-carve/compare/0.1.8...0.1.9
 
 ## [0.1.8] - 2026-10-14
 
