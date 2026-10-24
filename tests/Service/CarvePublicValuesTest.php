@@ -49,4 +49,24 @@ class CarvePublicValuesTest extends TestCase
         self::assertStringContainsString('../secret', $html);
         self::assertStringNotContainsString('Shop <safe>', $html);
     }
+
+    public function testMissingBundlePackageLeavesTheAuthoredPathReadable(): void
+    {
+        $context = $this->createStub(SalesChannelContext::class);
+        $context->method('getContext')->willReturn(Context::createDefaultContext());
+        $resources = new CarveResources(
+            $this->createStub(EntityRepository::class),
+            $this->createStub(EntityRepository::class),
+            $this->createStub(SalesChannelRepository::class),
+            $this->createStub(SeoUrlPlaceholderHandlerInterface::class),
+            $this->createStub(SystemConfigService::class),
+            $this->createStub(EventDispatcherInterface::class),
+            $this->createStub(EntityRepository::class),
+            new Packages(),
+        );
+        $converter = new CarveConverter();
+        $resources->register($converter, $context);
+
+        self::assertStringContainsString('icons/truck.svg', $converter->convert(':asset[icons/truck.svg]'));
+    }
 }
