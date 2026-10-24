@@ -115,6 +115,25 @@ Easy returns
 Columns collapse to one per row when the available width is narrow. Cards and
 USP lists also work outside a columns block.
 
+## Inline values
+
+Use `:rating-stars[4.5]` for a five-star display and `:progress[70]` for a
+native progress bar. Ratings accept values from 0 to 5; progress accepts 0 to
+100. Both round to one decimal place. Invalid values render as plain text.
+
+`:color[#ff8800]` shows a labeled swatch. Use three- or six-digit hexadecimal
+colors. A palette groups swatches:
+
+```carve
+::: palette
+:color[#ff8800] :color[#155e75]
+:::
+```
+
+`:unit[6 mm]` keeps a measurement together with a narrow no-break space. It
+accepts a signed number followed by whitespace and unit text. These displays
+use no catalog data or client script.
+
 ## Placement and links
 
 `productPlacement` accepts `append` (default), `before`, or `replace`. Replacement
