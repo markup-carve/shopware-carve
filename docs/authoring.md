@@ -40,7 +40,11 @@ through theme integration.
 | Source | Output |
 |---|---|
 | `:product[SKU]` | Translated product name linked through Shopware's SEO URL handler. |
+| `:product[SKU]{.card}` | Compact inline card with the product name, current or sale price, and public cover image when available. |
 | `:price[SKU]` | Formatted unit price for the first advanced-price tier, or the calculated base price. |
+| `:was-now[SKU]` | List price and current price when a sale is active; current price otherwise. |
+| `:discount[SKU]` | Percentage off when the selected price has a higher list price. |
+| `:product-image[SKU]` | Public cover image with the translated product name as alternative text. |
 | `:stock[SKU]` | Translated availability label. |
 | `:datasheet[SKU]` | First public PDF attached to the product. |
 | `:category[UUID]` | Active page category within the channel's navigation, footer, or service tree. |

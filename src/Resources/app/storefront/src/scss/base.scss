@@ -12,6 +12,10 @@
     > .product-box, section > .product-box { max-width: 24rem; margin-block: 1.5rem; }
     .carve-product-card { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
     .carve-product-card img { max-width: 72px; }
+    .carve-product-card__body { display: inline-flex; flex-direction: column; }
+    .carve-product-image { max-width: 8rem; height: auto; vertical-align: middle; }
+    .carve-sale-price s { color: #59656a; }
+    .carve-discount { display: inline-block; padding: .1em .4em; border-radius: .25rem; background: #fff5f5; color: #9b2c2c; }
     .carve-chart-data { white-space: pre-wrap; }
     .carve-badge { display: inline-block; padding: .1em .5em; border-radius: .25em; font-size: .875em; font-weight: 600; background: #e6fffa; color: #1a5556; }
     .carve-badge--success { background: #f0fff4; color: #22543d; }

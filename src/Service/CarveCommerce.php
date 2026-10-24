@@ -66,7 +66,7 @@ class CarveCommerce implements ResetInterface
     {
         $skus = [];
         $visit = function (Node $node) use (&$visit, &$skus): void {
-            if ($node instanceof InlineExtension && in_array($node->getExtensionType(), ['product', 'price', 'stock', 'datasheet'], true)) {
+            if ($node instanceof InlineExtension && in_array($node->getExtensionType(), ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image'], true)) {
                 $skus[] = $this->argument($node);
             }
             if ($node instanceof Div && ($node->hasClass('specs') || $node->hasClass('product-card'))) {
@@ -91,6 +91,7 @@ class CarveCommerce implements ResetInterface
             $criteria->addFilter(new ProductAvailableFilter($context->getSalesChannelId(), ProductVisibilityDefinition::VISIBILITY_LINK));
             $criteria->addAssociation('properties.group');
             $criteria->addAssociation('media.media');
+            $criteria->addAssociation('cover.media');
             foreach ($missing as $sku) {
                 $cached[$sku] = null;
             }
@@ -136,7 +137,7 @@ class CarveCommerce implements ResetInterface
 
                 return;
             }
-            if (!in_array($type, ['product', 'price', 'stock', 'datasheet'], true)) {
+            if (!in_array($type, ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image'], true)) {
                 return;
             }
             $product = ($this->products[$context] ?? [])[$argument] ?? null;
@@ -160,16 +161,17 @@ class CarveCommerce implements ResetInterface
             $name = (string)($product->getTranslation('name') ?? $product->getName() ?? $argument);
             $url = $this->seo->generate('frontend.detail.page', ['productId' => $product->getId()]);
             $html = match ($type) {
-                'price' => $this->escape($this->currency->formatCurrencyByLanguage(
-                    ($product->getCalculatedPrices()->first() ?? $product->getCalculatedPrice())->getUnitPrice(),
-                    $context->getCurrency()->getIsoCode(),
-                    $context->getLanguageId(), $context->getContext(), $context->getItemRounding()->getDecimals(),
-                )),
+                'price' => $this->price($product, $context),
+                'was-now' => $this->salePrice($product, $context),
+                'discount' => $this->discount($product),
+                'product-image' => $this->productImage($product, $name) ?: $this->escape($argument),
                 'datasheet' => $this->datasheet($product, $argument),
                 default => '<a href="' . $this->escape($url) . '">' . $this->escape($name) . '</a>',
             };
             if ($type === 'product' && $node->hasClass('card')) {
-                $html = '<span class="carve-product-card">' . $html . '</span>';
+                $image = $this->productImage($product, $name);
+                $html = '<span class="carve-product-card">' . $image . '<span class="carve-product-card__body">'
+                    . $html . ' ' . $this->salePrice($product, $context) . '</span></span>';
             }
             $event->setHtml($html);
         });
@@ -195,6 +197,62 @@ class CarveCommerce implements ResetInterface
             }
             $event->setHtml('<div class="carve-product-grid">' . $html . '</div>');
         });
+    }
+
+    private function price(SalesChannelProductEntity $product, SalesChannelContext $context): string
+    {
+        $price = $product->getCalculatedPrices()->first() ?? $product->getCalculatedPrice();
+
+        return $this->formatPrice($price->getUnitPrice(), $context);
+    }
+
+    private function formatPrice(float $value, SalesChannelContext $context): string
+    {
+        return $this->escape($this->currency->formatCurrencyByLanguage(
+            $value,
+            $context->getCurrency()->getIsoCode(),
+            $context->getLanguageId(),
+            $context->getContext(),
+            $context->getItemRounding()->getDecimals(),
+        ));
+    }
+
+    private function salePrice(SalesChannelProductEntity $product, SalesChannelContext $context): string
+    {
+        $price = $product->getCalculatedPrices()->first() ?? $product->getCalculatedPrice();
+        $list = $price->getListPrice();
+        if ($list === null || $list->getPrice() <= $price->getUnitPrice()) {
+            return $this->price($product, $context);
+        }
+
+        return '<span class="carve-sale-price"><s>' . $this->formatPrice($list->getPrice(), $context)
+            . '</s> <strong>' . $this->price($product, $context) . '</strong></span>';
+    }
+
+    private function discount(SalesChannelProductEntity $product): string
+    {
+        $price = $product->getCalculatedPrices()->first() ?? $product->getCalculatedPrice();
+        $list = $price->getListPrice();
+        if ($list === null || $list->getPrice() <= $price->getUnitPrice()) {
+            return '';
+        }
+
+        return '<span class="carve-discount">-' . $this->escape((string)round($list->getPercentage())) . '%</span>';
+    }
+
+    private function productImage(SalesChannelProductEntity $product, string $name): string
+    {
+        $media = $product->getCover()?->getMedia();
+        $url = $media?->getUrl();
+        if (
+            $media === null || $media->isPrivate() || !str_starts_with($media->getMimeType() ?? '', 'image/')
+            || !is_string($url) || preg_match('~^(?:https?://|/(?!/))[^\s]+$~i', $url) !== 1
+        ) {
+            return '';
+        }
+
+        return '<img class="carve-product-image" src="' . $this->escape($url) . '" alt="'
+            . $this->escape($name) . '" loading="lazy" decoding="async">';
     }
 
     private function card(SalesChannelProductEntity $product, SalesChannelContext $context): string
