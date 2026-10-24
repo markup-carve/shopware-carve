@@ -14,6 +14,8 @@
     .carve-product-card img { max-width: 72px; }
     .carve-product-card__body { display: inline-flex; flex-direction: column; }
     .carve-product-image { max-width: 8rem; height: auto; vertical-align: middle; }
+    .carve-variants { display: inline-flex; flex-wrap: wrap; gap: .35rem; vertical-align: middle; }
+    .carve-variant-chip { padding: .1em .5em; border: 1px solid #d3d9dc; border-radius: 999px; font-size: .875em; }
     .carve-sale-price s { color: #59656a; }
     .carve-discount { display: inline-block; padding: .1em .4em; border-radius: .25rem; background: #fff5f5; color: #9b2c2c; }
     .carve-price-note { color: #59656a; font-size: .875em; }

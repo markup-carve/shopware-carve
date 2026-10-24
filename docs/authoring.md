@@ -45,6 +45,7 @@ through theme integration.
 | `:was-now[SKU]` | List price and current price when a sale is active; current price otherwise. |
 | `:discount[SKU]` | Percentage off when the selected price has a higher list price. |
 | `:product-image[SKU]` | Public cover image with the translated product name as alternative text. |
+| `:variants[SKU]` | Selected option groups for a visible variant, shown as escaped chips. |
 | `:vat-note[]` | Localized VAT note for the active channel's gross, net, or tax-free state. |
 | `:price-note[]` | VAT note followed by a localized shipping-cost suffix. |
 | `:shipping-from[50]` | Declared free-shipping threshold formatted in the active channel currency. |
