@@ -18,6 +18,8 @@ use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityD
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
 use Shopware\Core\Content\Product\SalesChannel\ProductAvailableFilter;
+use Shopware\Core\Content\Product\SalesChannel\Review\AbstractProductReviewLoader;
+use Shopware\Core\Content\Product\SalesChannel\Review\RatingMatrix;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopware\Core\Framework\Adapter\Cache\Event\AddCacheTagEvent;
@@ -26,6 +28,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\System\Currency\CurrencyFormatter;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\Service\ResetInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -42,8 +46,15 @@ class CarveCommerce implements ResetInterface
     private WeakMap $products;
 
     /**
+     * @var \WeakMap<\Shopware\Core\System\SalesChannel\SalesChannelContext, array<string, \Shopware\Core\Content\Product\SalesChannel\Review\RatingMatrix>>
+     */
+    private WeakMap $reviews;
+
+    /**
      * @param \Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository<\Shopware\Core\Content\Product\SalesChannel\SalesChannelProductCollection> $productsRepository
      * @param \Symfony\Contracts\EventDispatcher\EventDispatcherInterface $cacheTags
+     * @param \Shopware\Core\System\SystemConfig\SystemConfigService|null $config
+     * @param \Shopware\Core\Content\Product\SalesChannel\Review\AbstractProductReviewLoader|null $reviewLoader
      * @param \Twig\Environment $twig
      * @param \Symfony\Contracts\Translation\TranslatorInterface $translator
      * @param \Shopware\Core\System\Currency\CurrencyFormatter $currency
@@ -56,21 +67,29 @@ class CarveCommerce implements ResetInterface
         private readonly TranslatorInterface $translator,
         private readonly Environment $twig,
         private readonly EventDispatcherInterface $cacheTags,
+        private readonly ?AbstractProductReviewLoader $reviewLoader = null,
+        private readonly ?SystemConfigService $config = null,
     ) {
         $this->products = new WeakMap();
+        $this->reviews = new WeakMap();
     }
 
     public function reset(): void
     {
         $this->products = new WeakMap();
+        $this->reviews = new WeakMap();
     }
 
     public function prepare(Document $document, SalesChannelContext $context): void
     {
         $skus = [];
-        $visit = function (Node $node) use (&$visit, &$skus): void {
-            if ($node instanceof InlineExtension && in_array($node->getExtensionType(), ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image', 'variants'], true)) {
+        $reviewSkus = [];
+        $visit = function (Node $node) use (&$visit, &$skus, &$reviewSkus): void {
+            if ($node instanceof InlineExtension && in_array($node->getExtensionType(), ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image', 'variants', 'rating', 'reviews-summary'], true)) {
                 $skus[] = $this->argument($node);
+                if (in_array($node->getExtensionType(), ['rating', 'reviews-summary'], true)) {
+                    $reviewSkus[] = $this->argument($node);
+                }
             }
             if ($node instanceof Div && ($node->hasClass('specs') || $node->hasClass('product-card'))) {
                 $skus[] = $node->getAttribute('sku') ?? '';
@@ -114,6 +133,25 @@ class CarveCommerce implements ResetInterface
                     $this->cacheTags->dispatch(new AddCacheTagEvent(ProductDetailRoute::buildName($product->getParentId())));
                 }
             }
+        }
+        if ($this->reviewLoader !== null && $this->config?->get('ShopwareCarve.config.enableReviewAggregates', $context->getSalesChannelId()) === true) {
+            if ($reviewSkus !== []) {
+                $this->cacheTags->dispatch(new AddCacheTagEvent('carve-reviews'));
+            }
+            $reviews = $this->reviews[$context] ?? [];
+            foreach (array_slice(array_unique($reviewSkus), 0, 12) as $sku) {
+                $product = $cached[$sku] ?? null;
+                if ($product === null || isset($reviews[$product->getId()])) {
+                    continue;
+                }
+                $reviews[$product->getId()] = $this->reviewLoader->load(
+                    new Request(),
+                    $context,
+                    $product->getId(),
+                    $product->getParentId(),
+                )->getMatrix();
+            }
+            $this->reviews[$context] = $reviews;
         }
     }
 
@@ -173,12 +211,18 @@ class CarveCommerce implements ResetInterface
 
                 return;
             }
-            if (!in_array($type, ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image', 'variants'], true)) {
+            if (!in_array($type, ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image', 'variants', 'rating', 'reviews-summary'], true)) {
                 return;
             }
             $product = ($this->products[$context] ?? [])[$argument] ?? null;
             if ($product === null) {
                 $event->setHtml($this->escape($argument));
+
+                return;
+            }
+            if ($type === 'rating' || $type === 'reviews-summary') {
+                $matrix = ($this->reviews[$context] ?? [])[$product->getId()] ?? null;
+                $event->setHtml($matrix === null ? $this->escape($argument) : $this->reviewSummary($matrix, $type));
 
                 return;
             }
@@ -338,6 +382,29 @@ class CarveCommerce implements ResetInterface
         }
 
         return $chips === '' ? $this->escape($sku) : '<span class="carve-variants">' . $chips . '</span>';
+    }
+
+    private function reviewSummary(RatingMatrix $matrix, string $type): string
+    {
+        $count = $matrix->getTotalReviewCount();
+        $rating = round($matrix->getAverageRating(), 1);
+        $ratingText = number_format($rating, 1, '.', '');
+        $countText = $this->translator->trans(
+            $count === 1 ? 'shopware-carve.reviewCountOne' : 'shopware-carve.reviewCountMany',
+            ['%count%' => (string)$count],
+        );
+        $label = $this->translator->trans('shopware-carve.reviewRating', [
+            '%rating%' => $ratingText,
+            '%reviews%' => $countText,
+        ]);
+        $stars = '<span class="carve-rating-stars" role="img" aria-label="' . $this->escape($label) . '">'
+            . '<span aria-hidden="true">★★★★★</span><span class="carve-rating-stars__fill" aria-hidden="true" style="width: '
+            . ($rating * 20) . '%">★★★★★</span></span>';
+
+        return $type === 'rating'
+            ? '<span class="carve-review-rating">' . $stars . ' (' . $count . ')</span>'
+            : '<span class="carve-reviews-summary">' . $stars . ' <strong>' . $ratingText . '/5</strong> '
+                . $this->escape($countText) . '</span>';
     }
 
     private function card(SalesChannelProductEntity $product, SalesChannelContext $context): string

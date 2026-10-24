@@ -71,6 +71,8 @@ services:
             - '@translator'
             - '@twig'
             - '@event_dispatcher'
+            - '@Shopware\Core\Content\Product\SalesChannel\Review\ProductReviewLoader'
+            - '@Shopware\Core\System\SystemConfig\SystemConfigService'
         tags:
             - { name: kernel.reset, method: reset }
 

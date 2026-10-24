@@ -6,6 +6,9 @@
         "taxNet": "Exkl. MwSt.",
         "taxFree": "Umsatzsteuerfrei",
         "plusShipping": "zzgl. Versand",
-        "shippingFrom": "Versandkostenfrei ab"
+        "shippingFrom": "Versandkostenfrei ab",
+        "reviewCountOne": "%count% Bewertung",
+        "reviewCountMany": "%count% Bewertungen",
+        "reviewRating": "%rating% von 5 Sternen aus %reviews%"
     }
 }

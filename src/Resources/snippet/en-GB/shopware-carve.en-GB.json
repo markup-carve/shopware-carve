@@ -6,6 +6,9 @@
         "taxNet": "Excl. VAT",
         "taxFree": "VAT exempt",
         "plusShipping": "plus shipping",
-        "shippingFrom": "Free shipping from"
+        "shippingFrom": "Free shipping from",
+        "reviewCountOne": "%count% review",
+        "reviewCountMany": "%count% reviews",
+        "reviewRating": "%rating% out of 5 stars from %reviews%"
     }
 }
