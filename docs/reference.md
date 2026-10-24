@@ -410,6 +410,7 @@ Access the plugin settings via Admin - Extensions - My extensions - Carve - Conf
 | `ShopwareCarve.config.enableCharts` | `false` | Lazy-load Chart.js from CDN and render ` ```chart ` blocks as charts. CDN must be in CSP. |
 | `ShopwareCarve.config.enablePlantuml` | `false` | Render ` ```plantuml ` (and ` ```puml `) blocks as diagrams via the external Kroki service (`https://kroki.io`). Kroki must be in CSP `connect-src`; `img` must allow `data:`. |
 | `ShopwareCarve.config.renderReviews` | `false` | Render product review text as Carve HTML (comment profile, always hardened). See Surface 9. |
+| `ShopwareCarve.config.enableReviewAggregates` | `false` | Resolve published review counts and ratings for up to 12 products per document. Used by `:rating[SKU]` and `:reviews-summary[SKU]`. |
 | `ShopwareCarve.config.includeRoot` | empty | Absolute containment root for file includes. Empty keeps every directive literal. See File includes below. |
 | `ShopwareCarve.config.lintOnSave` | `false` | Reject admin and API saves whose Carve source has lint findings. See Surface 12. |
 

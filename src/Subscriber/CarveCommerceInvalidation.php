@@ -36,6 +36,9 @@ class CarveCommerceInvalidation implements EventSubscriberInterface
         if ($event->getEventByEntityName('snippet') !== null) {
             $tags[] = 'carve-snippets';
         }
+        if ($event->getEventByEntityName('product_review') !== null) {
+            $tags[] = 'carve-reviews';
+        }
         if ($tags !== []) {
             $this->invalidator->invalidate(array_values(array_unique($tags)));
         }

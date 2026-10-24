@@ -234,6 +234,15 @@
             <helpText lang="de-DE">Wenn aktiviert, wird der Bewertungstext im Storefront als sicheres Carve-HTML mit dem Kommentar-Profil (UGC) gerendert - immer gehärtet, unabhängig von anderen Einstellungen; standardmäßig deaktiviert.</helpText>
         </input-field>
 
+        <input-field type="bool">
+            <name>enableReviewAggregates</name>
+            <label>Show product rating summaries</label>
+            <label lang="de-DE">Produktbewertungen zusammenfassen</label>
+            <defaultValue>false</defaultValue>
+            <helpText>Resolve Shopware review ratings for :rating and :reviews-summary references. At most 12 products per document are queried.</helpText>
+            <helpText lang="de-DE">Veröffentlichte Bewertungen für :rating und :reviews-summary laden. Pro Dokument werden höchstens 12 Produkte abgefragt.</helpText>
+        </input-field>
+
         <input-field type="text">
             <name>includeRoot</name>
             <label>Include containment root</label>
