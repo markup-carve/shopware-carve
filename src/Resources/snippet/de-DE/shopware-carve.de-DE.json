@@ -1,6 +1,11 @@
 {
     "shopware-carve": {
         "inStock": "Auf Lager",
-        "outOfStock": "Nicht auf Lager"
+        "outOfStock": "Nicht auf Lager",
+        "taxGross": "Inkl. MwSt.",
+        "taxNet": "Exkl. MwSt.",
+        "taxFree": "Umsatzsteuerfrei",
+        "plusShipping": "zzgl. Versand",
+        "shippingFrom": "Versandkostenfrei ab"
     }
 }
