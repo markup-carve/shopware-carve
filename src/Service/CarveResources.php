@@ -23,6 +23,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\Asset\Packages;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class CarveResources
@@ -35,6 +36,7 @@ class CarveResources
      * @param \Shopware\Core\Framework\DataAbstractionLayer\EntityRepository<\Shopware\Core\Content\Media\MediaCollection> $mediaRepository
      * @param \Shopware\Core\Framework\DataAbstractionLayer\EntityRepository<\Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerCollection> $manufacturers
      * @param \Shopware\Core\Framework\DataAbstractionLayer\EntityRepository<\Shopware\Core\Content\Cms\CmsPageCollection> $cmsPages
+     * @param \Symfony\Component\Asset\Packages|null $assets
      */
     public function __construct(
         private readonly EntityRepository $mediaRepository,
@@ -44,6 +46,7 @@ class CarveResources
         private readonly SystemConfigService $config,
         private readonly EventDispatcherInterface $cacheTags,
         private readonly EntityRepository $cmsPages,
+        private readonly ?Packages $assets = null,
     ) {
     }
 
@@ -51,13 +54,22 @@ class CarveResources
     {
         $converter->on('render.inline_extension', function (RenderEvent $event) use ($context): void {
             $node = $event->getNode();
-            if (!$node instanceof InlineExtension || !in_array($node->getExtensionType(), ['media', 'category', 'manufacturer', 'legal'], true)) {
+            if (!$node instanceof InlineExtension || !in_array($node->getExtensionType(), ['media', 'category', 'manufacturer', 'legal', 'config', 'asset'], true)) {
                 return;
             }
             $this->cacheTags->dispatch(new AddCacheTagEvent('carve-resources'));
             $type = $node->getExtensionType();
             $argument = $this->argument($node);
             $html = $this->escape($argument);
+            if ($type === 'config' && $argument === 'core.shopName') {
+                $name = $this->config->get('core.basicInformation.shopName', $context->getSalesChannelId());
+                if (is_string($name) && $name !== '') {
+                    $html = $this->escape($name);
+                }
+            }
+            if ($type === 'asset' && $this->assets !== null && self::safeAssetPath($argument)) {
+                $html = $this->escape($this->assets->getUrl($argument, '@ShopwareCarve'));
+            }
             if ($type === 'media' && Uuid::isValid($argument)) {
                 $criteria = new Criteria([$argument]);
                 $criteria->addAssociation('thumbnails');
@@ -144,6 +156,20 @@ class CarveResources
     private function safeUrl(string $url): bool
     {
         return preg_match('~^(?:https?://|/(?!/))[^\s]+$~i', $url) === 1;
+    }
+
+    private static function safeAssetPath(string $path): bool
+    {
+        if (preg_match('/^[A-Za-z0-9][A-Za-z0-9._\/-]{0,255}$/D', $path) !== 1) {
+            return false;
+        }
+        foreach (explode('/', $path) as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function argument(Node $node): string

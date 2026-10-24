@@ -102,6 +102,7 @@ services:
             - '@Shopware\Core\System\SystemConfig\SystemConfigService'
             - '@event_dispatcher'
             - '@cms_page.repository'
+            - '@assets.packages'
 
     MarkupCarve\Shopware\Subscriber\CarveStoreApiCacheKey:
         tags: [kernel.event_subscriber]

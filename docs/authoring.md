@@ -57,6 +57,8 @@ through theme integration.
 | `:badge[Sale|danger]` | Styled text label. Variants: `info`, `success`, `warning`, `danger`. |
 | `:media[UUID]{alt="Description"}` | Public image with thumbnails in `srcset`, lazy loading, and alternative text. |
 | `:video[youtube:ID]` | Local button that loads a YouTube iframe only after a visitor clicks it. |
+| `:config[core.shopName]` | Escaped shop name from the active sales-channel configuration. This is the only public config key. |
+| `:asset[path]` | URL for a file in this plugin's public asset bundle; relative paths only. |
 | `:spark[1,4,2,8]` | Small inline SVG chart for two to 32 comma-separated numbers. |
 
 Product lookup uses the sales-channel repository and link visibility. Inactive,
