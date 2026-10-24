@@ -38,6 +38,10 @@
     .palette { display: flex; flex-wrap: wrap; gap: .75rem; margin-block: 1rem; }
     .palette p { display: flex; flex-wrap: wrap; gap: .75rem; margin: 0; }
     .carve-unit { white-space: nowrap; }
+    .carve-faq, .carve-accordion { margin-block: .75rem; padding: .75rem 1rem; border: 1px solid #d3d9dc; border-radius: .25rem; }
+    .carve-faq > summary, .carve-accordion > summary { cursor: pointer; font-weight: 600; }
+    .carve-faq[open] > summary, .carve-accordion[open] > summary { margin-bottom: .75rem; }
+    .carve-faq > :last-child, .carve-accordion > :last-child { margin-bottom: 0; }
 
 
     // -------------------------------------------------------------------------
