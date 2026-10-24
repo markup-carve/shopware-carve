@@ -134,6 +134,22 @@ colors. A palette groups swatches:
 accepts a signed number followed by whitespace and unit text. These displays
 use no catalog data or client script.
 
+## FAQs and accordions
+
+Use a quoted header to give each disclosure a summary. Both `faq` and
+`accordion` blocks render as native details elements, so visitors can open
+them with a keyboard without loading client JavaScript.
+
+```carve
+::: faq "When will my order ship?"
+Orders usually leave the warehouse on the next business day.
+:::
+
+::: accordion "Care instructions"
+Wash at 30 °C and let dry flat.
+:::
+```
+
 ## Placement and links
 
 `productPlacement` accepts `append` (default), `before`, or `replace`. Replacement

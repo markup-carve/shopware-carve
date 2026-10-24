@@ -6,6 +6,7 @@ namespace MarkupCarve\Shopware\Service;
 
 use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Carve\Event\RenderEvent;
+use MarkupCarve\Carve\Node\Block\Div;
 use MarkupCarve\Carve\Node\Inline\InlineExtension;
 
 class CarvePresentation
@@ -54,6 +55,23 @@ class CarvePresentation
 
             $event->setHtml('<span class="carve-badge carve-badge--' . $variant . '">'
                 . self::escape(trim($label)) . '</span>');
+        });
+        $converter->on('render.div', static function (RenderEvent $event): void {
+            $node = $event->getNode();
+            if (!$node instanceof Div) {
+                return;
+            }
+            $kind = $node->hasClass('faq') ? 'faq' : ($node->hasClass('accordion') ? 'accordion' : null);
+            if ($kind === null) {
+                return;
+            }
+            $summary = trim($node->getHeader() ?? '');
+            if ($summary === '') {
+                $summary = $kind === 'faq' ? 'Question' : 'Details';
+            }
+
+            $event->setHtml('<details class="carve-' . $kind . '"><summary>' . self::escape($summary)
+                . '</summary>' . $event->getChildrenHtml() . '</details>');
         });
     }
 
