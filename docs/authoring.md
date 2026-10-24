@@ -53,6 +53,7 @@ through theme integration.
 | `:snippet[key]` | Escaped translation snippet text. |
 | `:badge[Sale|danger]` | Styled text label. Variants: `info`, `success`, `warning`, `danger`. |
 | `:media[UUID]{alt="Description"}` | Public image with thumbnails in `srcset`, lazy loading, and alternative text. |
+| `:spark[1,4,2,8]` | Small inline SVG chart for two to 32 comma-separated numbers. |
 
 Product lookup uses the sales-channel repository and link visibility. Inactive,
 unassigned, and missing products stay as literal SKU text. Unavailable products
@@ -102,6 +103,18 @@ images. Give each image useful alternative text, or an empty value when decorati
 :media[SIDE_MEDIA_UUID]{alt="Product side"}
 :::
 ```
+
+Paste a CSV table into a `csv` fence. The first row becomes column headings, and
+fields with commas or line breaks follow CSV quoting rules. Malformed or large
+tables stay visible as code:
+
+````carve
+```csv
+Item,Quantity
+Bolts,12
+"Washers, steel",24
+```
+````
 
 CMS fragments namespace IDs by slot to keep repeated tabs and anchors separate.
 Twig filters preserve existing heading IDs by default. Pass an optional namespace
