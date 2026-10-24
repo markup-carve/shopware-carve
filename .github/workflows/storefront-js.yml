@@ -64,6 +64,9 @@ jobs:
             --config "${GITHUB_WORKSPACE}/.github/storefront-eslint.config.mjs" \
             src
 
+      - name: Test content widgets
+        run: node --test --experimental-default-type=module "${GITHUB_WORKSPACE}"/tests/Storefront/*.test.mjs
+
       # Building is the parse check that a linter cannot fully replace: esbuild
       # resolves the relative import graph, so a renamed or deleted
       # carve-diagrams.js fails here rather than in a merchant's theme build.
@@ -86,7 +89,7 @@ jobs:
           node -e '
             const meta = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
             const inputs = Object.keys(meta.inputs);
-            const required = ["src/main.js", "src/carve-diagrams.js"];
+            const required = ["src/main.js", "src/carve-diagrams.js", "src/carve-widgets.js"];
             const missing = required.filter((f) => !inputs.includes(f));
             if (missing.length > 0) {
               console.error("::error::the storefront bundle has no input for " + missing.join(", ") +
@@ -113,6 +116,8 @@ jobs:
               "cdn.jsdelivr.net/npm/mermaid",
               "cdn.jsdelivr.net/npm/chart.js",
               "kroki.io/plantuml/svg",
+              "carve-coupon__copy",
+              "carve-countdown[data-target]",
             ];
             const missing = required.filter((s) => !bundle.includes(s));
             if (missing.length > 0) {
