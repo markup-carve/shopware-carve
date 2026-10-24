@@ -33,6 +33,11 @@
     .usp { margin-block: 1.5rem; }
     .usp li { margin-block: .4rem; padding-left: .25rem; }
     .usp li::marker { color: #155e75; }
+    .trust-badges, .gallery { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-block: 1.5rem; }
+    .trust-badges > p, .gallery > p { margin: 0; }
+    .trust-badges img { display: block; width: auto; max-width: 7rem; max-height: 3rem; object-fit: contain; }
+    .gallery { align-items: start; }
+    .gallery img { display: block; width: auto; max-width: min(100%, 18rem); max-height: 18rem; object-fit: contain; }
 
     .carve-rating-stars { position: relative; display: inline-block; white-space: nowrap; line-height: 1; color: #9aa1a4; }
     .carve-rating-stars__fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; white-space: nowrap; color: #805300; }

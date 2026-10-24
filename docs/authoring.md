@@ -86,6 +86,23 @@ omits unavailable products. Core-only installations and previews without the
 Storefront runtime fall back to product links. Specification lists use translated product property
 groups and values. Keep SKUs stable when shared documents reference them.
 
+Use media IDs for a trust badge row or gallery. The media resolver only emits public
+images. Give each image useful alternative text, or an empty value when decorative:
+
+```carve
+::: trust-badges
+:media[PAYMENT_MEDIA_UUID]{alt="Payment methods"}
+
+:media[SHIPPING_MEDIA_UUID]{alt="Shipping methods"}
+:::
+
+::: gallery
+:media[FRONT_MEDIA_UUID]{alt="Product front"}
+
+:media[SIDE_MEDIA_UUID]{alt="Product side"}
+:::
+```
+
 CMS fragments namespace IDs by slot to keep repeated tabs and anchors separate.
 Twig filters preserve existing heading IDs by default. Pass an optional namespace
 to `carve` or `carve_ctx` when rendering repeated fragments in a custom template.
