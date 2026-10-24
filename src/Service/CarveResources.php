@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Service;
 
+use InvalidArgumentException;
 use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Carve\Event\RenderEvent;
 use MarkupCarve\Carve\Node\Document;
@@ -68,7 +69,11 @@ class CarveResources
                 }
             }
             if ($type === 'asset' && $this->assets !== null && self::safeAssetPath($argument)) {
-                $html = $this->escape($this->assets->getUrl($argument, '@ShopwareCarve'));
+                try {
+                    $html = $this->escape($this->assets->getUrl($argument, '@ShopwareCarve'));
+                } catch (InvalidArgumentException) {
+                    // Core-only contexts may not have the plugin asset package.
+                }
             }
             if ($type === 'media' && Uuid::isValid($argument)) {
                 $criteria = new Criteria([$argument]);
