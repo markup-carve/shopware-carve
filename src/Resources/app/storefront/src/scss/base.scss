@@ -30,6 +30,15 @@
     .usp li { margin-block: .4rem; padding-left: .25rem; }
     .usp li::marker { color: #155e75; }
 
+    .carve-rating-stars { position: relative; display: inline-block; white-space: nowrap; line-height: 1; color: #9aa1a4; }
+    .carve-rating-stars__fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; white-space: nowrap; color: #805300; }
+    .carve-progress { width: min(100%, 16rem); vertical-align: middle; accent-color: #155e75; }
+    .carve-color { display: inline-flex; align-items: center; gap: .35em; }
+    .carve-color__swatch { display: inline-block; width: 1em; height: 1em; border: 1px solid #777; border-radius: .15em; }
+    .palette { display: flex; flex-wrap: wrap; gap: .75rem; margin-block: 1rem; }
+    .palette p { display: flex; flex-wrap: wrap; gap: .75rem; margin: 0; }
+    .carve-unit { white-space: nowrap; }
+
 
     // -------------------------------------------------------------------------
     // Tables (pipe-table and list-table both render as <table>)
