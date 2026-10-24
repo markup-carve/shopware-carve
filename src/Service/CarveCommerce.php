@@ -68,7 +68,7 @@ class CarveCommerce implements ResetInterface
     {
         $skus = [];
         $visit = function (Node $node) use (&$visit, &$skus): void {
-            if ($node instanceof InlineExtension && in_array($node->getExtensionType(), ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image'], true)) {
+            if ($node instanceof InlineExtension && in_array($node->getExtensionType(), ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image', 'variants'], true)) {
                 $skus[] = $this->argument($node);
             }
             if ($node instanceof Div && ($node->hasClass('specs') || $node->hasClass('product-card'))) {
@@ -94,6 +94,7 @@ class CarveCommerce implements ResetInterface
             $criteria->addAssociation('properties.group');
             $criteria->addAssociation('media.media');
             $criteria->addAssociation('cover.media');
+            $criteria->addAssociation('options.group');
             foreach ($missing as $sku) {
                 $cached[$sku] = null;
             }
@@ -171,7 +172,7 @@ class CarveCommerce implements ResetInterface
 
                 return;
             }
-            if (!in_array($type, ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image'], true)) {
+            if (!in_array($type, ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image', 'variants'], true)) {
                 return;
             }
             $product = ($this->products[$context] ?? [])[$argument] ?? null;
@@ -199,6 +200,7 @@ class CarveCommerce implements ResetInterface
                 'was-now' => $this->salePrice($product, $context),
                 'discount' => $this->discount($product),
                 'product-image' => $this->productImage($product, $name) ?: $this->escape($argument),
+                'variants' => $this->variants($product, $argument),
                 'datasheet' => $this->datasheet($product, $argument),
                 default => '<a href="' . $this->escape($url) . '">' . $this->escape($name) . '</a>',
             };
@@ -300,6 +302,23 @@ class CarveCommerce implements ResetInterface
 
         return '<img class="carve-product-image" src="' . $this->escape($url) . '" alt="'
             . $this->escape($name) . '" loading="lazy" decoding="async">';
+    }
+
+    private function variants(SalesChannelProductEntity $product, string $sku): string
+    {
+        $chips = '';
+        foreach ($product->getOptions() ?? [] as $option) {
+            $value = (string)($option->getTranslation('name') ?? $option->getName() ?? '');
+            if ($value === '') {
+                continue;
+            }
+            $group = $option->getGroup();
+            $groupName = (string)($group?->getTranslation('name') ?? $group?->getName() ?? '');
+            $label = $groupName === '' ? $value : $groupName . ': ' . $value;
+            $chips .= '<span class="carve-variant-chip">' . $this->escape($label) . '</span>';
+        }
+
+        return $chips === '' ? $this->escape($sku) : '<span class="carve-variants">' . $chips . '</span>';
     }
 
     private function card(SalesChannelProductEntity $product, SalesChannelContext $context): string
