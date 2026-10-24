@@ -42,6 +42,11 @@
     .carve-faq > summary, .carve-accordion > summary { cursor: pointer; font-weight: 600; }
     .carve-faq[open] > summary, .carve-accordion[open] > summary { margin-bottom: .75rem; }
     .carve-faq > :last-child, .carve-accordion > :last-child { margin-bottom: 0; }
+    .carve-coupon { display: inline-flex; align-items: center; gap: .5rem; padding: .2rem; border: 1px dashed #155e75; border-radius: .25rem; }
+    .carve-coupon code { padding-inline: .35rem; }
+    .carve-coupon__copy { padding: .2rem .5rem; border: 0; border-radius: .2rem; background: #155e75; color: #fff; cursor: pointer; }
+    .carve-coupon__copy:focus-visible { outline: 3px solid #155e75; outline-offset: 3px; }
+    .carve-countdown { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 
     // -------------------------------------------------------------------------

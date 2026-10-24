@@ -150,6 +150,16 @@ Wash at 30 °C and let dry flat.
 :::
 ```
 
+## Coupons and countdowns
+
+`:coupon[SAVE-20]` displays a voucher code with a copy button. Codes may use
+letters, digits, hyphens, and underscores, up to 64 characters. The code stays
+visible when JavaScript or clipboard access is unavailable.
+
+`:countdown[2027-07-01]` displays the target date until storefront JavaScript
+loads, then updates the remaining days, hours, and minutes once a minute. Dates
+use `YYYY-MM-DD` and end at 00:00 UTC. An invalid date renders as plain text.
+
 ## Placement and links
 
 `productPlacement` accepts `append` (default), `before`, or `replace`. Replacement

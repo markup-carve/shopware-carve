@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Service;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Carve\Event\RenderEvent;
 use MarkupCarve\Carve\Node\Block\Div;
@@ -40,6 +42,16 @@ class CarvePresentation
             }
             if ($type === 'unit') {
                 $event->setHtml(self::unit($value));
+
+                return;
+            }
+            if ($type === 'coupon') {
+                $event->setHtml(self::coupon($value));
+
+                return;
+            }
+            if ($type === 'countdown') {
+                $event->setHtml(self::countdown($value));
 
                 return;
             }
@@ -125,6 +137,30 @@ class CarvePresentation
         }
 
         return '<span class="carve-unit">' . self::escape($parts[1]) . '&#8239;' . self::escape($parts[2]) . '</span>';
+    }
+
+    private static function coupon(string $value): string
+    {
+        if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/D', $value) !== 1) {
+            return self::escape($value);
+        }
+        $code = self::escape($value);
+
+        return '<span class="carve-coupon"><code>' . $code . '</code><button type="button" class="carve-coupon__copy"'
+            . ' data-code="' . $code . '" aria-label="Copy coupon ' . $code . '">Copy</button></span>';
+    }
+
+    private static function countdown(string $value): string
+    {
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/D', $value) !== 1) {
+            return self::escape($value);
+        }
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value, new DateTimeZone('UTC'));
+        if ($date === false || $date->format('Y-m-d') !== $value) {
+            return self::escape($value);
+        }
+
+        return '<time class="carve-countdown" datetime="' . $value . '" data-target="' . $value . '">' . $value . '</time>';
     }
 
     private static function escape(string $value): string
