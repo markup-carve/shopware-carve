@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Command;
 
+use League\Flysystem\Filesystem;
+use League\Flysystem\FilesystemException;
+use League\Flysystem\Local\LocalFilesystemAdapter;
 use MarkupCarve\Carve\CarveConverter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -61,7 +64,12 @@ class CarveFormatCommand extends Command
                 continue;
             }
             if ($write) {
-                if ($formatted !== $source && @file_put_contents($path, $formatted) === false) {
+                try {
+                    if ($formatted !== $source) {
+                        $filesystem = new Filesystem(new LocalFilesystemAdapter(dirname($path)));
+                        $filesystem->write(basename($path), $formatted);
+                    }
+                } catch (FilesystemException) {
                     $failed = true;
                     $output->writeln(sprintf('<error>File "%s" could not be written.</error>', $path));
                 }
