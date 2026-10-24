@@ -67,6 +67,7 @@ class CarveConverterFactory
         }
         if (!$ugc) {
             (new CarvePresentation())->register($converter);
+            (new CarveLocalData())->register($converter);
             foreach (['enableMermaid' => 'mermaid', 'enableCharts' => 'chart', 'enablePlantuml' => 'plantuml'] as $key => $language) {
                 if (!$this->bool($key, $salesChannelId)) {
                     continue;
