@@ -66,6 +66,7 @@ class CarveConverterFactory
             $converter->addExtension(new SmartQuotesExtension(locale: $effective));
         }
         if (!$ugc) {
+            (new CarvePresentation())->register($converter);
             foreach (['enableMermaid' => 'mermaid', 'enableCharts' => 'chart', 'enablePlantuml' => 'plantuml'] as $key => $language) {
                 if (!$this->bool($key, $salesChannelId)) {
                     continue;

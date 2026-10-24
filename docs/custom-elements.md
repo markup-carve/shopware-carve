@@ -10,33 +10,34 @@ Carve parses `:name[content]` as an `InlineExtension`. A `::: name` container is
 a `Div` with that class. Hooks replace the HTML for these nodes; they do not
 need a custom parser. Unknown elements keep their generic rendered output.
 
-This badge hook uses an allowlist for its CSS variant and the renderer's existing
-child HTML:
+Badges are built in: `:badge[Sale|danger]` renders a styled label. For another
+inline element, register a render hook and validate each CSS variant against an
+allowlist. This example adds a `notice` element:
 
 ```php
 use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Carve\Event\RenderEvent;
 use MarkupCarve\Carve\Node\Inline\InlineExtension;
 
-function registerBadge(CarveConverter $converter): void
+function registerNotice(CarveConverter $converter): void
 {
     $converter->on('render.inline_extension', static function (RenderEvent $event): void {
         $node = $event->getNode();
-        if (!$node instanceof InlineExtension || $node->getExtensionType() !== 'badge') {
+        if (!$node instanceof InlineExtension || $node->getExtensionType() !== 'notice') {
             return;
         }
         $variant = $node->getAttribute('variant') ?? 'info';
         if (!in_array($variant, ['info', 'success', 'warning', 'danger'], true)) {
             $variant = 'info';
         }
-        $event->setHtml('<span class="carve-badge carve-badge--' . $variant . '">'
+        $event->setHtml('<span class="shop-notice shop-notice--' . $variant . '">'
             . $event->getChildrenHtml() . '</span>');
     });
 }
 ```
 
-Authors can then write `:badge[Sale]{variant="danger"}`. Add the badge classes to
-the theme's stylesheet.
+Authors can then write `:notice[Limited stock]{variant="danger"}`. Add the notice
+classes to the theme's stylesheet.
 
 For a block, listen on `render.div` and check `Div::hasClass()`. Block attributes
 precede the opener:
