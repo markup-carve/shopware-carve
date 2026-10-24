@@ -47,6 +47,7 @@ through theme integration.
 | `:manufacturer[UUID]` | Translated brand name linked to storefront search. Core has no manufacturer detail route. |
 | `:legal[privacy]` | Link to the layout configured as the channel's privacy page under basic information, opened in a modal like core's own legal links. Also accepts `tos`, `imprint`, and `withdrawal`. |
 | `:snippet[key]` | Escaped translation snippet text. |
+| `:badge[Sale|danger]` | Styled text label. Variants: `info`, `success`, `warning`, `danger`. |
 | `:media[UUID]{alt="Description"}` | Public image with thumbnails in `srcset`, lazy loading, and alternative text. |
 
 Product lookup uses the sales-channel repository and link visibility. Inactive,
