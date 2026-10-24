@@ -45,6 +45,9 @@ through theme integration.
 | `:was-now[SKU]` | List price and current price when a sale is active; current price otherwise. |
 | `:discount[SKU]` | Percentage off when the selected price has a higher list price. |
 | `:product-image[SKU]` | Public cover image with the translated product name as alternative text. |
+| `:vat-note[]` | Localized VAT note for the active channel's gross, net, or tax-free state. |
+| `:price-note[]` | VAT note followed by a localized shipping-cost suffix. |
+| `:shipping-from[50]` | Declared free-shipping threshold formatted in the active channel currency. |
 | `:stock[SKU]` | Translated availability label. |
 | `:datasheet[SKU]` | First public PDF attached to the product. |
 | `:category[UUID]` | Active page category within the channel's navigation, footer, or service tree. |
@@ -64,6 +67,8 @@ request's channel context. One document batches up to 100 new SKUs.
 Price output follows the active currency and tax state. The inline price targets
 the first advanced tier; cart quantities and variant selection remain Shopware
 cart behavior. Use the core product card when those controls are needed.
+Keep the declared shipping threshold aligned with the storefront's shipping rules;
+the extension formats the amount but does not read rule-based delivery prices.
 
 Cards, curated grids, and specification lists are block elements:
 

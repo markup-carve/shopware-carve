@@ -11,6 +11,7 @@ use MarkupCarve\Carve\Node\Document;
 use MarkupCarve\Carve\Node\Inline\InlineExtension;
 use MarkupCarve\Carve\Node\Node;
 use MarkupCarve\Carve\Renderer\PlainTextRenderer;
+use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
@@ -134,6 +135,38 @@ class CarveCommerce implements ResetInterface
             if ($type === 'snippet') {
                 $this->cacheTags->dispatch(new AddCacheTagEvent('carve-snippets'));
                 $event->setHtml($this->escape($this->translator->trans($argument)));
+
+                return;
+            }
+            if ($type === 'vat-note' || $type === 'price-note') {
+                if ($argument !== '') {
+                    $event->setHtml($this->escape($argument));
+
+                    return;
+                }
+                $taxKey = match ($context->getTaxState()) {
+                    CartPrice::TAX_STATE_GROSS => 'shopware-carve.taxGross',
+                    CartPrice::TAX_STATE_NET => 'shopware-carve.taxNet',
+                    CartPrice::TAX_STATE_FREE => 'shopware-carve.taxFree',
+                    default => 'shopware-carve.taxNet',
+                };
+                $note = $this->escape($this->translator->trans($taxKey));
+                if ($type === 'price-note') {
+                    $note .= ', ' . $this->escape($this->translator->trans('shopware-carve.plusShipping'));
+                }
+                $event->setHtml('<span class="carve-price-note">' . $note . '</span>');
+
+                return;
+            }
+            if ($type === 'shipping-from') {
+                if (preg_match('/^\d{1,8}(?:\.\d{1,2})?$/D', $argument) !== 1) {
+                    $event->setHtml($this->escape($argument));
+
+                    return;
+                }
+                $label = $this->escape($this->translator->trans('shopware-carve.shippingFrom'));
+                $event->setHtml('<span class="carve-shipping-from">' . $label . ' '
+                    . $this->formatPrice((float)$argument, $context) . '</span>');
 
                 return;
             }

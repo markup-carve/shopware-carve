@@ -1,6 +1,11 @@
 {
     "shopware-carve": {
         "inStock": "In stock",
-        "outOfStock": "Out of stock"
+        "outOfStock": "Out of stock",
+        "taxGross": "Incl. VAT",
+        "taxNet": "Excl. VAT",
+        "taxFree": "VAT exempt",
+        "plusShipping": "plus shipping",
+        "shippingFrom": "Free shipping from"
     }
 }
