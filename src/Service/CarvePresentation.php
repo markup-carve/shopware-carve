@@ -18,7 +18,7 @@ class CarvePresentation
                 return;
             }
 
-            $value = trim(html_entity_decode(strip_tags((string) $event->getChildrenHtml()), ENT_QUOTES, 'UTF-8'));
+            $value = trim(html_entity_decode(strip_tags((string)$event->getChildrenHtml()), ENT_QUOTES, 'UTF-8'));
             [$label, $inlineVariant] = array_pad(explode('|', $value, 2), 2, '');
             $variant = $node->getAttribute('variant') ?: $inlineVariant;
             if (!in_array($variant, ['info', 'success', 'warning', 'danger'], true)) {
