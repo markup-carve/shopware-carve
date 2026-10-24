@@ -56,6 +56,7 @@ through theme integration.
 | `:snippet[key]` | Escaped translation snippet text. |
 | `:badge[Sale|danger]` | Styled text label. Variants: `info`, `success`, `warning`, `danger`. |
 | `:media[UUID]{alt="Description"}` | Public image with thumbnails in `srcset`, lazy loading, and alternative text. |
+| `:video[youtube:ID]` | Local button that loads a YouTube iframe only after a visitor clicks it. |
 | `:spark[1,4,2,8]` | Small inline SVG chart for two to 32 comma-separated numbers. |
 
 Product lookup uses the sales-channel repository and link visibility. Inactive,
@@ -108,6 +109,11 @@ images. Give each image useful alternative text, or an empty value when decorati
 :media[SIDE_MEDIA_UUID]{alt="Product side"}
 :::
 ```
+
+For a video, use the 11-character ID from its YouTube URL, for example
+`:video[youtube:ABCDEFGHIJK]` with the placeholder replaced. The storefront loads no YouTube thumbnail or iframe
+until a visitor clicks the button. The administration preview shows the button
+without running storefront JavaScript.
 
 Paste a CSV table into a `csv` fence. The first row becomes column headings, and
 fields with commas or line breaks follow CSV quoting rules. Malformed or large

@@ -22,10 +22,27 @@ export function countdownText(date, now = Date.now()) {
     return `${days}d ${String(hours).padStart(2, '0')}h ${String(rest).padStart(2, '0')}m`;
 }
 
+export function loadVideo(button) {
+    const id = button.dataset.videoId;
+    if (!/^[A-Za-z0-9_-]{11}$/.test(id ?? '')) return false;
+    const frame = button.ownerDocument.createElement('iframe');
+    frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
+    frame.title = 'YouTube video';
+    frame.referrerPolicy = 'no-referrer';
+    frame.allow = 'autoplay; encrypted-media; picture-in-picture';
+    frame.allowFullscreen = true;
+    frame.loading = 'lazy';
+    button.replaceWith(frame);
+    return true;
+}
+
 export function initCarveWidgets(root = document) {
     root.addEventListener('click', (event) => {
-        const button = event.target instanceof globalThis.Element ? event.target.closest('.carve-coupon__copy') : null;
-        if (button && root.contains(button)) void copyCoupon(button);
+        const target = event.target instanceof globalThis.Element ? event.target : null;
+        const coupon = target?.closest('.carve-coupon__copy');
+        if (coupon && root.contains(coupon)) void copyCoupon(coupon);
+        const video = target?.closest('.carve-video__load');
+        if (video && root.contains(video)) loadVideo(video);
     });
     const timers = root.querySelectorAll('.carve-countdown[data-target]');
     if (timers.length === 0) return;

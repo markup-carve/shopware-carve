@@ -55,6 +55,11 @@ class CarvePresentation
 
                 return;
             }
+            if ($type === 'video') {
+                $event->setHtml(self::video($value));
+
+                return;
+            }
             if ($type !== 'badge') {
                 return;
             }
@@ -161,6 +166,16 @@ class CarvePresentation
         }
 
         return '<time class="carve-countdown" datetime="' . $value . '" data-target="' . $value . '">' . $value . '</time>';
+    }
+
+    private static function video(string $value): string
+    {
+        if (preg_match('/^youtube:([A-Za-z0-9_-]{11})$/D', $value, $matches) !== 1) {
+            return self::escape($value);
+        }
+
+        return '<span class="carve-video"><button type="button" class="carve-video__load" data-video-id="'
+            . $matches[1] . '" aria-label="Load YouTube video">Load video</button></span>';
     }
 
     private static function escape(string $value): string

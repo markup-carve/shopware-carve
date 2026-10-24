@@ -44,6 +44,9 @@
     .carve-csv-table { max-width: 100%; overflow-x: auto; margin-block: 1.5rem; }
     .carve-csv-table table { border-collapse: collapse; width: 100%; }
     .carve-csv-table th, .carve-csv-table td { border: 1px solid #d3d9dc; padding: .4rem .6rem; text-align: left; }
+    .carve-video { display: inline-block; max-width: 100%; }
+    .carve-video__load { padding: .6rem 1rem; border: 1px solid currentColor; border-radius: .25rem; background: transparent; color: #155e75; cursor: pointer; }
+    .carve-video iframe { display: block; width: min(100%, 35rem); aspect-ratio: 16 / 9; border: 0; }
 
     .carve-rating-stars { position: relative; display: inline-block; white-space: nowrap; line-height: 1; color: #9aa1a4; }
     .carve-rating-stars__fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; white-space: nowrap; color: #805300; }
