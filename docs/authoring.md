@@ -95,6 +95,23 @@ omits unavailable products. Core-only installations and previews without the
 Storefront runtime fall back to product links. Specification lists use translated product property
 groups and values. Keep SKUs stable when shared documents reference them.
 
+## App blocks
+
+Installed extensions can handle named blocks during trusted storefront rendering:
+
+```carve
+{name="inventory.stock"}
+::: app-block
+Fallback content when no extension handles this name.
+:::
+```
+
+Subscribe to `MarkupCarve\Shopware\Event\CarveAppBlockEvent`. Read its name,
+fallback HTML, and sales-channel context; call `setHtml()` to replace the block.
+Names start with a letter and contain only letters, digits, dots, underscores,
+or hyphens. The attribute line belongs before the `:::` opener. A block without
+a valid name or handler keeps its authored content.
+
 Use media IDs for a trust badge row or gallery. The media resolver only emits public
 images. Give each image useful alternative text, or an empty value when decorative:
 

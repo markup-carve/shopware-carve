@@ -11,6 +11,7 @@ use MarkupCarve\Carve\Node\Document;
 use MarkupCarve\Carve\Node\Inline\InlineExtension;
 use MarkupCarve\Carve\Node\Node;
 use MarkupCarve\Carve\Renderer\PlainTextRenderer;
+use MarkupCarve\Shopware\Event\CarveAppBlockEvent;
 use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -210,6 +211,19 @@ class CarveCommerce implements ResetInterface
         });
         $converter->on('render.div', function (RenderEvent $event) use ($context): void {
             $node = $event->getNode();
+            if ($node instanceof Div && $node->hasClass('app-block')) {
+                $name = $node->getAttribute('name') ?? '';
+                if (preg_match('/^[A-Za-z][A-Za-z0-9._-]{0,63}$/D', $name) !== 1) {
+                    return;
+                }
+                $block = new CarveAppBlockEvent($name, (string)$event->getChildrenHtml(), $context);
+                $this->cacheTags->dispatch($block);
+                if ($block->getHtml() !== null) {
+                    $event->setHtml($block->getHtml());
+                }
+
+                return;
+            }
             if ($node instanceof Div && ($node->hasClass('specs') || $node->hasClass('product-card'))) {
                 $sku = $node->getAttribute('sku') ?? '';
                 $product = ($this->products[$context] ?? [])[$sku] ?? null;
