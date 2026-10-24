@@ -32,4 +32,15 @@ class CarveLocalDataTest extends TestCase
         self::assertStringContainsString('language-csv', $html);
         self::assertStringNotContainsString('carve-csv-table', $html);
     }
+
+    public function testQuotedLineBreaksStayInOneCellAndUnclosedQuotesStayAsCode(): void
+    {
+        $factory = new CarveConverterFactory($this->createStub(SystemConfigService::class));
+        $valid = $factory->create()->convert("```csv\nName,Qty\n\"A\nB\",2\n```");
+        $invalid = $factory->create()->convert("```csv\nName,Qty\n\"A,2\n```");
+
+        self::assertStringContainsString("<td>A\nB</td><td>2</td>", $valid);
+        self::assertStringContainsString('language-csv', $invalid);
+        self::assertStringNotContainsString('carve-csv-table', $invalid);
+    }
 }

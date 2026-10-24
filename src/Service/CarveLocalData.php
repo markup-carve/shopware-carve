@@ -66,42 +66,99 @@ class CarveLocalData
         if (strlen($source) > 32768) {
             return null;
         }
-        $stream = fopen('php://temp', 'w+');
-        if ($stream === false) {
+        $rows = self::csvRows($source);
+        if ($rows === null) {
             return null;
         }
-        fwrite($stream, $source);
-        rewind($stream);
-        $rows = [];
-        while (($row = fgetcsv($stream, 0, ',', '"', '')) !== false) {
-            if ($row === [null]) {
-                continue;
-            }
-            if (count($rows) >= 128 || count($row) > 32 || ($rows !== [] && count($row) !== count($rows[0]))) {
-                fclose($stream);
-
-                return null;
-            }
-            $rows[] = $row;
-        }
-        fclose($stream);
         if (count($rows) < 2 || count($rows[0]) < 2) {
             return null;
         }
         $html = '<div class="carve-csv-table"><table><thead><tr>';
         foreach ($rows[0] as $cell) {
-            $html .= '<th scope="col">' . self::escape($cell ?? '') . '</th>';
+            $html .= '<th scope="col">' . self::escape($cell) . '</th>';
         }
         $html .= '</tr></thead><tbody>';
         foreach (array_slice($rows, 1) as $row) {
             $html .= '<tr>';
             foreach ($row as $cell) {
-                $html .= '<td>' . self::escape($cell ?? '') . '</td>';
+                $html .= '<td>' . self::escape($cell) . '</td>';
             }
             $html .= '</tr>';
         }
 
         return $html . '</tbody></table></div>';
+    }
+
+    /**
+     * @return list<list<string>>|null
+     */
+    private static function csvRows(string $source): ?array
+    {
+        $rows = [];
+        $row = [];
+        $field = '';
+        $quoted = false;
+        $closed = false;
+        $length = strlen($source);
+        for ($index = 0; $index < $length; $index++) {
+            $character = $source[$index];
+            if ($quoted) {
+                if ($character === '"' && ($source[$index + 1] ?? '') === '"') {
+                    $field .= '"';
+                    $index++;
+                } elseif ($character === '"') {
+                    $quoted = false;
+                    $closed = true;
+                } else {
+                    $field .= $character;
+                }
+
+                continue;
+            }
+            if ($character === '"' && $field === '' && !$closed) {
+                $quoted = true;
+            } elseif ($character === ',') {
+                $row[] = $field;
+                $field = '';
+                $closed = false;
+            } elseif ($character === "\n" || $character === "\r") {
+                $row[] = $field;
+                if ($row !== ['']) {
+                    $rows[] = $row;
+                }
+                if (count($rows) > 128 || count($row) > 32) {
+                    return null;
+                }
+                $row = [];
+                $field = '';
+                $closed = false;
+                if ($character === "\r" && ($source[$index + 1] ?? '') === "\n") {
+                    $index++;
+                }
+            } else {
+                if ($closed || $character === '"') {
+                    return null;
+                }
+                $field .= $character;
+            }
+        }
+        if ($quoted) {
+            return null;
+        }
+        if ($field !== '' || $row !== [] || $closed) {
+            $row[] = $field;
+            $rows[] = $row;
+        }
+        if (count($rows) > 128 || ($rows !== [] && count($rows[0]) > 32)) {
+            return null;
+        }
+        foreach ($rows as $row) {
+            if (count($row) !== count($rows[0])) {
+                return null;
+            }
+        }
+
+        return $rows;
     }
 
     private static function escape(string $value): string
