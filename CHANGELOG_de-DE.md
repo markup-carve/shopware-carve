@@ -1,3 +1,10 @@
+# 0.1.9
+- Neue Konsolenbefehle: carve:lint prüft das Carve in Produkten, Kategorien, Herstellern und CMS-Elementen, carve:fmt formatiert Carve-Dateien und kann Tabellen ausrichten, und carve:convert überführt vorhandene HTML-Beschreibungen in Carve-Felder (standardmäßig als Probelauf).
+- Neue Einstellung „Speichern bei Carve-Lint-Befunden ablehnen“, standardmäßig deaktiviert.
+- Die Vorschau im Editor meldet jetzt alle Carve-Lint-Regeln, auch Probleme mit Listen, Fortsetzungen und Tabellen.
+- Includes können einen benannten Bereich auswählen oder eine Datei als Codeblock einfügen.
+- Erfordert carve-php 0.1.14.
+
 # 0.1.8
 - Erfordert carve-php 0.1.12 mit korrigierten Tabellenspannen, Fußnoten und Aufgabenlisten.
 - Markdown-Abkürzungen und einfache HTML-Container mit der Klasse line-block werden beim Import anders gelesen. Prüfen Sie die Vorschau vor dem Speichern.

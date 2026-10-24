@@ -8,11 +8,9 @@ use DOMDocument;
 use DOMElement;
 use DOMXPath;
 use MarkupCarve\Carve\CarveConverter;
+use MarkupCarve\Carve\Lint\DocumentLinter;
 use MarkupCarve\Carve\Lint\LintWarning;
-use MarkupCarve\Carve\Lint\MarkdownHabitLinter;
 use MarkupCarve\Carve\Lint\ReferenceLinter;
-use MarkupCarve\Carve\Lint\RetiredSpellingLinter;
-use MarkupCarve\Carve\Lint\SourceLinter;
 use MarkupCarve\Carve\Lint\SourceOffsets;
 use MarkupCarve\Carve\Node\Inline\Link;
 
@@ -23,21 +21,30 @@ class CarvePreviewLinter
      */
     public function lint(string $source, CarveConverter $converter, string $html, bool $referenceChecks = true): array
     {
-        $warnings = array_merge(
-            (new MarkdownHabitLinter())->lint($source),
-            (new RetiredSpellingLinter())->lint($source),
-            (new SourceLinter())->lint($source),
-        );
-        if ($referenceChecks) {
-            foreach ((new ReferenceLinter())->lint($source, ['extensions' => array_values($converter->getExtensions())]) as $warning) {
-                if ($warning->rule !== 'broken-fragment-link') {
-                    $warnings[] = $warning;
-                }
+        $options = ['extensions' => array_values($converter->getExtensions())];
+        // Included files can define what the editor's source references, so those findings are dropped then.
+        $skip = [];
+        if (!$referenceChecks) {
+            foreach ((new ReferenceLinter())->lint($source, $options) as $warning) {
+                $skip[self::key($warning)] = true;
+            }
+        }
+        $warnings = [];
+        foreach ((new DocumentLinter())->lint($source, $options) as $warning) {
+            // The preview checks fragments against its own rendered ids below.
+            if ($warning->rule !== 'broken-fragment-link' && !isset($skip[self::key($warning)])) {
+                $warnings[] = $warning;
             }
         }
         array_push($warnings, ...$this->fragmentWarnings($source, $converter, $html));
+        usort($warnings, static fn (LintWarning $a, LintWarning $b): int => [$a->line, $a->column] <=> [$b->line, $b->column]);
 
         return $warnings;
+    }
+
+    private static function key(LintWarning $warning): string
+    {
+        return $warning->line . ':' . $warning->column . ':' . $warning->rule . ':' . $warning->message;
     }
 
     /**

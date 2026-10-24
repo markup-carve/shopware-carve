@@ -120,7 +120,10 @@ For product references inside the manufacturer copy, use `|carve_ctx(context)` i
 
 CMS slots and plugin custom fields use the shared `carve-editor` component.
 Preview HTML comes from the PHP renderer, with diagnostics and include dependency
-metadata. Select a sales channel for product resolution and guest pricing.
+metadata. The diagnostics are every rule of carve-php's `DocumentLinter`, with
+the enabled extensions passed in, plus a fragment-link check against the
+rendered preview. When included files resolve, reference findings are dropped,
+since the included content can define those targets. Select a sales channel for product resolution and guest pricing.
 Requests are debounced and older responses cannot replace newer results.
 The HTML is displayed in a sandboxed iframe with basic preview styles.
 
@@ -222,6 +225,63 @@ bin/console carve:render path/to/content.crv --md
 # (--term, not --ansi: the latter is reserved by Symfony's console to force color globally)
 bin/console carve:render path/to/content.crv --term
 ```
+
+### 11 - Lint, format and migrate from the console
+
+`carve:lint` reports the diagnostics the editor preview shows. Without
+arguments it reads the Carve source of every product, category and manufacturer
+field and every static Carve CMS element (live version, all languages). Pass
+`--entity` to narrow it, or file paths to lint files instead. It exits non-zero
+when it finds a problem, so it can gate a deployment.
+
+```bash
+bin/console carve:lint
+bin/console carve:lint --entity product --entity cms
+bin/console carve:lint content/page.crv
+bin/console carve:lint --include-root content content/page.crv
+```
+
+With `--include-root`, the given files are linted together with what their
+include directives pull in from below that root, and findings in an included
+file name that file.
+
+Locations read `entity:id:languageId:field:line:column`.
+
+`carve:fmt` prints files in canonical form. `--write` rewrites them in place,
+`--check` fails without changing them, and `--align-tables` pads pipe-table
+cells so the columns line up. Pass `-` to read stdin.
+
+```bash
+bin/console carve:fmt --check --align-tables content/*.crv
+```
+
+`carve:convert` migrates the HTML `description` of products, categories and
+manufacturers into their Carve field. It is a dry run unless you pass
+`--write`, and prints the import report for each description. A conversion
+whose report has a warning (content that cannot be carried over, such as a
+`<video>` element) is skipped unless you pass `--accept-losses`; info-level
+notes show with `-v`. Fields that already hold Carve source are kept unless you
+pass `--overwrite`. Writes go through the DAL, so indexing and cache
+invalidation run as for an admin save. The HTML description stays in place; set
+the product placement to *Replace the description* once the copy is reviewed.
+
+```bash
+bin/console carve:convert                       # dry run, all three entities
+bin/console carve:convert --entity product --write
+bin/console carve:convert page.html             # convert one file to stdout
+```
+
+### 12 - Lint on save
+
+With `lintOnSave` on, an admin or API write is rejected while the Carve source
+it stores has lint findings. It covers the three custom fields and static Carve
+CMS elements, and reports each finding as a validation error on the field.
+Fragment links are not checked, because their target can live elsewhere on the
+storefront page. System writes, such as migrations and `carve:convert`, pass.
+The setting is off by default: turning it on means existing content with
+findings cannot be saved until it is fixed, so run `carve:lint` first.
+Layout overrides stored on products and categories (`slotConfig`) are not
+checked.
 
 ---
 
@@ -351,6 +411,7 @@ Access the plugin settings via Admin - Extensions - My extensions - Carve - Conf
 | `ShopwareCarve.config.enablePlantuml` | `false` | Render ` ```plantuml ` (and ` ```puml `) blocks as diagrams via the external Kroki service (`https://kroki.io`). Kroki must be in CSP `connect-src`; `img` must allow `data:`. |
 | `ShopwareCarve.config.renderReviews` | `false` | Render product review text as Carve HTML (comment profile, always hardened). See Surface 9. |
 | `ShopwareCarve.config.includeRoot` | empty | Absolute containment root for file includes. Empty keeps every directive literal. See File includes below. |
+| `ShopwareCarve.config.lintOnSave` | `false` | Reject admin and API saves whose Carve source has lint findings. See Surface 12. |
 
 ### File includes
 

@@ -38,6 +38,23 @@ class CarveIncludeRenderTest extends CarveIncludeTestCase
         self::assertStringNotContainsString('English care.', $german->html);
     }
 
+    public function testRegionAndCodeIncludesReachTheStorefront(): void
+    {
+        $root = $this->makeRoot([
+            'shared/care.crv' => "Intro.\n\n%% #region care\nCare *text*.\n%% #endregion\n",
+            'snippets/setup.php' => "<?php\n// #region demo\necho 1;\n// #endregion\n",
+        ]);
+        $renderer = $this->makeRenderer($root);
+
+        $region = $renderer->toHtmlWithIncludes('{{ shared/care.crv @region:care }}', $this->privilegedAdmin());
+        $code = $renderer->toHtmlWithIncludes('{{ snippets/setup.php @region:demo @code:php }}', $this->privilegedAdmin());
+
+        self::assertStringContainsString('Care <strong>text</strong>.', $region->html);
+        self::assertStringNotContainsString('Intro.', $region->html);
+        self::assertStringContainsString('<code class="language-php">echo 1;', $code->html);
+        self::assertStringNotContainsString('#region', $code->html);
+    }
+
     public function testTraversalAndSymlinkEscapeStayLiteralAndReportNoPath(): void
     {
         $root = $this->makeRoot();

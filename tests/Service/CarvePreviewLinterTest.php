@@ -49,4 +49,22 @@ class CarvePreviewLinterTest extends TestCase
         self::assertSame(3, $warning->column);
         self::assertSame('[go](#missing)', substr($source, $warning->start, $warning->end - $warning->start));
     }
+
+    public function testThePreviewRunsEveryDocumentLinterRule(): void
+    {
+        $source = "- item\n\n  text\n - x\n";
+        $warnings = (new CarvePreviewLinter())->lint($source, new CarveConverter(), (new CarveConverter())->convert($source));
+        self::assertContains('list-marker-below-content-column', array_column($warnings, 'rule'));
+    }
+
+    public function testResolvedIncludesSuppressOnlyReferenceFindings(): void
+    {
+        $source = "[x][missing] and **bold**\n";
+        $html = (new CarveConverter())->convert($source);
+        $checked = array_column((new CarvePreviewLinter())->lint($source, new CarveConverter(), $html), 'rule');
+        $unchecked = array_column((new CarvePreviewLinter())->lint($source, new CarveConverter(), $html, false), 'rule');
+        self::assertContains('unresolved-reference-link', $checked);
+        self::assertNotContains('unresolved-reference-link', $unchecked);
+        self::assertContains('markdown-strong-double-star', $unchecked);
+    }
 }

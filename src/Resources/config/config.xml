@@ -243,6 +243,15 @@
         </input-field>
 
         <input-field type="bool">
+            <name>lintOnSave</name>
+            <label>Reject saves with Carve lint findings</label>
+            <label lang="de-DE">Speichern bei Carve-Lint-Befunden ablehnen</label>
+            <defaultValue>false</defaultValue>
+            <helpText>When on, saving a product, category or manufacturer Carve field or a static Carve CMS element fails while the source has lint findings (the diagnostics the live preview shows, except fragment links). System writes such as migrations and carve:convert are not checked. Off by default. Run carve:lint to list findings in content that is already stored.</helpText>
+            <helpText lang="de-DE">Wenn aktiviert, schlägt das Speichern eines Carve-Felds an Produkt, Kategorie oder Hersteller oder eines statischen Carve-CMS-Elements fehl, solange die Quelle Lint-Befunde hat (die Diagnosen der Live-Vorschau, außer Fragment-Links). Systemschreibvorgänge wie Migrationen und carve:convert werden nicht geprüft. Standardmäßig deaktiviert. carve:lint listet Befunde in bereits gespeicherten Inhalten.</helpText>
+        </input-field>
+
+        <input-field type="bool">
             <name>externalLinksNofollow</name><label>Add nofollow to external links</label>
             <label lang="de-DE">Externe Links mit nofollow markieren</label><defaultValue>true</defaultValue>
         </input-field>
