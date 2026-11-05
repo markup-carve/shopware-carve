@@ -58,7 +58,17 @@ comment syntax (`// #region demo` in PHP):
 {{ snippets/setup.php @region:demo @code:php }}
 ```
 
-Use one of a section ID, a line range or a region in one directive. Section IDs survive
+A CSV or TSV file renders as a table when the directive carries `@code:csv`
+or `@code:tsv` and a `{table}` attribute on the line above. `@rows:N-M` picks
+records counted from 1, header record included; the header always stays.
+`@cols:"Name,Other"` keeps the named columns in that order:
+
+```carve
+{table}
+{{ data/sizes.csv @code:csv @rows:2-4 @cols:"Size,Load" }}
+```
+
+Use one of a section ID, a line range, a region or `@rows` in one directive. Section IDs survive
 edits elsewhere in the file better than line numbers. The editor accepts a
 section ID and heading shift; line ranges remain available in source.
 
