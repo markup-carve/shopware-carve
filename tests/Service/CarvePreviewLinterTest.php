@@ -57,6 +57,15 @@ class CarvePreviewLinterTest extends TestCase
         self::assertContains('list-marker-below-content-column', array_column($warnings, 'rule'));
     }
 
+    public function testDeprecatedSpellingsAreReported(): void
+    {
+        $source = "|= Size |=> Load |\n| 6 mm | 320 kg |\n\n---\n\nNext.\n";
+        $warnings = (new CarvePreviewLinter())->lint($source, new CarveConverter(), (new CarveConverter())->convert($source));
+        $rules = array_column($warnings, 'rule');
+        self::assertContains('deprecated-cell-alignment', $rules);
+        self::assertContains('thematic-break-spelling', $rules);
+    }
+
     public function testResolvedIncludesSuppressOnlyReferenceFindings(): void
     {
         $source = "[x][missing] and **bold**\n";

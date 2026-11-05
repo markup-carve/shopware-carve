@@ -55,6 +55,24 @@ class CarveIncludeRenderTest extends CarveIncludeTestCase
         self::assertStringNotContainsString('#region', $code->html);
     }
 
+    public function testATableIncludeSelectsRowsAndColumns(): void
+    {
+        $root = $this->makeRoot([
+            'data/sizes.csv' => "Size,Load,Weight\n6 mm,320 kg,0.2\n8 mm,560 kg,0.3\n10 mm,880 kg,0.4\n",
+        ]);
+
+        $result = $this->makeRenderer($root)->toHtmlWithIncludes(
+            "{table}\n{{ data/sizes.csv @code:csv @rows:2-3 @cols:\"Load,Size\" }}\n",
+            $this->privilegedAdmin(),
+        );
+
+        self::assertStringContainsString('<tr><th scope="col">Load</th><th scope="col">Size</th></tr>', $result->html);
+        self::assertStringContainsString('<tr><td>560 kg</td><td>8 mm</td></tr>', $result->html);
+        self::assertStringNotContainsString('10 mm', $result->html);
+        self::assertStringNotContainsString('Weight', $result->html);
+        self::assertSame([], $result->warnings);
+    }
+
     public function testTraversalAndSymlinkEscapeStayLiteralAndReportNoPath(): void
     {
         $root = $this->makeRoot();
