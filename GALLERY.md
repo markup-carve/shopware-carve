@@ -134,8 +134,7 @@ We profile each coffee on a sample roaster first, then scale the curve. The goal
 a sweet, even cup --- never ashy.
 :::
 
-| Stage       | What we look for           |
-|-------------|----------------------------|
+|= Stage      |= What we look for          |
 | Drying      | Even moisture release      |
 | Maillard    | Sweetness development      |
 | Development | Clarity without roastiness |
@@ -261,11 +260,10 @@ Use *60 g of coffee per litre* of water --- a 1:16.7 ratio.
 Keep water at 94 °C. Too hot scorches the delicate florals.
 :::
 
-| Stage    | Time |
-|----------|------|
-| Bloom    | 0:45 |
-| Main pour | 2:00 |
-| Drawdown | 3:00 |
+|= Stage    |= Time |
+| Bloom     | 0:45  |
+| Main pour | 2:00  |
+| Drawdown  | 3:00  |
 
 Brew. Taste. /Adjust./
 ```
