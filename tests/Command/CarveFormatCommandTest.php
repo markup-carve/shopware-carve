@@ -14,7 +14,7 @@ class CarveFormatCommandTest extends TestCase
     /**
      * @var string
      */
-    private const TABLE = "| a | bbb |\n|---|---|\n| cc | d |\n";
+    private const TABLE = "|= a |= bbb |\n| cc | d |\n";
 
     private string $file;
 
@@ -35,7 +35,7 @@ class CarveFormatCommandTest extends TestCase
         $tester->execute(['paths' => [$this->file], '--align-tables' => true]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
-        self::assertStringContainsString("| a  | bbb |\n", $tester->getDisplay());
+        self::assertStringContainsString("| cc | d    |\n", $tester->getDisplay());
 
         $plain = new CommandTester(new CarveFormatCommand());
         $plain->execute(['paths' => [$this->file]]);
@@ -58,7 +58,7 @@ class CarveFormatCommandTest extends TestCase
         $tester->execute(['paths' => [$this->file], '--write' => true, '--align-tables' => true]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
-        self::assertStringContainsString("| a  | bbb |\n", (string)file_get_contents($this->file));
+        self::assertStringContainsString("| cc | d    |\n", (string)file_get_contents($this->file));
     }
 
     public function testWriteAndCheckAreExclusive(): void

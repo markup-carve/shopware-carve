@@ -49,9 +49,9 @@ case "${again}" in *'skipped 1 with existing Carve'*) ;; *) echo "${again}"; fai
 
 php bin/console carve:lint --entity manufacturer || fail 'carve:lint reported the converted source'
 
-printf '| a | bbb |\n|---|---|\n| cc | d |\n' > /tmp/smoke-table.crv
+printf '|= a |= bbb |\n| cc | d |\n' > /tmp/smoke-table.crv
 formatted="$(php bin/console carve:fmt --align-tables /tmp/smoke-table.crv)"
-case "${formatted}" in *'| a  | bbb |'*) ;; *) echo "${formatted}"; fail 'carve:fmt --align-tables did not align' ;; esac
+case "${formatted}" in *'| cc | d    |'*) ;; *) echo "${formatted}"; fail 'carve:fmt --align-tables did not align' ;; esac
 
 php bin/console system:config:set ShopwareCarve.config.lintOnSave true
 code="$(curl -s -o /tmp/gate.json -w '%{http_code}' -X PATCH "${base}/api/product-manufacturer/${id}" \
