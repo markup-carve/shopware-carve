@@ -1,5 +1,8 @@
 name: Engine drift
 
+env:
+  COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
+
 # This repo does not implement Carve - it calls an engine that is already
 # corpus-gated in its own repository. So what can rot here is not conformance,
 # it is the DEPENDENCY: nobody notices when the engine stops moving, and CI
@@ -92,7 +95,9 @@ jobs:
           echo "range            ${range}"
           echo "resolves to      ${resolved}"
           echo "packagist latest ${latest}"
-          if [ -n "${latest}" ] && [ "${resolved}" != "${latest}" ]; then
+          if [[ "${range}" == dev-* ]]; then
+            echo "development commit pin: the Packagist range check resumes at the release cut"
+          elif [ -n "${latest}" ] && [ "${resolved}" != "${latest}" ]; then
             echo "::warning::${pkg} ${latest} is published, but the range ${range} takes ${resolved} - a major-bumped release does not arrive on its own"
           fi
           echo "latest=${latest}" >> "${GITHUB_OUTPUT}"
