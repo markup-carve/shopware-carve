@@ -1,5 +1,8 @@
 name: Shopware 6.7
 
+env:
+  COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
+
 # Resolve the declared 6.7 line independently of the 6.6 lockfile.
 # Advisory-blocked installs remain failures. Do not suppress them or allow
 # a lane named 6.7 to resolve 6.6.

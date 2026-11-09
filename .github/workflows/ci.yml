@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
+
 on:
   push:
     branches: [main]
@@ -242,6 +245,8 @@ jobs:
             echo "::error::installed ${pkg} ${installed} is not the locked ${locked}"
             exit 1
           fi
+          source_ref="$(composer show --format=json "${pkg}" | php -r '$package = json_decode(stream_get_contents(STDIN), true); echo $package["source"]["reference"] ?? "";')"
+          test "$source_ref" = f528aaca2dd277ed52c0c8843ffdd77fa87f875d
 
       # The lock also decides which Shopware line this leg runs against, and that
       # is the one place a lockfile can quietly contradict the axis above. It is

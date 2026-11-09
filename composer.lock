@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "16592214e0d1d7ae2fae8f32c0917be3",
+    "content-hash": "f15edb37478e4234e3155b6069ea39f3",
     "packages": [
         {
             "name": "brick/math",
@@ -3501,7 +3501,7 @@
                     "url": "https://github.com/dereuromark"
                 }
             ],
-            "time": "2026-11-05T06:05:43+00:00"
+            "time": "2026-11-09T21:25:48+00:00"
         },
         {
             "name": "masterminds/html5",
@@ -13034,14 +13034,7 @@
             "time": "2025-11-17T20:03:58+00:00"
         }
     ],
-    "aliases": [
-        {
-            "package": "markup-carve/carve-php",
-            "version": "dev-main",
-            "alias": "0.1.17",
-            "alias_normalized": "0.1.17.0"
-        }
-    ],
+    "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
         "markup-carve/carve-php": 20
