@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f15edb37478e4234e3155b6069ea39f3",
+    "content-hash": "d2276c9314141a86d724ba517e0519b3",
     "packages": [
         {
             "name": "brick/math",
@@ -3501,7 +3501,7 @@
                     "url": "https://github.com/dereuromark"
                 }
             ],
-            "time": "2026-11-09T21:25:48+00:00"
+            "time": "2026-11-09T21:51:35+00:00"
         },
         {
             "name": "masterminds/html5",

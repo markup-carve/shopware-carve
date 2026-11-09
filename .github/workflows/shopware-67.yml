@@ -37,7 +37,7 @@ jobs:
       - name: Install Shopware ${{ matrix.shopware }}
         run: |
           set -euo pipefail
-          if ! composer update --no-interaction --no-progress --prefer-dist \
+          if ! composer update --no-interaction --no-progress --prefer-dist --with "markup-carve/carve-php:dev-main#f528aaca2dd277ed52c0c8843ffdd77fa87f875d" \
                  --with "shopware/core:${{ matrix.shopware }}"; then
             echo "::error::shopware/core ${{ matrix.shopware }} could not be installed, so the support composer.json declares for that line is unverified. Composer's reasoning is above; when it names a security advisory the fix is upstream and this leg stays red until it lands."
             exit 1
@@ -97,7 +97,7 @@ jobs:
       - name: Install Shopware ${{ matrix.shopware }}
         run: |
           set -euo pipefail
-          if ! composer update --no-interaction --no-progress --prefer-dist \
+          if ! composer update --no-interaction --no-progress --prefer-dist --with "markup-carve/carve-php:dev-main#f528aaca2dd277ed52c0c8843ffdd77fa87f875d" \
                  --with "shopware/core:${{ matrix.shopware }}"; then
             echo "::error::shopware/core ${{ matrix.shopware }} could not be installed, so nothing here analyses this plugin against that line."
             exit 1
