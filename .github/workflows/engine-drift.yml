@@ -96,7 +96,11 @@ jobs:
           echo "resolves to      ${resolved}"
           echo "packagist latest ${latest}"
           if [[ "${range}" == dev-* ]]; then
-            echo "development commit pin: the Packagist range check resumes at the release cut"
+            if [ -n "${latest}" ] && php -r 'exit(version_compare($argv[1], "0.1.16", ">") ? 0 : 1);' "${latest}"; then
+              echo "::warning::${pkg} ${latest} is published; re-point the development commit pin to the release"
+            else
+              echo "development commit pin: the release cut is still pending"
+            fi
           elif [ -n "${latest}" ] && [ "${resolved}" != "${latest}" ]; then
             echo "::warning::${pkg} ${latest} is published, but the range ${range} takes ${resolved} - a major-bumped release does not arrive on its own"
           fi
