@@ -64,11 +64,11 @@ over-extract --- the florals fade fast.
 
 ## At a glance
 
-|= Attribute |=> Value          |
-| Origin     |  Gedeo, Ethiopia |
-| Process    |  Washed          |
-| Altitude   |  1,900--2,100 m  |
-| Roast      |  Light           |
+|= Attribute |={>} Value       |
+| Origin     | Gedeo, Ethiopia |
+| Process    | Washed          |
+| Altitude   | 1,900--2,100 m  |
+| Roast      | Light           |
 
 ::: warning "Storage"
 Keep the bag sealed and away from light. Whole bean stays bright for about three

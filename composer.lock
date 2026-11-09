@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9a7de2fd295258fe6e22953139cb5a71",
+    "content-hash": "d2276c9314141a86d724ba517e0519b3",
     "packages": [
         {
             "name": "brick/math",
@@ -3382,16 +3382,16 @@
         },
         {
             "name": "markup-carve/carve-php",
-            "version": "0.1.15",
+            "version": "dev-main",
             "source": {
                 "type": "git",
                 "url": "https://github.com/markup-carve/carve-php.git",
-                "reference": "df08f6ebe64923dc18403b9701d896199dfbd677"
+                "reference": "f528aaca2dd277ed52c0c8843ffdd77fa87f875d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/df08f6ebe64923dc18403b9701d896199dfbd677",
-                "reference": "df08f6ebe64923dc18403b9701d896199dfbd677",
+                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/f528aaca2dd277ed52c0c8843ffdd77fa87f875d",
+                "reference": "f528aaca2dd277ed52c0c8843ffdd77fa87f875d",
                 "shasum": ""
             },
             "require": {
@@ -3408,6 +3408,7 @@
                 "ext-dom": "Required for HTML import and HTML heading-ID conversion.",
                 "ext-intl": "Recommended for heading-ID transliteration: enables ICU romanization of non-Latin scripts (e.g. CJK, Arabic). Without it, a baked map covers Latin/Cyrillic/punctuation identically and other scripts fall back to the generated `section` id."
             },
+            "default-branch": true,
             "bin": [
                 "bin/carve"
             ],
@@ -3417,7 +3418,58 @@
                     "MarkupCarve\\Carve\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "MarkupCarve\\Carve\\Test\\": "tests/"
+                }
+            },
+            "scripts": {
+                "check": [
+                    "@cs-check",
+                    "@stan",
+                    "@test"
+                ],
+                "cs-check": [
+                    "phpcs --colors --parallel=16"
+                ],
+                "complexity-check": [
+                    "phpcs --standard=phpcs-complexity.xml --no-cache --parallel=16"
+                ],
+                "cs-fix": [
+                    "phpcbf --colors --parallel=16"
+                ],
+                "fuzz": [
+                    "php-fuzzer fuzz fuzz/target.php fuzz/corpus/"
+                ],
+                "fuzz-strict": [
+                    "php-fuzzer fuzz fuzz/target-strict.php fuzz/corpus/"
+                ],
+                "schema-map-check": [
+                    "@php scripts/check-schema-map.php"
+                ],
+                "stan": [
+                    "phpstan analyze"
+                ],
+                "test": [
+                    "@php -d pcov.enabled=0 vendor/bin/phpunit"
+                ],
+                "test-parallel": [
+                    "@php -d pcov.enabled=0 vendor/bin/paratest --passthru-php=\"-d pcov.enabled=0\""
+                ],
+                "test-all": [
+                    "@test",
+                    "@test-scaling"
+                ],
+                "test-coverage": [
+                    "@php vendor/bin/phpunit --coverage-clover coverage.xml"
+                ],
+                "test-coverage-parallel": [
+                    "@php scripts/coverage-shards.php"
+                ],
+                "test-scaling": [
+                    "@php -d pcov.enabled=0 vendor/bin/phpunit --group scaling"
+                ]
+            },
             "license": [
                 "MIT"
             ],
@@ -3440,16 +3492,16 @@
                 "parser"
             ],
             "support": {
-                "issues": "https://github.com/markup-carve/carve-php/issues",
-                "source": "https://github.com/markup-carve/carve-php/tree/0.1.15"
+                "source": "https://github.com/markup-carve/carve-php/tree/main",
+                "issues": "https://github.com/markup-carve/carve-php/issues"
             },
             "funding": [
                 {
-                    "url": "https://github.com/dereuromark",
-                    "type": "github"
+                    "type": "github",
+                    "url": "https://github.com/dereuromark"
                 }
             ],
-            "time": "2026-10-24T17:15:42+00:00"
+            "time": "2026-11-09T21:51:35+00:00"
         },
         {
             "name": "masterminds/html5",
@@ -12984,7 +13036,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "markup-carve/carve-php": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

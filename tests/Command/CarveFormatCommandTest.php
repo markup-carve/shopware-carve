@@ -61,6 +61,17 @@ class CarveFormatCommandTest extends TestCase
         self::assertStringContainsString("| cc | d    |\n", (string)file_get_contents($this->file));
     }
 
+    public function testDeprecatedSpellingsAreRewritten(): void
+    {
+        $file = (string)tempnam(sys_get_temp_dir(), 'carve-fmt-');
+        file_put_contents($file, "|= Size |=> Load |\n| 6 mm | 320 kg |\n\n---\n\nNext.\n");
+        $tester = new CommandTester(new CarveFormatCommand());
+        $tester->execute(['paths' => [$file]]);
+        unlink($file);
+
+        self::assertSame("|= Size |={>} Load |\n| 6 mm | 320 kg |\n\n***\n\nNext.\n", $tester->getDisplay());
+    }
+
     public function testWriteAndCheckAreExclusive(): void
     {
         $tester = new CommandTester(new CarveFormatCommand());

@@ -12,13 +12,19 @@
     "require": {
         "php": "^8.2",
         "shopware/core": "~6.6.0 || ~6.7.0",
-        "markup-carve/carve-php": "^0.1.15"
+        "markup-carve/carve-php": "dev-main#f528aaca2dd277ed52c0c8843ffdd77fa87f875d || 9999999-dev"
     },
     "require-dev": {
         "php-collective/code-sniffer": "^0.6.0",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.5 || ^12.0 || ^13.0"
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/markup-carve/carve-php"
+        }
+    ],
     "minimum-stability": "stable",
     "prefer-stable": true,
     "autoload": {

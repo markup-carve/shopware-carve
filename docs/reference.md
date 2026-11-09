@@ -249,7 +249,10 @@ Locations read `entity:id:languageId:field:line:column`.
 
 `carve:fmt` prints files in canonical form. `--write` rewrites them in place,
 `--check` fails without changing them, and `--align-tables` pads pipe-table
-cells so the columns line up. Pass `-` to read stdin.
+cells so the columns line up. Pass `-` to read stdin. The canonical form writes
+every thematic break as `***`, table headers as `|=` cells, and cell alignment
+inside the cell's braces (`|={>} Price |`), so it also migrates the deprecated
+`|=>` prefixes, which stop parsing in 0.2.0.
 
 ```bash
 bin/console carve:fmt --check --align-tables content/*.crv
@@ -280,6 +283,9 @@ Fragment links are not checked, because their target can live elsewhere on the
 storefront page. System writes, such as migrations and `carve:convert`, pass.
 The setting is off by default: turning it on means existing content with
 findings cannot be saved until it is fixed, so run `carve:lint` first.
+Spelling findings count too: a `---` thematic break (`thematic-break-spelling`)
+or a deprecated alignment prefix such as `|=>` (`deprecated-cell-alignment`)
+blocks the save until it is rewritten as `***` or `|={>}`.
 Layout overrides stored on products and categories (`slotConfig`) are not
 checked.
 
