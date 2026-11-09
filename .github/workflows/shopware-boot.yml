@@ -91,6 +91,7 @@ jobs:
           composer config repositories.shopware-carve \
             '{"type":"path","url":"../plugin","options":{"symlink":false}}'
           composer config repositories.carve-php vcs https://github.com/markup-carve/carve-php
+          composer require 'markup-carve/carve-php:dev-main#f528aaca2dd277ed52c0c8843ffdd77fa87f875d' --no-update --no-interaction
           composer require markup-carve/shopware-carve:'*' --no-interaction --no-progress
           engine_ref="$(composer show markup-carve/carve-php --format=json | php -r '$package = json_decode(stream_get_contents(STDIN), true); echo $package["source"]["reference"] ?? "";')"
           test "$engine_ref" = f528aaca2dd277ed52c0c8843ffdd77fa87f875d
