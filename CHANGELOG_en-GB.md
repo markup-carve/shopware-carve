@@ -1,3 +1,10 @@
+# 0.1.10
+- Requires carve-php 0.1.17.
+- carve:fmt writes native table headers, *** thematic breaks and braced table alignment such as |={>}. The old |=> spelling is still read.
+- With "Reject saves with Carve lint findings" on, content with a --- thematic break or an old alignment prefix such as |=> must be rewritten before it can be saved.
+- CSV and TSV table includes can select rows and columns.
+- HTML import no longer reads data-djot-* attributes.
+
 # 0.1.9
 - New console commands: carve:lint checks the Carve in products, categories, manufacturers and CMS elements, carve:fmt formats Carve files and can align tables, and carve:convert migrates existing HTML descriptions into Carve fields (dry run by default).
 - New setting "Reject saves with Carve lint findings", off by default.
