@@ -34,6 +34,11 @@ jobs:
           - line: '6.7'
             template: '6.7.*'
             php: '8.3'
+            # 2026-11-11: shopware/core 6.7.15.0+ requires mcp/sdk ^0.8.1, and
+            # every 0.8.x carries this advisory (an OAuth middleware endpoint
+            # of the MCP server, unused in a throwaway CI shop). Remove once a
+            # 6.7 core allows a fixed mcp/sdk; the step below warns when it can go.
+            ignore-advisories: '["PKSA-s52d-n7sx-trsg"]'
 
     services:
       database:
@@ -74,11 +79,26 @@ jobs:
       # The project template, not a hand-assembled stack: it is what the
       # Shopware documentation installs for a production shop, so a failure
       # here is a failure a shop owner would also hit.
+      - name: Ignore the advisories this line cannot install without
+        if: matrix.ignore-advisories
+        run: composer config --global policy.advisories.ignore-id --json '${{ matrix.ignore-advisories }}'
+
       - name: Create a shopware/production project (${{ matrix.template }})
         run: |
           set -euo pipefail
           composer create-project shopware/production shop '${{ matrix.template }}' \
             --no-interaction --no-progress --no-scripts
+
+      - name: Warn when the ignored advisory is no longer needed
+        if: matrix.ignore-advisories
+        working-directory: shop
+        run: |
+          set -euo pipefail
+          sdk="$(composer show mcp/sdk --format=json 2>/dev/null | php -r '$p = json_decode(stream_get_contents(STDIN), true); echo $p["versions"][0] ?? "";')"
+          case "$sdk" in
+            v0.8.*|0.8.*) ;;
+            *) echo "::warning::the project installed mcp/sdk '${sdk}', outside the advisory's 0.8 range; drop ignore-advisories from the 6.7 leg" ;;
+          esac
 
       # A path repository is canonical and is consulted before packagist.org,
       # so the checkout wins the tie on its own version number. The read-back
