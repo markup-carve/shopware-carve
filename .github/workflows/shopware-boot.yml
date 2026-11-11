@@ -91,10 +91,10 @@ jobs:
           composer config repositories.shopware-carve \
             '{"type":"path","url":"../plugin","options":{"symlink":false}}'
           composer config repositories.carve-php vcs https://github.com/markup-carve/carve-php
-          composer require 'markup-carve/carve-php:dev-main#f528aaca2dd277ed52c0c8843ffdd77fa87f875d' --no-update --no-interaction
+          composer require 'markup-carve/carve-php:dev-main#a5b43d25fb2ec10e8eb18f905b1ff4734eb26dbb' --no-update --no-interaction
           composer require markup-carve/shopware-carve:'*' --no-interaction --no-progress
           engine_ref="$(composer show markup-carve/carve-php --format=json | php -r '$package = json_decode(stream_get_contents(STDIN), true); echo $package["source"]["reference"] ?? "";')"
-          test "$engine_ref" = f528aaca2dd277ed52c0c8843ffdd77fa87f875d
+          test "$engine_ref" = a5b43d25fb2ec10e8eb18f905b1ff4734eb26dbb
           installed='vendor/markup-carve/shopware-carve/src/ShopwareCarve.php'
           if [ ! -f "${installed}" ]; then
             echo "::error::the plugin is not installed into the project, so nothing below boots it"

@@ -65,7 +65,7 @@ jobs:
           coverage: none
 
       - name: Install dependencies
-        run: composer update --prefer-dist --no-progress --no-interaction --with "markup-carve/carve-php:dev-main#f528aaca2dd277ed52c0c8843ffdd77fa87f875d"
+        run: composer update --prefer-dist --no-progress --no-interaction --with "markup-carve/carve-php:dev-main#a5b43d25fb2ec10e8eb18f905b1ff4734eb26dbb"
 
       - name: Compare the range against Packagist
         id: registry
