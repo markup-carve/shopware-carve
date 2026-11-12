@@ -1,3 +1,10 @@
+# 0.1.10
+- Erfordert carve-php 0.1.17.
+- carve:fmt schreibt native Tabellenköpfe, *** als thematischen Umbruch und die Tabellenausrichtung in geschweiften Klammern wie |={>}. Die alte Schreibweise |=> wird weiterhin gelesen.
+- Ist „Speichern bei Carve-Lint-Befunden ablehnen“ aktiviert, müssen Inhalte mit einem thematischen Umbruch aus --- oder einer alten Ausrichtung wie |=> vor dem Speichern umgeschrieben werden.
+- CSV- und TSV-Tabellen-Includes können Zeilen und Spalten auswählen.
+- Der HTML-Import liest keine data-djot-*-Attribute mehr.
+
 # 0.1.9
 - Neue Konsolenbefehle: carve:lint prüft das Carve in Produkten, Kategorien, Herstellern und CMS-Elementen, carve:fmt formatiert Carve-Dateien und kann Tabellen ausrichten, und carve:convert überführt vorhandene HTML-Beschreibungen in Carve-Felder (standardmäßig als Probelauf).
 - Neue Einstellung „Speichern bei Carve-Lint-Befunden ablehnen“, standardmäßig deaktiviert.

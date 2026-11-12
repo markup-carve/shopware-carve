@@ -5,6 +5,25 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-11-12
+
+Storefront, preview, and command output follow the published carve-php 0.1.17 engine.
+
+### Breaking
+
+- With `lintOnSave` on, content using a `---` thematic break or an old alignment prefix such as `|=>` cannot be saved until it is rewritten, because the new `thematic-break-spelling` and `deprecated-cell-alignment` rules report it (#107).
+- HTML import in `carve:convert` and the editor's import preview no longer reads `data-djot-*` attributes (markup-carve/carve#5735).
+- The lint rule alias `a11y/heading-jump` is gone; use `heading-level-skip`.
+- `carve:render` HTML output without `--include-root` no longer ends with a final line feed.
+
+### Improvements
+
+- Requires carve-php 0.1.17 (#107).
+- `carve:fmt` writes `|=` header cells, `***` thematic breaks, and braced table alignment (`|={>}`); the old `|=>` spelling is still read (#106, #107).
+- CSV and TSV table includes can select rows and columns with `@rows:` and `@cols:` (#107).
+
+**Full Changelog**: https://github.com/markup-carve/shopware-carve/compare/0.1.9...0.1.10
+
 ## [0.1.9] - 2026-10-24
 
 Authors can check and convert stored Carve, while storefront content gains commerce details, interactive sections, and theme-aware presentation.
