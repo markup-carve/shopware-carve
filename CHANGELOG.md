@@ -5,7 +5,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.1.10] - 2026-11-11
+## [0.1.10] - 2026-11-12
 
 Storefront, preview, and command output follow the published carve-php 0.1.17 engine.
 
