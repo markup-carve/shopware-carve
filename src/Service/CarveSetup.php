@@ -23,6 +23,9 @@ use MarkupCarve\Carve\RenderResult;
  */
 class CarveSetup
 {
+    /**
+     * @var string
+     */
     public const NAMESPACE = 'shopware';
 
     /**
@@ -128,6 +131,7 @@ class CarveSetup
     }
 
     /**
+     * @param string $source
      * @param array<string, mixed> $extra
      */
     public function parse(string $source, array $extra = []): Node
@@ -217,8 +221,10 @@ class CarveSetup
     {
         $name = $node->f['name'] ?? null;
         $source = $node->f['props']['source'] ?? null;
-        if (!in_array($node->type, ['inline_extension', 'block_extension'], true) || !is_string($name)
-            || !str_starts_with($name, self::NAMESPACE . '.') || !is_array($source)) {
+        if (
+            !in_array($node->type, ['inline_extension', 'block_extension'], true) || !is_string($name)
+            || !str_starts_with($name, self::NAMESPACE . '.') || !is_array($source)
+        ) {
             return null;
         }
         $fallback = $node->f['fallback'] ?? [];

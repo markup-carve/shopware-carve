@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Inline;
 
-use MarkupCarve\Shopware\Service\CarveSetup;
 use MarkupCarve\Shopware\Inline\ProductInlineMatcher;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 
 class ProductInlineMatcherTest extends TestCase

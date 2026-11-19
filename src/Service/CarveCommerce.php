@@ -40,6 +40,9 @@ class CarveCommerce implements ResetInterface
      */
     private const PRODUCT_TYPES = ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image', 'variants', 'rating', 'reviews-summary'];
 
+    /**
+     * @var string
+     */
     private const CARD = 'shopware.product-card';
 
     /**

@@ -13,6 +13,11 @@ use RuntimeException;
  */
 final class CarveImport
 {
+    public static function supports(string $format): bool
+    {
+        return $format === 'html';
+    }
+
     /**
      * @param string $format `html` or `markdown`.
      * @param string $input
@@ -23,7 +28,7 @@ final class CarveImport
      */
     public static function convert(string $format, string $input): array
     {
-        if ($format !== 'html') {
+        if (!self::supports($format)) {
             throw new RuntimeException(sprintf('The Carve "%s" importer is not available in carve-php 0.2; only HTML can be imported.', $format));
         }
         $result = Carve::importHtml($input);

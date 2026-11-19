@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MarkupCarve\Shopware\Tests\Command;
 
 use MarkupCarve\Shopware\Command\CarveConvertCommand;
+use MarkupCarve\Shopware\Service\CarveImport;
 use MarkupCarve\Shopware\Service\CarveStoredSource;
 use MarkupCarve\Shopware\Service\CarveStoredSources;
 use PHPUnit\Framework\TestCase;
@@ -82,7 +83,9 @@ class CarveConvertCommandTest extends TestCase
 
     public function testAFileConvertsToStdout(): void
     {
-        self::markTestSkipped('carve-php 0.2 has no Markdown importer: it is not in the 0.2 specification (C2-T-003, carve-php docs/migration.md).');
+        if (!CarveImport::supports('markdown')) {
+            self::markTestSkipped('carve-php 0.2 has no Markdown importer: it is not in the 0.2 specification (C2-T-003, carve-php docs/migration.md).');
+        }
         $file = sys_get_temp_dir() . '/carve-convert-' . bin2hex(random_bytes(4)) . '.md';
         file_put_contents($file, "Some **bold** text.\n");
         $tester = new CommandTester(new CarveConvertCommand($this->createStub(CarveStoredSources::class)));

@@ -4,23 +4,24 @@ This page documents the plugin surfaces and configuration. Start with the [packa
 
 ## Enabled extensions
 
-The following carve-php extensions are registered unconditionally on every HTML converter (both
-`CarveRenderer` and `CarveContextRenderer`). They are pure-PHP and require no extra JavaScript.
+The plugin renders with carve-php 0.2. Admonitions, footnotes (including inline `^[...]` notes) and
+autolinks in angle brackets (`<https://example.com>`) are core Carve 0.2 syntax. carve-php 0.2 does
+not ship the rest of the 0.1 extension catalog yet, so the plugin registers these on every HTML
+render itself (`CarveHostExtensions`). They are pure PHP and need no extra JavaScript.
 
-| Extension | What it does |
+| Element | What it does |
 |---|---|
-| `AdmonitionExtension` | Converts `::: note`, `::: tip`, `::: warning`, `::: danger`, `::: info`, `::: success` divs to `<div class="admonition {type}">` with a `<p class="admonition-title">` header and an appropriate ARIA role. |
-| `DetailsExtension` | Converts `::: details "Title"` to a native `<details><summary>Title</summary>...</details>` disclosure widget. |
-| `ListTableExtension` | Converts `::: list-table` blocks (nested lists) to real `<table>` markup with `<thead>`/`<tbody>`/`<th>`/`<td>` and rowspan/colspan support. |
-| `InlineFootnotesExtension` | Allows inline footnote syntax `[content]{.fn}` to generate numbered footnote references and an end-of-document footnotes section, sharing the numbering sequence with regular footnotes. |
-| `AutolinkExtension` | Detects bare `https://`, `http://`, and `mailto:` URLs in text and turns them into clickable `<a>` links. |
-| `ExternalLinksExtension` | Adds `rel="nofollow noopener"` and `target="_blank"` to all external HTTP/HTTPS links, including those produced by `AutolinkExtension`. |
-| `TableOfContentsExtension` | Collects headings and makes a `<ul class="toc">` available via `getTocHtml()` (or auto-inserts at `position: 'top'`/`'bottom'` when configured). Not auto-inserted by default - use `position` option or call `getTocHtml()` manually. |
-| `SpoilerExtension` | Block `::: spoiler "Title"` becomes a native `<details class="spoiler"><summary>Title</summary>...</details>` (collapsed by default - no JS). Inline `:spoiler[text]` becomes `<span class="spoiler">text</span>` (CSS blur-until-hover, no JS). |
-| `CodeGroupExtension` | Converts `::: code-group` with labeled fenced blocks (e.g. ` ```bash [npm] `) to a tabbed group with `<input class="code-group-radio">` / `<label class="code-group-label">npm</label>` / `<div class="code-group-panel">` markup. Tab switching is CSS-only (radio hack) - no JavaScript. |
-| `TabsExtension` | Converts `:::: tabs` / `::: tab "Title"` blocks to the same CSS radio-tab pattern with classes `tabs-radio` / `tabs-label` / `tabs-panel`. No JavaScript. |
+| Tabs | The engine's standard `carve.tabs` family: `:::: tabs` with `::: tab "Title"` children renders one radio input, label and panel per tab. No JavaScript. |
+| `::: details "Title"` | A native `<details class="details"><summary>Title</summary>...</details>` disclosure. |
+| `::: spoiler "Title"`, `:spoiler[text]` | The block becomes `<details class="spoiler">` (collapsed, no JavaScript); the inline form becomes `<span class="spoiler">text</span>`. |
+| `::: list-table` | A nested bullet list becomes a `<table>`; `{header-rows=N}` on the block makes the first N rows `<th scope="col">` cells. |
+| `::: code-group` | Labeled fences (` ```bash [npm] `) become a CSS radio-tab group with `code-group-radio`, `code-group-label` and `code-group-panel` classes. |
+| External links | Absolute `http`/`https` links get `rel` and `target` from the `externalLinksNofollow` and `externalLinksNewTab` settings (default `rel="nofollow noopener" target="_blank"`). A `rel` or `target` the author set wins. |
 
-Config-driven extensions (added only when enabled in the plugin settings): smart quotes
+Not available in 0.2: bare URLs are text (write `<https://example.com>`), and the 0.1 table of
+contents extension has no replacement yet.
+
+Config-driven elements (added only when enabled in the plugin settings): locale quotes
 (`ShopwareCarve.config.smartQuotes`), Mermaid diagrams (`ShopwareCarve.config.enableMermaid`),
 charts (`ShopwareCarve.config.enableCharts`) and PlantUML diagrams
 (`ShopwareCarve.config.enablePlantuml`). Mermaid/chart lazy-load their library from a CDN, and
@@ -47,6 +48,10 @@ Markdown variants enable channel reuse (mail, export).
 {# Markdown (e.g. for export) #}
 {{ product.translated.description | carve_md }}
 ```
+
+`|carve_text` and `|carve_md` go through carve-php's writer registry. carve-php 0.2 does not
+register its `text` and `markdown` writers yet ([carve-php#5235](https://github.com/markup-carve/carve-php/issues/5235)),
+so until it does both filters throw `CarveWriterUnavailable` ("writer not available yet").
 
 For content that contains `:product[SKU]` inline references, use `|carve_ctx(context)` to pass the
 sales channel context so product links resolve correctly (see Surface 8).
@@ -226,6 +231,9 @@ bin/console carve:render path/to/content.crv --md
 bin/console carve:render path/to/content.crv --term
 ```
 
+`--plain`, `--md` and `--term` exit with an error ("writer not available yet") until carve-php 0.2
+registers its `text`, `markdown` and `ansi` writers ([carve-php#5235](https://github.com/markup-carve/carve-php/issues/5235)).
+
 ### 11 - Lint, format and migrate from the console
 
 `carve:lint` reports the diagnostics the editor preview shows. Without
@@ -351,7 +359,9 @@ repository and no local clone.
 
 #### PHP dependency: carve-php
 
-Pulled in by the plugin's own `composer.json` (`markup-carve/carve-php: ^0.1.15`):
+Pulled in by the plugin's own `composer.json`. Until carve-php 0.2 is released, the `next2` line
+pins the engine's `next2` branch by commit through a VCS repository
+(`markup-carve/carve-php: dev-next2#<sha>`):
 
 ```bash
 composer require markup-carve/shopware-carve
@@ -361,7 +371,7 @@ Verify the library loaded correctly:
 
 ```php
 <?php
-var_dump(class_exists('MarkupCarve\\Carve\\CarveConverter')); // bool(true)
+var_dump(class_exists('MarkupCarve\\Carve\\Carve')); // bool(true)
 ```
 
 #### Administration build
@@ -475,9 +485,10 @@ should edit this setting. Never populate it from user-authored content.
 
 ### smartQuotes
 
-When `true`, carve-php's smart-quotes extension is applied to HTML output, converting straight
-ASCII quotes (`"..."` and `'...'`) to locale-correct typographic equivalents. Only affects HTML
-output (`|carve`, `|carve_ctx`) - plain-text and Markdown targets are not affected.
+carve-php 0.2 always writes English typographic quotes in HTML. When `true`, the plugin rewrites
+them to the quote style of `smartQuotesLocale` (for example `„...“` for `de`). Apostrophes and text
+inside `code`, `pre`, `kbd`, `samp`, `script` and `style` keep their characters. Only affects HTML
+output (`|carve`, `|carve_ctx`).
 
 Default: `false`.
 
@@ -552,10 +563,9 @@ Default: `false`.
 
 Restricts which Carve node types are rendered in HTML output. Use `comment` or `minimal` for
 untrusted user content such as product reviews, Q&A answers, or any other UGC surface. Disallowed
-elements degrade to plain text by default (carve-php's `ACTION_TO_TEXT`). Applies to HTML output
-only (`|carve`, `|carve_ctx`) - text and Markdown converters are never profiled.
+elements degrade to plain text. Applies to HTML output only (`|carve`, `|carve_ctx`).
 
-Default: `none` (no restriction).
+Default: `none` (no restriction; carve-php 0.2 renders it as the `full` profile).
 
 | Value | Name | What it restricts |
 |-------|------|-------------------|
@@ -565,30 +575,11 @@ Default: `none` (no restriction).
 | `minimal` | Minimal (inline only) | Allows basic inline formatting (bold, italic, strikethrough, code, insert/delete/superscript/subscript, soft/hard breaks) and block-level paragraphs and lists only. Denies links, images, headings, tables, blockquotes, footnotes, raw HTML, and all advanced elements. Max nesting depth: 2. Suitable for chat messages and micro-posts. |
 | `full` | Full | Explicitly marks all features as allowed. Functionally equivalent to `none` but records intent. Use for trusted admin content. |
 
-#### Custom profile (PHP escape hatch)
+#### Custom profiles
 
-There is no UI for a fully custom profile. To apply bespoke restrictions, build a `Profile`
-directly in PHP and set it on the converter before rendering. The simplest approach is to decorate
-or replace `CarveRenderer` in your own plugin:
-
-```php
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Profile;
-
-// Example: comment profile but also deny links
-$profile = Profile::comment()
-    ->denyInline(['link'])
-    ->setMaxNesting(3)
-    ->onDisallowed(Profile::ACTION_STRIP); // strip instead of converting to text
-
-$converter = new CarveConverter();
-$converter->setProfile($profile);
-$html = $converter->convert($source);
-```
-
-For the full list of node type constants, see
-[`Carve\NodeType`](https://github.com/markup-carve/carve-php/blob/main/src/NodeType.php) in the
-carve-php library and the node-type vocabulary in `docs/profiles.md` in the Carve spec.
+carve-php 0.2 has only the four named profiles; the 0.1 `Profile` builder for custom profiles is
+gone. To restrict output further, decorate `CarveRenderer` and post-process the HTML, or register a
+render hook (see [custom elements](custom-elements.md)).
 
 ### CDN, Kroki and CSP
 

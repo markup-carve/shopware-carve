@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Service;
 
-
 class CarveLocalData
 {
     public function register(CarveSetup $setup): void

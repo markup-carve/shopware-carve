@@ -65,7 +65,7 @@ records counted from 1, header record included; the header always stays.
 
 ```carve
 {table}
-{{ data/sizes.csv @code:csv @rows:2-4 @cols:"Size,Load" }}
+{{ data/sizes.csv @rows:2-4 @cols:"Size,Load" @code:csv }}
 ```
 
 Use one of a section ID, a line range, a region or `@rows` in one directive. Section IDs survive

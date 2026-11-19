@@ -167,17 +167,11 @@ class CarveRenderer
         return $this->htmlConverters[$signature] ??= $this->factory->create($salesChannelId, $locale, $ugc);
     }
 
-    /**
-     * @throws \MarkupCarve\Shopware\Service\CarveWriterUnavailable While carve-php 0.2 registers no `text` writer.
-     */
     public function toText(?string $source): string
     {
         return $source === null || trim($source) === '' ? '' : self::write('text', $source);
     }
 
-    /**
-     * @throws \MarkupCarve\Shopware\Service\CarveWriterUnavailable While carve-php 0.2 registers no `markdown` writer.
-     */
     public function toMarkdown(?string $source): string
     {
         return $source === null || trim($source) === '' ? '' : self::write('markdown', $source);

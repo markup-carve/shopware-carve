@@ -5,9 +5,9 @@ env:
 
 on:
   push:
-    branches: [main]
+    branches: [main, next2]
   pull_request:
-    branches: [main]
+    branches: [main, next2]
 
 # Resolve 6.6 here and 6.7 in shopware-67.yml. Each lane verifies the
 # installed line. The locked-install lane checks reproducibility separately.

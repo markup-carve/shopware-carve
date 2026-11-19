@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
+use MarkupCarve\Carve\Carve;
 use MarkupCarve\Shopware\Service\CarveLiteral;
 use MarkupCarve\Shopware\Service\CarveRenderer;
 use MarkupCarve\Shopware\Service\CarveSetup;
@@ -22,7 +23,9 @@ class CarveLiteralTest extends TestCase
 
     public function testInterpolatedDataRoundTripsToPlainText(): void
     {
-        self::markTestSkipped('Waits for the carve-php 0.2 text writer, markup-carve/carve-php#5235.');
+        if (!Carve::writers()->has('text')) {
+            self::markTestSkipped('Waits for the carve-php 0.2 text writer, markup-carve/carve-php#5235.');
+        }
         $value = '[Account](https://example.com/phishing) *Admin* {{ secret.crv }} :product[SKU]';
         self::assertSame('Dear ' . $value, trim(CarveRenderer::write('text', 'Dear ' . CarveLiteral::escape($value))));
     }

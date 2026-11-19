@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
+use MarkupCarve\Carve\Carve;
 use MarkupCarve\Shopware\Service\CarveConverterFactory;
 use MarkupCarve\Shopware\Service\CarveRenderer;
 use MarkupCarve\Shopware\Service\CarveSetup;
@@ -112,7 +113,9 @@ class CarveRendererTest extends TestCase
 
     public function testPlainTextStripsFormatting(): void
     {
-        self::markTestSkipped('Waits for the carve-php 0.2 text writer, markup-carve/carve-php#5235.');
+        if (!Carve::writers()->has('text')) {
+            self::markTestSkipped('Waits for the carve-php 0.2 text writer, markup-carve/carve-php#5235.');
+        }
         $text = $this->renderer->toText('*bold*');
         self::assertStringNotContainsString('<strong>', $text);
         self::assertStringContainsString('bold', $text);
@@ -120,7 +123,9 @@ class CarveRendererTest extends TestCase
 
     public function testMarkdownRoundTrips(): void
     {
-        self::markTestSkipped('Waits for the carve-php 0.2 markdown writer, markup-carve/carve-php#5235.');
+        if (!Carve::writers()->has('markdown')) {
+            self::markTestSkipped('Waits for the carve-php 0.2 markdown writer, markup-carve/carve-php#5235.');
+        }
         $md = $this->renderer->toMarkdown('*bold*');
         self::assertStringContainsString('bold', $md);
     }

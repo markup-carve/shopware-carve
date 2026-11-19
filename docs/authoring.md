@@ -9,7 +9,8 @@ Deactivation and uninstall restore the standard textarea for fields using the
 Carve editor; reactivation restores the Carve editor. Content stays stored.
 
 The editor provides syntax help, product and media selection, conversion from
-HTML or Markdown, and a server preview. Conversion returns diagnostics and a
+HTML, and a server preview. Markdown conversion returns an error: carve-php 0.2
+has no Markdown importer. Conversion returns diagnostics and a
 candidate source. **Replace with converted source** applies it to the current
 form; save the Shopware entity to persist it.
 
@@ -80,16 +81,18 @@ the extension formats the amount but does not read rule-based delivery prices.
 Cards, curated grids, and specification lists are block elements:
 
 ```carve
-{sku="SKU"}
+{sku=SKU}
 ::: product-card
+
 :::
 
 ::: product-grid
 SKU-A, SKU-B, SKU-C
 :::
 
-{sku="SKU"}
+{sku=SKU}
 ::: specs
+
 :::
 ```
 
@@ -104,7 +107,7 @@ groups and values. Keep SKUs stable when shared documents reference them.
 Installed extensions can handle named blocks during trusted storefront rendering:
 
 ```carve
-{name="inventory.stock"}
+{name=inventory.stock}
 ::: app-block
 Fallback content when no extension handles this name.
 :::
@@ -165,14 +168,15 @@ destination remains available to keyboard and screen-reader users.
 [Shop now](/category/new)
 :::
 
-::: columns
+:::: columns
 ::: card
 Fast delivery
 :::
+
 ::: card
 Easy returns
 :::
-:::
+::::
 
 ::: usp
 - Free returns

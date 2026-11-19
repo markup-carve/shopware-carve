@@ -139,6 +139,7 @@ class CarveResources
                 );
             }
         }
+
         return $html;
     }
 
