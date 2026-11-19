@@ -114,12 +114,19 @@ class CarveRenderCommand extends Command
         $prefix = rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
         if ($source !== null && !str_starts_with($source, $prefix)) {
             // A relative directive resolves against the source's directory, which lies outside the root.
-            return ['resolver' => new class implements IncludeResolver {
-                public function resolve(array $request): array
-                {
-                    return ['error' => 'outside_root'];
-                }
-            }];
+            return [
+                'resolver' => new class implements IncludeResolver {
+                    /**
+                     * @param array<string, mixed> $request
+                     *
+                     * @return array{error: string}
+                     */
+                    public function resolve(array $request): array
+                    {
+                        return ['error' => 'outside_root'];
+                    }
+                },
+            ];
         }
         $includes = ['resolver' => FileResolver::forRoot($root)];
         if ($source !== null) {
