@@ -207,7 +207,7 @@ class CarveHostExtensions
             }
             $rows[] = $cells->children ?? [];
         }
-        $headerRows = max(0, (int)($call->attribute('header-rows') ?? 0));
+        $headerRows = min(count($rows), max(0, (int)($call->attribute('header-rows') ?? 0)));
         $html = '<table>';
         foreach ($rows as $index => $cells) {
             if ($index === 0 && $headerRows > 0) {

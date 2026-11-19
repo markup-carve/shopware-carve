@@ -88,6 +88,17 @@ class CarveSetupTest extends TestCase
         );
     }
 
+    public function testAListTableWithMoreHeaderRowsThanRowsStaysWellFormed(): void
+    {
+        $setup = new CarveSetup();
+        (new CarveHostExtensions())->register($setup);
+
+        self::assertSame(
+            '<table><thead><tr><th scope="col">A</th><th scope="col">B</th></tr></thead></table>',
+            $setup->render("{header-rows=3}\n::: list-table\n- - A\n  - B\n:::\n"),
+        );
+    }
+
     public function testMissingWritersFailWithAClearError(): void
     {
         if (Carve::writers()->has('text')) {

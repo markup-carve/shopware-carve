@@ -6,6 +6,7 @@ namespace MarkupCarve\Shopware\Command;
 
 use MarkupCarve\Carve\Carve;
 use MarkupCarve\Carve\Include\FileResolver;
+use MarkupCarve\Carve\Include\IncludeResolver;
 use MarkupCarve\Shopware\Service\CarveRenderer;
 use MarkupCarve\Shopware\Service\CarveWriterUnavailable;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -110,9 +111,18 @@ class CarveRenderCommand extends Command
             return null;
         }
 
-        $includes = ['resolver' => FileResolver::forRoot($root)];
         $prefix = rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-        if ($source !== null && str_starts_with($source, $prefix)) {
+        if ($source !== null && !str_starts_with($source, $prefix)) {
+            // A relative directive resolves against the source's directory, which lies outside the root.
+            return ['resolver' => new class implements IncludeResolver {
+                public function resolve(array $request): array
+                {
+                    return ['error' => 'outside_root'];
+                }
+            }];
+        }
+        $includes = ['resolver' => FileResolver::forRoot($root)];
+        if ($source !== null) {
             $includes['file'] = str_replace(DIRECTORY_SEPARATOR, '/', substr($source, strlen($prefix)));
         }
 
