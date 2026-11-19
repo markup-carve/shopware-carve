@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MarkupCarve\Shopware\Tests\Command;
 
 use MarkupCarve\Shopware\Command\CarveConvertCommand;
+use MarkupCarve\Shopware\Service\CarveImport;
 use MarkupCarve\Shopware\Service\CarveStoredSource;
 use MarkupCarve\Shopware\Service\CarveStoredSources;
 use PHPUnit\Framework\TestCase;
@@ -56,8 +57,35 @@ class CarveConvertCommandTest extends TestCase
         self::assertSame(Command::INVALID, (new CommandTester(new CarveConvertCommand($sources)))->execute(['--entity' => ['cms']]));
     }
 
+    public function testAnHtmlFileConvertsToStdout(): void
+    {
+        $file = sys_get_temp_dir() . '/carve-convert-' . bin2hex(random_bytes(4)) . '.html';
+        file_put_contents($file, "<p>Some <strong>bold</strong> text.</p>\n");
+        $tester = new CommandTester(new CarveConvertCommand($this->createStub(CarveStoredSources::class)));
+        $status = $tester->execute(['path' => $file]);
+        unlink($file);
+
+        self::assertSame(Command::SUCCESS, $status);
+        self::assertSame("Some *bold* text.\n", $tester->getDisplay());
+    }
+
+    public function testAMarkdownFileIsRefusedWithAClearMessage(): void
+    {
+        $file = sys_get_temp_dir() . '/carve-convert-' . bin2hex(random_bytes(4)) . '.md';
+        file_put_contents($file, "Some **bold** text.\n");
+        $tester = new CommandTester(new CarveConvertCommand($this->createStub(CarveStoredSources::class)));
+        $status = $tester->execute(['path' => $file]);
+        unlink($file);
+
+        self::assertSame(Command::FAILURE, $status);
+        self::assertStringContainsString('"markdown" importer is not available', $tester->getDisplay());
+    }
+
     public function testAFileConvertsToStdout(): void
     {
+        if (!CarveImport::supports('markdown')) {
+            self::markTestSkipped('carve-php 0.2 has no Markdown importer: it is not in the 0.2 specification (C2-T-003, carve-php docs/migration.md).');
+        }
         $file = sys_get_temp_dir() . '/carve-convert-' . bin2hex(random_bytes(4)) . '.md';
         file_put_contents($file, "Some **bold** text.\n");
         $tester = new CommandTester(new CarveConvertCommand($this->createStub(CarveStoredSources::class)));

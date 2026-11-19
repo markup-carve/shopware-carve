@@ -2,9 +2,9 @@ name: Extension validation
 
 on:
   push:
-    branches: [main]
+    branches: [main, next2]
   pull_request:
-    branches: [main]
+    branches: [main, next2]
 
 permissions:
   contents: read

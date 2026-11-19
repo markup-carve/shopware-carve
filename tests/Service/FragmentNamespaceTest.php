@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace MarkupCarve\Shopware\Tests\Service;
 
 use DOMDocument;
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Extension\TabsExtension;
+use MarkupCarve\Carve\Extension\Tabs;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use MarkupCarve\Shopware\Service\FragmentNamespace;
 use PHPUnit\Framework\TestCase;
 
@@ -14,10 +14,10 @@ class FragmentNamespaceTest extends TestCase
 {
     public function testFragmentsKeepTheirTabsAndFootnotesIndependent(): void
     {
-        $converter = new CarveConverter();
-        $converter->addExtension(new TabsExtension());
+        $converter = new CarveSetup();
+        $converter->addExtension(...Tabs::extensions(true));
         $source = ":::: tabs\n::: tab \"One\"\nFirst\n:::\n::: tab \"Two\"\nSecond\n:::\n::::\n\nText[^n]\n\n[^n]: Note";
-        $original = $converter->convert($source);
+        $original = $converter->render($source);
         $first = FragmentNamespace::apply($original, 'cms-first');
         $second = FragmentNamespace::apply($original, 'cms-second');
         self::assertSame($first, FragmentNamespace::apply($original, 'cms-first'));

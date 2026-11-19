@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6a389ed31c83e420e11298b05c432312",
+    "content-hash": "a37ccef8922ae5ea60e8fac93fe86cda",
     "packages": [
         {
             "name": "brick/math",
@@ -3382,25 +3382,26 @@
         },
         {
             "name": "markup-carve/carve-php",
-            "version": "0.1.17",
+            "version": "dev-next2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/markup-carve/carve-php.git",
-                "reference": "fa017b5e5260180e45cf8cb2add16c9adaad74a3"
+                "reference": "db1624daf966ccfefb5adccf919c05ac89b7af4e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/fa017b5e5260180e45cf8cb2add16c9adaad74a3",
-                "reference": "fa017b5e5260180e45cf8cb2add16c9adaad74a3",
+                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/db1624daf966ccfefb5adccf919c05ac89b7af4e",
+                "reference": "db1624daf966ccfefb5adccf919c05ac89b7af4e",
                 "shasum": ""
             },
             "require": {
-                "php": "^8.2"
+                "php": "^8.2",
+                "symfony/polyfill-intl-normalizer": "^1.27"
             },
             "require-dev": {
-                "brianium/paratest": "^7.8",
-                "nikic/php-fuzzer": "^0.0.11",
+                "league/commonmark": "^2.7",
                 "php-collective/code-sniffer": "^0.6.8",
+                "php-collective/djot": "^0.1.35",
                 "phpstan/phpstan": "^2.1.32",
                 "phpunit/phpunit": "^11.0 || ^12.0 || ^13.0"
             },
@@ -3412,12 +3413,44 @@
                 "bin/carve"
             ],
             "type": "library",
+            "extra": {
+                "require-dev-notes": {
+                    "league/commonmark": "Benchmark only (bench/bench-engines.php).",
+                    "php-collective/djot": "Benchmark only (bench/bench-engines.php)."
+                }
+            },
             "autoload": {
                 "psr-4": {
                     "MarkupCarve\\Carve\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "MarkupCarve\\Carve\\Test\\": "tests/"
+                }
+            },
+            "scripts": {
+                "check": [
+                    "@cs-check",
+                    "@stan",
+                    "@test"
+                ],
+                "cs-check": [
+                    "phpcs --colors --parallel=16"
+                ],
+                "cs-fix": [
+                    "phpcbf --colors --parallel=16"
+                ],
+                "stan": [
+                    "phpstan analyze --memory-limit=1G"
+                ],
+                "tables-check": [
+                    "@php scripts/generate-tables.php --check"
+                ],
+                "test": [
+                    "@php -d pcov.enabled=0 vendor/bin/phpunit"
+                ]
+            },
             "license": [
                 "MIT"
             ],
@@ -3440,16 +3473,16 @@
                 "parser"
             ],
             "support": {
-                "issues": "https://github.com/markup-carve/carve-php/issues",
-                "source": "https://github.com/markup-carve/carve-php/tree/0.1.17"
+                "source": "https://github.com/markup-carve/carve-php/tree/next2",
+                "issues": "https://github.com/markup-carve/carve-php/issues"
             },
             "funding": [
                 {
-                    "url": "https://github.com/dereuromark",
-                    "type": "github"
+                    "type": "github",
+                    "url": "https://github.com/dereuromark"
                 }
             ],
-            "time": "2026-11-12T09:37:21+00:00"
+            "time": "2026-11-19T01:32:40+00:00"
         },
         {
             "name": "masterminds/html5",
@@ -12984,7 +13017,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "markup-carve/carve-php": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

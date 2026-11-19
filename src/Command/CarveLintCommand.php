@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Command;
 
-use MarkupCarve\Carve\Lint\IncludeLinter;
-use MarkupCarve\Carve\Transform\FilesystemIncludeResolver;
+use MarkupCarve\Carve\Carve;
+use MarkupCarve\Carve\Include\FileResolver;
+use MarkupCarve\Carve\Include\IncludeResolver;
+use MarkupCarve\Shopware\Service\CarveLintWarning;
 use MarkupCarve\Shopware\Service\CarveRenderer;
 use MarkupCarve\Shopware\Service\CarveStoredSources;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -45,6 +47,7 @@ class CarveLintCommand extends Command
         }
 
         $resolver = null;
+        $includeRoot = '';
         $root = $input->getOption('include-root');
         if (is_string($root) && $root !== '') {
             $real = realpath($root);
@@ -53,7 +56,8 @@ class CarveLintCommand extends Command
 
                 return Command::INVALID;
             }
-            $resolver = new FilesystemIncludeResolver($real);
+            $resolver = FileResolver::forRoot($real);
+            $includeRoot = $real;
         }
 
         $failed = false;
@@ -62,7 +66,7 @@ class CarveLintCommand extends Command
         foreach ($this->inputs($paths, $entities, $failed, $output) as $location => $source) {
             $checked++;
             $warnings = $resolver === null ? $this->renderer->lint($source)
-                : (new IncludeLinter())->lint($source, [], $resolver, realpath($location) ?: $location);
+                : $this->lintWithIncludes($source, $resolver, $includeRoot, realpath($location) ?: $location);
             foreach ($warnings as $warning) {
                 $at = ($warning->file ?? $location) . ':' . $warning->line . ':' . $warning->column;
                 // A file both linted and included by another one would report twice.
@@ -80,6 +84,33 @@ class CarveLintCommand extends Command
         $output->writeln(sprintf('<error>%d Carve problem(s) found in %d source(s).</error>', count($rows), $checked));
 
         return Command::FAILURE;
+    }
+
+    /**
+     * Lints a file and the files it includes; a finding in an included file names that file.
+     *
+     * @return list<\MarkupCarve\Shopware\Service\CarveLintWarning>
+     */
+    private function lintWithIncludes(string $source, IncludeResolver $resolver, string $root, string $path): array
+    {
+        $prefix = rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $includes = ['resolver' => $resolver];
+        if (str_starts_with($path, $prefix)) {
+            $includes['file'] = str_replace(DIRECTORY_SEPARATOR, '/', substr($path, strlen($prefix)));
+        }
+        $warnings = [];
+        foreach (Carve::lint($source, ['includes' => $includes]) as $diagnostic) {
+            $file = $diagnostic->file;
+            if ($file === null || $file === ($includes['file'] ?? null)) {
+                $warnings[] = CarveLintWarning::fromDiagnostic($diagnostic, $source, null);
+
+                continue;
+            }
+            $text = is_file($prefix . $file) ? (string)file_get_contents($prefix . $file) : '';
+            $warnings[] = CarveLintWarning::fromDiagnostic($diagnostic, $text, $prefix . $file);
+        }
+
+        return $warnings;
     }
 
     /**

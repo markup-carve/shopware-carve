@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
+use MarkupCarve\Carve\Carve;
 use MarkupCarve\Shopware\Service\CarveIncludeResult;
 use Shopware\Core\Framework\Context;
 
@@ -96,7 +97,8 @@ class CarveIncludeRenderTest extends CarveIncludeTestCase
         );
         self::assertCount(3, $result->warnings);
         foreach ($result->warnings as $warning) {
-            self::assertSame('include-unresolved', $warning['rule']);
+            // 0.2 (C2-N-061): a path outside the root reports include-outside-root, where 0.1 said include-unresolved.
+            self::assertSame('include-outside-root', $warning['rule']);
             self::assertSame(['rule', 'message', 'file', 'line', 'column'], array_keys($warning));
         }
         // `message` quotes the directive the author typed, which is theirs to
@@ -158,7 +160,21 @@ class CarveIncludeRenderTest extends CarveIncludeTestCase
         // Product, category and manufacturer bodies and storefront reviews all
         // render through these, whoever wrote them, and an import writes those
         // fields too.
-        foreach (['toHtml', 'toHtmlUgc', 'toText', 'toMarkdown'] as $method) {
+        // toText and toMarkdown wait for the 0.2 writers: see testUntrustedTextAndMarkdownKeepDirectivesLiteral.
+        foreach (['toHtml', 'toHtmlUgc'] as $method) {
+            $rendered = $renderer->{$method}("{{ secret.crv }}\n");
+            self::assertStringNotContainsString('SECRET', $rendered, $method);
+            self::assertStringContainsString('{{ secret.crv }}', $rendered, $method);
+        }
+    }
+
+    public function testUntrustedTextAndMarkdownKeepDirectivesLiteral(): void
+    {
+        if (!Carve::writers()->has('text') || !Carve::writers()->has('markdown')) {
+            self::markTestSkipped('Waits for the carve-php 0.2 text and markdown writers, markup-carve/carve-php#5235.');
+        }
+        $renderer = $this->makeRenderer($this->makeRoot(['secret.crv' => "SECRET\n"]));
+        foreach (['toText', 'toMarkdown'] as $method) {
             $rendered = $renderer->{$method}("{{ secret.crv }}\n");
             self::assertStringNotContainsString('SECRET', $rendered, $method);
             self::assertStringContainsString('{{ secret.crv }}', $rendered, $method);

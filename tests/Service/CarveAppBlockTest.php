@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Event\CarveAppBlockEvent;
 use MarkupCarve\Shopware\Service\CarveCommerce;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopware\Core\System\Currency\CurrencyFormatter;
@@ -35,9 +35,9 @@ class CarveAppBlockTest extends TestCase
             },
         );
         $commerce = $this->commerce($events);
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $commerce->register($converter, $context);
-        $html = $converter->convert("{name=\"inventory.stock\"}\n::: app-block\nFallback\n:::");
+        $html = $converter->render("{name=\"inventory.stock\"}\n::: app-block\nFallback\n:::");
 
         self::assertStringContainsString('<strong>Available</strong>', $html);
         self::assertStringNotContainsString('Fallback', $html);
@@ -47,9 +47,9 @@ class CarveAppBlockTest extends TestCase
     {
         $events = $this->createMock(EventDispatcherInterface::class);
         $events->expects(self::once())->method('dispatch')->willReturnArgument(0);
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $this->commerce($events)->register($converter, $this->createStub(SalesChannelContext::class));
-        $html = $converter->convert("{name=\"inventory.stock\"}\n::: app-block\nFallback\n:::"
+        $html = $converter->render("{name=\"inventory.stock\"}\n::: app-block\nFallback\n:::"
             . "\n\n{name=\"bad name\"}\n::: app-block\nUnchanged\n:::");
 
         self::assertStringContainsString('Fallback', $html);

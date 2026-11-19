@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Service\CarvePresentation;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 
 class CarvePresentationValuesTest extends TestCase
 {
     private function convert(string $source): string
     {
-        $converter = new CarveConverter(safeMode: true);
+        $converter = new CarveSetup();
         (new CarvePresentation())->register($converter);
 
-        return $converter->convert($source);
+        return $converter->render($source);
     }
 
     public function testRatingAndProgressUseBoundedValues(): void

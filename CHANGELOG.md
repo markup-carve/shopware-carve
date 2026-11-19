@@ -5,6 +5,21 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+The plugin renders with Carve 0.2 (carve-php `next2`, pinned by commit until it is released).
+
+### Breaking
+
+- Requires carve-php 0.2: Carve source follows the 0.2 syntax (run the 0.2 `upgrade` tool on stored content) and HTML follows 0.2 (for example admonitions are `<aside>`, no final line feed).
+- `|carve_text`, `|carve_md` and `carve:render --plain/--md/--term` throw "writer not available yet" until carve-php registers those writers (markup-carve/carve-php#5235).
+- Markdown import (`carve:convert --from=markdown`, editor import) is refused: carve-php 0.2 has no Markdown importer.
+- Render hooks take a `CarveSetup` (`on('inline'|'div'|'fence', $name, $hook)`) instead of a `CarveConverter`; `CarveCommerce::prepare()` takes the 0.2 tree.
+- Include diagnostics use the 0.2 codes (`include-not-found`, `include-outside-root`, `include-unreadable`); lint rules follow the 0.2 catalog.
+- Bare URLs are no longer linked (write `<https://...>`); the table of contents extension and custom PHP profiles are gone.
+
+### Improvements
+
+- Details, spoiler, code group, list table, diagram fences, external link attributes and locale quotes are rebuilt on carve-php 0.2 extensions; tabs use the engine's standard tabs family.
+
 ## [0.1.10] - 2026-11-12
 
 Storefront, preview, and command output follow the published carve-php 0.1.17 engine.

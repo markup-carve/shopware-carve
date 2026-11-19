@@ -27,7 +27,8 @@ class CarveLintCommandTest extends TestCase
 
         self::assertSame(Command::FAILURE, $tester->getStatusCode());
         self::assertStringContainsString('product:' . str_repeat('a', 32) . ':' . str_repeat('b', 32) . ':carve_body:4:2', $tester->getDisplay());
-        self::assertStringContainsString('list-marker-below-content-column', $tester->getDisplay());
+        // 0.2 (C2-B-025, C2-B-027): ` - x` below the item's content column is item body, reported by the new rule.
+        self::assertStringContainsString('list-item-body-below-content-column', $tester->getDisplay());
         self::assertStringContainsString('in 2 source(s)', $tester->getDisplay());
     }
 

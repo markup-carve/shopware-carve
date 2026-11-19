@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Service\CarveCommerce;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\PriceCollection;
@@ -49,7 +49,7 @@ class CarveCommerceTest extends TestCase
         );
         $commerce = $this->commerce($repository);
         foreach ([':product[SKU] :product[SKU] :product[MISSING]', ':product[SKU] :product[MISSING]'] as $source) {
-            $converter = new CarveConverter();
+            $converter = new CarveSetup();
             $commerce->register($converter, $context);
             $document = $converter->parse($source);
             $commerce->prepare($document, $context);
@@ -73,7 +73,7 @@ class CarveCommerceTest extends TestCase
         $currency = $this->createMock(CurrencyFormatter::class);
         $currency->expects(self::once())->method('formatCurrencyByLanguage')->with(15.0, 'EUR', $context->getLanguageId(), $context->getContext(), 2)->willReturn('15,00 €');
         $commerce = $this->commerce($repository, $currency);
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $commerce->register($converter, $context);
         $document = $converter->parse(':price[SKU]');
         $commerce->prepare($document, $context);
@@ -88,7 +88,7 @@ class CarveCommerceTest extends TestCase
         $repository = $this->createStub(SalesChannelRepository::class);
         $repository->method('search')->willReturn(new EntitySearchResult('product', 1, new SalesChannelProductCollection([$product]), null, new Criteria(), $context->getContext()));
         $commerce = $this->commerce($repository);
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $commerce->register($converter, $context);
         $document = $converter->parse(':product[SKU] :stock[SKU]');
         $commerce->prepare($document, $context);
@@ -116,7 +116,7 @@ class CarveCommerceTest extends TestCase
             '@Storefront/storefront/component/product/card/box-standard.html.twig' => 'CARD {{ product.productNumber }} {{ context.currency.isoCode }}',
         ]));
         $commerce = $this->commerce($repository, twig: $twig);
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $commerce->register($converter, $context);
         $document = $converter->parse("{sku=\"AVAILABLE\"}\n::: product-card\n:::\n\n::: product-grid\nAVAILABLE, UNAVAILABLE\n:::");
         $commerce->prepare($document, $context);
@@ -139,7 +139,7 @@ class CarveCommerceTest extends TestCase
             $context->getContext(),
         ));
         $commerce = $this->commerce($repository);
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $commerce->register($converter, $context);
         $document = $converter->parse("{sku=\"SKU\"}\n::: product-card\n:::");
         $commerce->prepare($document, $context);
@@ -153,7 +153,7 @@ class CarveCommerceTest extends TestCase
         $tags = $this->createMock(EventDispatcherInterface::class);
         $tags->expects(self::never())->method('dispatch');
         $commerce = $this->commerce($repository, tags: $tags);
-        $commerce->prepare((new CarveConverter())->parse('Ordinary prose.'), $this->context());
+        $commerce->prepare((new CarveSetup())->parse('Ordinary prose.'), $this->context());
     }
 
     /**

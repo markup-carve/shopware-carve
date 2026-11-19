@@ -7,7 +7,8 @@ namespace MarkupCarve\Shopware\Command;
 use League\Flysystem\Filesystem;
 use League\Flysystem\FilesystemException;
 use League\Flysystem\Local\LocalFilesystemAdapter;
-use MarkupCarve\Carve\CarveConverter;
+use MarkupCarve\Carve\Carve;
+use MarkupCarve\Carve\Writer\CarveWriteError;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -54,7 +55,14 @@ class CarveFormatCommand extends Command
 
                 continue;
             }
-            $formatted = CarveConverter::toCarve($source, (bool)$input->getOption('align-tables'));
+            try {
+                $formatted = Carve::format($source, ['alignTables' => (bool)$input->getOption('align-tables')]);
+            } catch (CarveWriteError $exception) {
+                $failed = true;
+                $output->writeln(sprintf('<error>%s cannot be formatted without a loss: %s</error>', $path, $exception->getMessage()));
+
+                continue;
+            }
             if ($check) {
                 if ($formatted !== $source) {
                     $unformatted++;
