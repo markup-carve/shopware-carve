@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Service\CarveCommerce;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\SalesChannel\Review\AbstractProductReviewLoader;
 use Shopware\Core\Content\Product\SalesChannel\Review\ProductReviewResult;
@@ -73,7 +73,7 @@ class CarveReviewAggregateTest extends TestCase
             $loader,
             $config,
         );
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $commerce->register($converter, $context);
         $document = $converter->parse(':rating[SKU] :reviews-summary[SKU]');
         $commerce->prepare($document, $context);
@@ -116,7 +116,7 @@ class CarveReviewAggregateTest extends TestCase
             $loader,
             $config,
         );
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $commerce->register($converter, $context);
         $document = $converter->parse(':rating[SKU]');
         $commerce->prepare($document, $context);

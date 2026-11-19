@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Service\CarvePresentation;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 
 class CarvePresentationTest extends TestCase
 {
     public function testBadgeVariantAndTextAreBounded(): void
     {
-        $converter = new CarveConverter(safeMode: true);
+        $converter = new CarveSetup();
         (new CarvePresentation())->register($converter);
 
-        $html = $converter->convert(':badge[Sale|danger] :badge[<script>alert(1)</script>|evil]');
+        $html = $converter->render(':badge[Sale|danger] :badge[<script>alert(1)</script>|evil]');
 
         self::assertStringContainsString('<span class="carve-badge carve-badge--danger">Sale</span>', $html);
         self::assertStringContainsString('class="carve-badge carve-badge--info"', $html);
@@ -25,9 +25,9 @@ class CarvePresentationTest extends TestCase
 
     public function testOtherInlineExtensionsKeepTheirRenderer(): void
     {
-        $converter = new CarveConverter(safeMode: true);
+        $converter = new CarveSetup();
         (new CarvePresentation())->register($converter);
 
-        self::assertStringContainsString('ext-other', $converter->convert(':other[Text]'));
+        self::assertStringContainsString('ext-other', $converter->render(':other[Text]'));
     }
 }

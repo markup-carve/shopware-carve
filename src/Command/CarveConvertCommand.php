@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Command;
 
-use MarkupCarve\Carve\Converter\HtmlToCarve;
-use MarkupCarve\Carve\Converter\MarkdownToCarve;
-use MarkupCarve\Carve\Converter\MigrationResult;
+use MarkupCarve\Shopware\Service\CarveImport;
 use MarkupCarve\Shopware\Service\CarveStoredSources;
+use RuntimeException;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -63,7 +62,6 @@ class CarveConvertCommand extends Command
         $acceptLosses = (bool)$input->getOption('accept-losses');
         $context = Context::createCLIContext();
         $counts = ['converted' => 0, 'existing' => 0, 'lossy' => 0];
-        $importer = new HtmlToCarve();
 
         foreach ($this->sources->descriptions($entities) as ['source' => $target, 'carve' => $existing]) {
             if ($existing !== null && trim($existing) !== '' && !$overwrite) {
@@ -72,15 +70,15 @@ class CarveConvertCommand extends Command
 
                 continue;
             }
-            $result = $importer->convertWithFidelityReport($target->source);
-            $lossy = $this->report($target->label(), $result, $output);
+            $result = CarveImport::convert('html', $target->source);
+            $lossy = $this->report($target->label(), $result['diagnostics'], $output);
             if ($lossy && !$acceptLosses) {
                 $counts['lossy']++;
 
                 continue;
             }
             if ($write) {
-                $this->sources->write($target, $result->value, $context);
+                $this->sources->write($target, $result['source'], $context);
             }
             $counts['converted']++;
         }
@@ -99,11 +97,15 @@ class CarveConvertCommand extends Command
 
     /**
      * Prints the diagnostics and says whether any of them loses content.
+     *
+     * @param string $label
+     * @param array<\MarkupCarve\Carve\Diagnostics\Diagnostic> $diagnostics
+     * @param \Symfony\Component\Console\Output\OutputInterface $output
      */
-    private function report(string $label, MigrationResult $result, OutputInterface $output): bool
+    private function report(string $label, array $diagnostics, OutputInterface $output): bool
     {
         $lossy = false;
-        foreach ($result->diagnostics as $diagnostic) {
+        foreach ($diagnostics as $diagnostic) {
             $lossy = $lossy || $diagnostic->severity === 'warning' || $diagnostic->severity === 'error';
             $output->writeln(
                 sprintf('%s: %s %s: %s', $label, $diagnostic->severity, $diagnostic->code, $diagnostic->message),
@@ -127,18 +129,20 @@ class CarveConvertCommand extends Command
 
             return Command::FAILURE;
         }
-        $result = match ($from) {
-            'markdown' => (new MarkdownToCarve())->convertWithFidelityReport($source),
-            'html' => (new HtmlToCarve())->convertWithFidelityReport($source),
-            default => null,
-        };
-        if ($result === null) {
+        if (!in_array($from, ['markdown', 'html'], true)) {
             $output->writeln('<error>Cannot tell the input format. Pass --from=markdown or --from=html.</error>');
 
             return Command::FAILURE;
         }
-        $output->write($result->value, false, OutputInterface::OUTPUT_RAW);
-        $this->report($path, $result, $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output);
+        try {
+            $result = CarveImport::convert($from, $source);
+        } catch (RuntimeException $exception) {
+            $output->writeln('<error>' . $exception->getMessage() . '</error>');
+
+            return Command::FAILURE;
+        }
+        $output->write($result['source'], false, OutputInterface::OUTPUT_RAW);
+        $this->report($path, $result['diagnostics'], $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output);
 
         return Command::SUCCESS;
     }

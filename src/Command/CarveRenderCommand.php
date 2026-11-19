@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Command;
 
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Transform\FilesystemIncludeResolver;
-use MarkupCarve\Carve\Transform\IncludeExpander;
+use MarkupCarve\Carve\Carve;
+use MarkupCarve\Carve\Include\FileResolver;
+use MarkupCarve\Shopware\Service\CarveRenderer;
+use MarkupCarve\Shopware\Service\CarveWriterUnavailable;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -43,37 +44,42 @@ class CarveRenderCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $src = $this->readSource($input);
+        $errors = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
 
-        $converter = match (true) {
-            (bool)$input->getOption('md') => CarveConverter::markdown(),
-            (bool)$input->getOption('plain') => CarveConverter::plainText(),
-            (bool)$input->getOption('term') => CarveConverter::ansi(),
-            default => new CarveConverter(safeMode: true),
+        $target = match (true) {
+            (bool)$input->getOption('md') => 'markdown',
+            (bool)$input->getOption('plain') => 'text',
+            (bool)$input->getOption('term') => 'ansi',
+            default => 'html',
         };
+        if ($target !== 'html') {
+            try {
+                $output->write(CarveRenderer::write($target, $src));
+            } catch (CarveWriterUnavailable $exception) {
+                $errors->writeln('<error>' . $exception->getMessage() . '</error>');
 
-        $resolver = $this->buildResolver($input);
-        if ($resolver === null) {
-            $output->write($converter->convert($src));
+                return Command::FAILURE;
+            }
 
             return Command::SUCCESS;
         }
 
-        $expander = new IncludeExpander(
-            resolver: $resolver,
-            // A relative directive resolves against the document's own
-            // directory, not the root, so a widened root still reads a sibling
-            // the way the author wrote it.
-            currentPath: $this->sourcePath($input),
-            source: $src,
-            extensions: $converter->getExtensions(),
-        );
-        $output->write($converter->render($converter->transform($converter->parse($src), $expander)));
+        $includes = $this->buildIncludes($input);
+        if ($includes === null) {
+            $output->write(Carve::render($src));
+
+            return Command::SUCCESS;
+        }
+
+        $result = Carve::renderWithDiagnostics($src, ['includes' => $includes]);
+        $output->write($result->html);
 
         // A refused directive renders as the literal text it is, which reads
         // like prose somebody typed, so silence would hide a real error.
-        $errors = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
-        foreach ($expander->getWarnings() as $warning) {
-            $errors->writeln($warning->getRule() . ': ' . $warning->getMessage());
+        foreach ($result->diagnostics as $diagnostic) {
+            if (str_starts_with($diagnostic->code, 'include-')) {
+                $errors->writeln($diagnostic->code . ': ' . $diagnostic->message);
+            }
         }
 
         return Command::SUCCESS;
@@ -81,26 +87,36 @@ class CarveRenderCommand extends Command
 
     /**
      * The flag is a path somebody typed on a command line, so it is expanded
-     * against the working directory here, before the resolver sees it. The
-     * resolver's own rule is about a CONFIGURED root, which is not this.
+     * against the working directory here, before the resolver sees it. A
+     * relative directive resolves against the document's own directory, not
+     * the root, so a widened root still reads a sibling the way the author
+     * wrote it.
+     *
+     * @return array{resolver: \MarkupCarve\Carve\Include\IncludeResolver, file?: string}|null
      */
-    private function buildResolver(InputInterface $input): ?FilesystemIncludeResolver
+    private function buildIncludes(InputInterface $input): ?array
     {
+        $source = $this->sourcePath($input);
         $flag = $input->getOption('include-root');
         if (is_string($flag) && $flag !== '') {
             $expanded = realpath($flag);
-
-            return new FilesystemIncludeResolver($expanded === false ? $flag : $expanded);
-        }
-
-        $source = $this->sourcePath($input);
-        if ($source === null) {
+            $root = $expanded === false ? $flag : $expanded;
+        } elseif ($source !== null) {
+            $root = realpath(dirname($source));
+            if ($root === false) {
+                return null;
+            }
+        } else {
             return null;
         }
 
-        $directory = realpath(dirname($source));
+        $includes = ['resolver' => FileResolver::forRoot($root)];
+        $prefix = rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if ($source !== null && str_starts_with($source, $prefix)) {
+            $includes['file'] = str_replace(DIRECTORY_SEPARATOR, '/', substr($source, strlen($prefix)));
+        }
 
-        return $directory === false ? null : new FilesystemIncludeResolver($directory);
+        return $includes;
     }
 
     /**

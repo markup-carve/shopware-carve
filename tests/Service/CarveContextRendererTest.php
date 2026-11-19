@@ -28,7 +28,8 @@ class CarveContextRendererTest extends TestCase
         $request->attributes->set('_routeScope', ['storefront']);
         $seo = $this->createMock(SeoUrlPlaceholderHandlerInterface::class);
         $seo->expects(self::never())->method('replace');
-        self::assertSame("<p>Source</p>\n", $this->renderer($seo, $request)->toHtml('Source', $this->context()));
+        // 0.2 (C2-H-001): the HTML fragment ends without a line feed after the last block.
+        self::assertSame('<p>Source</p>', $this->renderer($seo, $request)->toHtml('Source', $this->context()));
     }
 
     public function testApiUsesMatchingConfiguredDomainForRequestedStorefrontUrl(): void
@@ -37,7 +38,8 @@ class CarveContextRendererTest extends TestCase
         $request->headers->set('sw-storefront-url', 'https://shop.example/de');
         $context = $this->context();
         $seo = $this->createMock(SeoUrlPlaceholderHandlerInterface::class);
-        $seo->expects(self::once())->method('replace')->with("<p>Source</p>\n", 'https://shop.example/de', $context)->willReturn('Resolved');
+        // 0.2 (C2-H-001): the HTML fragment ends without a line feed after the last block.
+        $seo->expects(self::once())->method('replace')->with('<p>Source</p>', 'https://shop.example/de', $context)->willReturn('Resolved');
         self::assertSame('Resolved', $this->renderer($seo, $request)->toHtml('Source', $context));
     }
 
@@ -47,7 +49,8 @@ class CarveContextRendererTest extends TestCase
         $request->headers->set('sw-storefront-url', 'https://attacker.example/');
         $context = $this->context();
         $seo = $this->createMock(SeoUrlPlaceholderHandlerInterface::class);
-        $seo->expects(self::once())->method('replace')->with("<p>Source</p>\n", 'http://shop.example/de', $context)->willReturn('Resolved');
+        // 0.2 (C2-H-001): the HTML fragment ends without a line feed after the last block.
+        $seo->expects(self::once())->method('replace')->with('<p>Source</p>', 'http://shop.example/de', $context)->willReturn('Resolved');
         self::assertSame('Resolved', $this->renderer($seo, $request)->toHtml('Source', $context));
     }
 

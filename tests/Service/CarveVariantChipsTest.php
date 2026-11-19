@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Service\CarveCommerce;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductCollection;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
@@ -60,7 +60,7 @@ class CarveVariantChipsTest extends TestCase
             new Environment(new ArrayLoader()),
             $this->createStub(EventDispatcherInterface::class),
         );
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $commerce->register($converter, $context);
         $document = $converter->parse(':variants[BLUE] :variants[PLAIN]');
         $commerce->prepare($document, $context);

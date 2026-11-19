@@ -5,12 +5,6 @@ declare(strict_types=1);
 namespace MarkupCarve\Shopware\Service;
 
 use InvalidArgumentException;
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Event\RenderEvent;
-use MarkupCarve\Carve\Node\Document;
-use MarkupCarve\Carve\Node\Inline\InlineExtension;
-use MarkupCarve\Carve\Node\Node;
-use MarkupCarve\Carve\Renderer\PlainTextRenderer;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
@@ -55,99 +49,97 @@ class CarveResources
     ) {
     }
 
-    public function register(CarveConverter $converter, SalesChannelContext $context): void
+    public function register(CarveSetup $setup, SalesChannelContext $context): void
     {
-        $converter->on('render.inline_extension', function (RenderEvent $event) use ($context): void {
-            $node = $event->getNode();
-            if (!$node instanceof InlineExtension || !in_array($node->getExtensionType(), ['media', 'category', 'manufacturer', 'legal', 'config', 'asset', 'icon'], true)) {
-                return;
-            }
-            $this->cacheTags->dispatch(new AddCacheTagEvent('carve-resources'));
-            $type = $node->getExtensionType();
-            $argument = $this->argument($node);
-            $html = $this->escape($argument);
-            if ($type === 'icon' && $this->twig !== null && preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $argument) === 1) {
-                try {
-                    $html = $this->twig->render('@ShopwareCarve/storefront/utilities/carve-icon.html.twig', ['name' => $argument]);
-                } catch (TwigError) {
-                    // Preview and core-only contexts may not have the Storefront icon tag.
-                }
-            }
-            if ($type === 'config' && $argument === 'core.shopName') {
-                $name = $this->config->get('core.basicInformation.shopName', $context->getSalesChannelId());
-                if (is_string($name) && $name !== '') {
-                    $html = $this->escape($name);
-                }
-            }
-            if ($type === 'asset' && $this->assets !== null && self::safeAssetPath($argument)) {
-                try {
-                    $html = $this->escape($this->assets->getUrl($argument, '@ShopwareCarve'));
-                } catch (InvalidArgumentException) {
-                    // Core-only contexts may not have the plugin asset package.
-                }
-            }
-            if ($type === 'media' && Uuid::isValid($argument)) {
-                $criteria = new Criteria([$argument]);
-                $criteria->addAssociation('thumbnails');
-                $media = $this->mediaRepository->search($criteria, $context->getContext())->getEntities()->first();
-                if ($media !== null && !$media->isPrivate() && str_starts_with($media->getMimeType() ?? '', 'image/')) {
-                    $html = $this->image($media, $node->getAttribute('alt'));
-                }
-            }
-            if ($type === 'manufacturer' && Uuid::isValid($argument)) {
-                $manufacturer = $this->manufacturers->search(new Criteria([$argument]), $context->getContext())->getEntities()->first();
-                if ($manufacturer !== null) {
-                    // Core has no manufacturer detail route. Link to storefront search by brand name.
-                    $name = (string)($manufacturer->getTranslation('name') ?? $manufacturer->getName());
-                    $html = $this->link($this->seo->generate('frontend.search.page', ['search' => $name]), $name);
-                }
-            }
-            if ($type === 'legal') {
-                $setting = match ($argument) {
-                    'privacy' => 'privacyPage', 'tos' => 'tosPage', 'imprint' => 'imprintPage',
-                    'withdrawal' => 'revocationPage', default => null,
-                };
-                // These settings hold CMS layout ids, which core opens through its widget route.
-                $pageId = $setting === null ? null : $this->config->get('core.basicInformation.' . $setting, $context->getSalesChannelId());
-                $page = is_string($pageId) && Uuid::isValid($pageId)
-                    ? $this->cmsPages->search(new Criteria([$pageId]), $context->getContext())->getEntities()->first()
-                    : null;
-                if ($page !== null) {
-                    $url = $this->escape($this->seo->generate('frontend.cms.page', ['id' => $pageId]));
-                    $name = (string)($page->getTranslation('name') ?? $page->getName() ?? $argument);
-                    $html = '<a href="' . $url . '" data-ajax-modal="true" data-url="' . $url . '">' . $this->escape($name) . '</a>';
-                }
-            }
-            $categoryId = $argument;
-            if ($type === 'category' && Uuid::isValid($categoryId)) {
-                $criteria = new Criteria([$categoryId]);
-                $criteria->addFilter(new EqualsFilter('active', true));
-                $criteria->addFilter(new EqualsFilter('type', CategoryDefinition::TYPE_PAGE));
-                $roots = array_filter([
-                    $context->getSalesChannel()->getNavigationCategoryId(),
-                    $context->getSalesChannel()->getFooterCategoryId(), $context->getSalesChannel()->getServiceCategoryId(),
-                ]);
-                $allowed = [];
-                foreach ($roots as $root) {
-                    $allowed[] = new EqualsFilter('id', $root);
-                    $allowed[] = new ContainsFilter('path', '|' . $root . '|');
-                }
-                if ($allowed === []) {
-                    $event->setHtml($html);
+        foreach (['media', 'category', 'manufacturer', 'legal', 'config', 'asset', 'icon'] as $type) {
+            $setup->on('inline', $type, fn (CarveHookCall $call): string => $this->resource($call, $type, $context));
+        }
+    }
 
-                    return;
-                }
-                $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, $allowed));
-                $category = $this->categories->search($criteria, $context)->getEntities()->first();
-                if ($category !== null) {
-                    $html = $this->link(
-                        $this->seo->generate('frontend.navigation.page', ['navigationId' => $categoryId]),
-                        (string)($category->getTranslation('name') ?? $category->getName() ?? $argument),
-                    );
-                }
+    private function resource(CarveHookCall $call, string $type, SalesChannelContext $context): string
+    {
+        $this->cacheTags->dispatch(new AddCacheTagEvent('carve-resources'));
+        $argument = $call->argument();
+        $html = $this->escape($argument);
+        if ($type === 'icon' && $this->twig !== null && preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $argument) === 1) {
+            try {
+                $html = $this->twig->render('@ShopwareCarve/storefront/utilities/carve-icon.html.twig', ['name' => $argument]);
+            } catch (TwigError) {
+                // Preview and core-only contexts may not have the Storefront icon tag.
             }
-            $event->setHtml($html);
-        });
+        }
+        if ($type === 'config' && $argument === 'core.shopName') {
+            $name = $this->config->get('core.basicInformation.shopName', $context->getSalesChannelId());
+            if (is_string($name) && $name !== '') {
+                $html = $this->escape($name);
+            }
+        }
+        if ($type === 'asset' && $this->assets !== null && self::safeAssetPath($argument)) {
+            try {
+                $html = $this->escape($this->assets->getUrl($argument, '@ShopwareCarve'));
+            } catch (InvalidArgumentException) {
+                // Core-only contexts may not have the plugin asset package.
+            }
+        }
+        if ($type === 'media' && Uuid::isValid($argument)) {
+            $criteria = new Criteria([$argument]);
+            $criteria->addAssociation('thumbnails');
+            $media = $this->mediaRepository->search($criteria, $context->getContext())->getEntities()->first();
+            if ($media !== null && !$media->isPrivate() && str_starts_with($media->getMimeType() ?? '', 'image/')) {
+                $html = $this->image($media, $call->attribute('alt'));
+            }
+        }
+        if ($type === 'manufacturer' && Uuid::isValid($argument)) {
+            $manufacturer = $this->manufacturers->search(new Criteria([$argument]), $context->getContext())->getEntities()->first();
+            if ($manufacturer !== null) {
+                // Core has no manufacturer detail route. Link to storefront search by brand name.
+                $name = (string)($manufacturer->getTranslation('name') ?? $manufacturer->getName());
+                $html = $this->link($this->seo->generate('frontend.search.page', ['search' => $name]), $name);
+            }
+        }
+        if ($type === 'legal') {
+            $setting = match ($argument) {
+                'privacy' => 'privacyPage', 'tos' => 'tosPage', 'imprint' => 'imprintPage',
+                'withdrawal' => 'revocationPage', default => null,
+            };
+            // These settings hold CMS layout ids, which core opens through its widget route.
+            $pageId = $setting === null ? null : $this->config->get('core.basicInformation.' . $setting, $context->getSalesChannelId());
+            $page = is_string($pageId) && Uuid::isValid($pageId)
+                ? $this->cmsPages->search(new Criteria([$pageId]), $context->getContext())->getEntities()->first()
+                : null;
+            if ($page !== null) {
+                $url = $this->escape($this->seo->generate('frontend.cms.page', ['id' => $pageId]));
+                $name = (string)($page->getTranslation('name') ?? $page->getName() ?? $argument);
+                $html = '<a href="' . $url . '" data-ajax-modal="true" data-url="' . $url . '">' . $this->escape($name) . '</a>';
+            }
+        }
+        $categoryId = $argument;
+        if ($type === 'category' && Uuid::isValid($categoryId)) {
+            $criteria = new Criteria([$categoryId]);
+            $criteria->addFilter(new EqualsFilter('active', true));
+            $criteria->addFilter(new EqualsFilter('type', CategoryDefinition::TYPE_PAGE));
+            $roots = array_filter([
+                $context->getSalesChannel()->getNavigationCategoryId(),
+                $context->getSalesChannel()->getFooterCategoryId(), $context->getSalesChannel()->getServiceCategoryId(),
+            ]);
+            $allowed = [];
+            foreach ($roots as $root) {
+                $allowed[] = new EqualsFilter('id', $root);
+                $allowed[] = new ContainsFilter('path', '|' . $root . '|');
+            }
+            if ($allowed === []) {
+                return $html;
+            }
+            $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, $allowed));
+            $category = $this->categories->search($criteria, $context)->getEntities()->first();
+            if ($category !== null) {
+                $html = $this->link(
+                    $this->seo->generate('frontend.navigation.page', ['navigationId' => $categoryId]),
+                    (string)($category->getTranslation('name') ?? $category->getName() ?? $argument),
+                );
+            }
+        }
+        return $html;
     }
 
     private function image(MediaEntity $media, ?string $alt): string
@@ -186,16 +178,6 @@ class CarveResources
         }
 
         return true;
-    }
-
-    private function argument(Node $node): string
-    {
-        $document = new Document();
-        foreach ($node->getChildren() as $child) {
-            $document->appendChild(clone $child);
-        }
-
-        return trim((new PlainTextRenderer())->render($document));
     }
 
     private function link(string $url, string $name): string

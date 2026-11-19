@@ -6,90 +6,48 @@ namespace MarkupCarve\Shopware\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Event\RenderEvent;
-use MarkupCarve\Carve\Node\Block\Div;
-use MarkupCarve\Carve\Node\Inline\InlineExtension;
 
 class CarvePresentation
 {
-    public function register(CarveConverter $converter): void
+    public function register(CarveSetup $setup): void
     {
-        $converter->on('render.inline_extension', static function (RenderEvent $event): void {
-            $node = $event->getNode();
-            if (!$node instanceof InlineExtension) {
-                return;
-            }
-
-            $value = trim(html_entity_decode(strip_tags((string)$event->getChildrenHtml()), ENT_QUOTES, 'UTF-8'));
-            $type = $node->getExtensionType();
-            if ($type === 'rating-stars') {
+        $inline = [
+            'rating-stars' => static function (string $value): string {
                 $rating = self::boundedNumber($value, 5);
-                $event->setHtml($rating === null ? self::escape($value) : self::ratingStars($rating));
 
-                return;
-            }
-            if ($type === 'progress') {
+                return $rating === null ? self::escape($value) : self::ratingStars($rating);
+            },
+            'progress' => static function (string $value): string {
                 $progress = self::boundedNumber($value, 100);
-                $event->setHtml($progress === null ? self::escape($value) : self::progress($progress));
 
-                return;
-            }
-            if ($type === 'color') {
-                $event->setHtml(self::color($value));
-
-                return;
-            }
-            if ($type === 'unit') {
-                $event->setHtml(self::unit($value));
-
-                return;
-            }
-            if ($type === 'coupon') {
-                $event->setHtml(self::coupon($value));
-
-                return;
-            }
-            if ($type === 'countdown') {
-                $event->setHtml(self::countdown($value));
-
-                return;
-            }
-            if ($type === 'video') {
-                $event->setHtml(self::video($value));
-
-                return;
-            }
-            if ($type !== 'badge') {
-                return;
-            }
-
-            [$label, $inlineVariant] = array_pad(explode('|', $value, 2), 2, '');
-            $variant = $node->getAttribute('variant') ?: $inlineVariant;
+                return $progress === null ? self::escape($value) : self::progress($progress);
+            },
+            'color' => self::color(...),
+            'unit' => self::unit(...),
+            'coupon' => self::coupon(...),
+            'countdown' => self::countdown(...),
+            'video' => self::video(...),
+        ];
+        foreach ($inline as $name => $render) {
+            $setup->on('inline', $name, static fn (CarveHookCall $call): string => $render($call->argument()));
+        }
+        $setup->on('inline', 'badge', static function (CarveHookCall $call): string {
+            [$label, $inlineVariant] = array_pad(explode('|', $call->argument(), 2), 2, '');
+            $variant = $call->attribute('variant') ?: $inlineVariant;
             if (!in_array($variant, ['info', 'success', 'warning', 'danger'], true)) {
                 $variant = 'info';
             }
 
-            $event->setHtml('<span class="carve-badge carve-badge--' . $variant . '">'
-                . self::escape(trim($label)) . '</span>');
+            return '<span class="carve-badge carve-badge--' . $variant . '">' . self::escape(trim($label)) . '</span>';
         });
-        $converter->on('render.div', static function (RenderEvent $event): void {
-            $node = $event->getNode();
-            if (!$node instanceof Div) {
-                return;
-            }
-            $kind = $node->hasClass('faq') ? 'faq' : ($node->hasClass('accordion') ? 'accordion' : null);
-            if ($kind === null) {
-                return;
-            }
-            $summary = trim($node->getHeader() ?? '');
-            if ($summary === '') {
-                $summary = $kind === 'faq' ? 'Question' : 'Details';
-            }
+        foreach (['faq' => 'Question', 'accordion' => 'Details'] as $kind => $default) {
+            $setup->on('div', $kind, static function (CarveHookCall $call) use ($kind, $default): string {
+                $summary = $call->title();
 
-            $event->setHtml('<details class="carve-' . $kind . '"><summary>' . self::escape($summary)
-                . '</summary>' . $event->getChildrenHtml() . '</details>');
-        });
+                return '<details class="carve-' . $kind . '"><summary>' . self::escape($summary !== '' ? $summary : $default)
+                    . '</summary>' . $call->childrenHtml() . '</details>';
+            });
+        }
     }
 
     private static function boundedNumber(string $value, int $maximum): ?float

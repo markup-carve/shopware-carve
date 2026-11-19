@@ -4,33 +4,17 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Service;
 
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Event\RenderEvent;
-use MarkupCarve\Carve\Node\Block\CodeBlock;
-use MarkupCarve\Carve\Node\Inline\InlineExtension;
 
 class CarveLocalData
 {
-    public function register(CarveConverter $converter): void
+    public function register(CarveSetup $setup): void
     {
-        $converter->on('render.inline_extension', static function (RenderEvent $event): void {
-            $node = $event->getNode();
-            if (!$node instanceof InlineExtension || $node->getExtensionType() !== 'spark') {
-                return;
-            }
-            $source = trim(html_entity_decode(strip_tags((string)$event->getChildrenHtml()), ENT_QUOTES, 'UTF-8'));
-            $event->setHtml(self::spark($source) ?? self::escape($source));
+        $setup->on('inline', 'spark', static function (CarveHookCall $call): string {
+            $source = $call->argument();
+
+            return self::spark($source) ?? self::escape($source);
         });
-        $converter->on('render.code_block', static function (RenderEvent $event): void {
-            $node = $event->getNode();
-            if (!$node instanceof CodeBlock || $node->getLanguage() !== 'csv') {
-                return;
-            }
-            $table = self::csvTable($node->getContent());
-            if ($table !== null) {
-                $event->setHtml($table);
-            }
-        });
+        $setup->on('fence', 'csv', static fn (CarveHookCall $call): ?string => self::csvTable($call->source['body'] ?? ''));
     }
 
     private static function spark(string $source): ?string

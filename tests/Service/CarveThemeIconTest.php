@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Service\CarveResources;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -36,9 +36,9 @@ class CarveThemeIconTest extends TestCase
             null,
             $twig,
         );
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $resources->register($converter, $this->createStub(SalesChannelContext::class));
-        $html = $converter->convert(':icon[truck] :icon[../secret]');
+        $html = $converter->render(':icon[truck] :icon[../secret]');
 
         self::assertStringContainsString('<span class="carve-icon">icon</span>', $html);
         self::assertStringContainsString('../secret', $html);
@@ -59,9 +59,9 @@ class CarveThemeIconTest extends TestCase
             null,
             $twig,
         );
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $resources->register($converter, $this->createStub(SalesChannelContext::class));
 
-        self::assertStringContainsString('truck', $converter->convert(':icon[truck]'));
+        self::assertStringContainsString('truck', $converter->render(':icon[truck]'));
     }
 }

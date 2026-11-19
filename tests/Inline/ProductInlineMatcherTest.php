@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Inline;
 
-use MarkupCarve\Carve\CarveConverter;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use MarkupCarve\Shopware\Inline\ProductInlineMatcher;
 use PHPUnit\Framework\TestCase;
 
@@ -12,10 +12,10 @@ class ProductInlineMatcherTest extends TestCase
 {
     private function convert(string $src, callable $lookup): string
     {
-        $converter = new CarveConverter(safeMode: true);
+        $converter = new CarveSetup();
         (new ProductInlineMatcher($lookup))->register($converter);
 
-        return $converter->convert($src);
+        return $converter->render($src);
     }
 
     public function testKnownSkuRendersLink(): void

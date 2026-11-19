@@ -4,20 +4,6 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Service;
 
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Extension\AdmonitionExtension;
-use MarkupCarve\Carve\Extension\AutolinkExtension;
-use MarkupCarve\Carve\Extension\CodeGroupExtension;
-use MarkupCarve\Carve\Extension\DetailsExtension;
-use MarkupCarve\Carve\Extension\ExternalLinksExtension;
-use MarkupCarve\Carve\Extension\FencedRenderExtension;
-use MarkupCarve\Carve\Extension\InlineFootnotesExtension;
-use MarkupCarve\Carve\Extension\ListTableExtension;
-use MarkupCarve\Carve\Extension\SmartQuotesExtension;
-use MarkupCarve\Carve\Extension\SpoilerExtension;
-use MarkupCarve\Carve\Extension\TableOfContentsExtension;
-use MarkupCarve\Carve\Extension\TabsExtension;
-use MarkupCarve\Carve\Profile;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class CarveConverterFactory
@@ -41,53 +27,40 @@ class CarveConverterFactory
         return hash('sha256', serialize($values));
     }
 
-    public function create(?string $salesChannelId = null, ?string $locale = null, bool $ugc = false): CarveConverter
+    public function create(?string $salesChannelId = null, ?string $locale = null, bool $ugc = false): CarveSetup
     {
-        $converter = new CarveConverter(
-            safeMode: $ugc || !$this->bool('allowRawHtml', $salesChannelId),
-            symbols: $ugc ? [] : $this->symbols($salesChannelId),
-        );
-        $converter->addExtensions([
-            new AdmonitionExtension(), new CodeGroupExtension(), new DetailsExtension(),
-            new SpoilerExtension(), new TabsExtension(), new ListTableExtension(),
-            new InlineFootnotesExtension(), new AutolinkExtension(),
-            new ExternalLinksExtension(
-                rel: $this->bool('externalLinksNofollow', $salesChannelId, true) ? 'nofollow noopener' : 'noopener',
-                target: $this->bool('externalLinksNewTab', $salesChannelId, true) ? '_blank' : '',
-            ),
-            new TableOfContentsExtension(),
+        $profile = $ugc ? 'comment' : $this->get('profile', $salesChannelId);
+        $setup = new CarveSetup([
+            'rawHtml' => !$ugc && $this->bool('allowRawHtml', $salesChannelId),
+            'symbols' => $ugc ? [] : $this->symbols($salesChannelId),
+            'profile' => in_array($profile, ['full', 'article', 'comment', 'minimal'], true) ? $profile : 'full',
         ]);
+        $extensions = new CarveHostExtensions();
+        $extensions->register($setup);
+        $extensions->externalLinks(
+            $setup,
+            $this->bool('externalLinksNofollow', $salesChannelId, true) ? 'nofollow noopener' : 'noopener',
+            $this->bool('externalLinksNewTab', $salesChannelId, true) ? '_blank' : '',
+        );
         if ($this->bool('smartQuotes', $salesChannelId)) {
             $configured = $this->get('smartQuotesLocale', $salesChannelId);
             $effective = is_string($configured) && $configured !== '' ? $configured : 'en';
             if ($effective === 'auto') {
                 $effective = $locale === 'de-CH' ? 'de-CH' : explode('-', $locale ?? 'en')[0];
             }
-            $converter->addExtension(new SmartQuotesExtension(locale: $effective));
+            $extensions->smartQuotes($setup, $effective);
         }
         if (!$ugc) {
-            (new CarvePresentation())->register($converter);
-            (new CarveLocalData())->register($converter);
-            foreach (['enableMermaid' => 'mermaid', 'enableCharts' => 'chart', 'enablePlantuml' => 'plantuml'] as $key => $language) {
-                if (!$this->bool($key, $salesChannelId)) {
-                    continue;
+            (new CarvePresentation())->register($setup);
+            (new CarveLocalData())->register($setup);
+            foreach (['enableMermaid' => 'mermaid', 'enableCharts' => 'chart', 'enablePlantuml' => 'plantuml'] as $key => $kind) {
+                if ($this->bool($key, $salesChannelId)) {
+                    $extensions->fenced($setup, $kind);
                 }
-                $converter->addExtension(match ($language) {
-                    'mermaid' => FencedRenderExtension::mermaid(),
-                    'chart' => FencedRenderExtension::chart(),
-                    default => new FencedRenderExtension(language: ['plantuml', 'puml'], cssClass: 'plantuml'),
-                });
             }
         }
-        $profile = $ugc ? Profile::comment() : match ($this->get('profile', $salesChannelId)) {
-            'article' => Profile::article(), 'comment' => Profile::comment(),
-            'minimal' => Profile::minimal(), 'full' => Profile::full(), default => null,
-        };
-        if ($profile !== null) {
-            $converter->setProfile($profile);
-        }
 
-        return $converter;
+        return $setup;
     }
 
     public function get(string $name, ?string $salesChannelId = null): mixed
