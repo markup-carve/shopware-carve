@@ -29,8 +29,8 @@ for env in prod dev; do
     # run against the prod container under a dev name.
     debug=0
     [ "${env}" = 'dev' ] && debug=1
-    # Without opcache for the reason commands-smoke.sh gives.
-    APP_ENV="${env}" APP_DEBUG="${debug}" php -d opcache.enable_cli=0 -S "${host}:${port}" -t public public/index.php \
+    # Without the JIT for the reason commands-smoke.sh gives.
+    APP_ENV="${env}" APP_DEBUG="${debug}" php -d opcache.jit=disable -S "${host}:${port}" -t public public/index.php \
         >"/tmp/server-${env}.log" 2>&1 &
     server=$!
     trap 'kill "${server}" 2>/dev/null || true' EXIT
