@@ -34,7 +34,17 @@ request() {
 
 APP_ENV=prod APP_DEBUG=0 php -S "${host}:${port}" -t public public/index.php >/tmp/server-commands.log 2>&1 &
 server=$!
-trap 'kill "${server}" 2>/dev/null || true' EXIT
+# 139 here means the server segfaulted.
+reap() {
+    if kill -0 "${server}" 2>/dev/null; then
+        kill "${server}" 2>/dev/null || true
+        return
+    fi
+    local status=0
+    wait "${server}" 2>/dev/null || status=$?
+    echo "php -S had exited with status ${status}" >&2
+}
+trap reap EXIT
 for _ in $(seq 1 60); do
     code="$(curl -s -o /dev/null -w '%{http_code}' "${base}/api/_info/version" || true)"
     [ "${code}" = '401' ] || [ "${code}" = '200' ] && break
