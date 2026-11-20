@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bc9554ac29190bbbf6eaa0e6230c6c84",
+    "content-hash": "07561be96a54cea865b560aff69b2c9f",
     "packages": [
         {
             "name": "brick/math",
@@ -3650,12 +3650,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/markup-carve/carve-php.git",
-                "reference": "fd4a883ce2d543f6ab555bb08322bc7c616ecb17"
+                "reference": "0f547121adf666fda67828ab37a6d9e2fd70d418"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/fd4a883ce2d543f6ab555bb08322bc7c616ecb17",
-                "reference": "fd4a883ce2d543f6ab555bb08322bc7c616ecb17",
+                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/0f547121adf666fda67828ab37a6d9e2fd70d418",
+                "reference": "0f547121adf666fda67828ab37a6d9e2fd70d418",
                 "shasum": ""
             },
             "require": {
