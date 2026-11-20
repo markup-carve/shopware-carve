@@ -14,7 +14,7 @@ use RuntimeException;
 final class CarveImport
 {
     /**
-     * @var array
+     * @var array<string>
      */
     private const FORMATS = ['html', 'markdown', 'gfm', 'djot'];
 
