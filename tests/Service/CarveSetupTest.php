@@ -105,9 +105,9 @@ class CarveSetupTest extends TestCase
             self::markTestSkipped('carve-php registers the text writer now.');
         }
         $this->expectException(CarveWriterUnavailable::class);
-        $this->expectExceptionMessage('The Carve "text" writer is not available yet in carve-php 0.2.');
+        $this->expectExceptionMessage('The Carve "missing" writer is not available yet in carve-php 0.2.');
 
-        CarveRenderer::write('text', '*bold*');
+        CarveRenderer::write('missing', '*bold*');
     }
 
     public function testLintWarningsCountCharacterColumns(): void

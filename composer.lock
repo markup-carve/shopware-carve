@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a37ccef8922ae5ea60e8fac93fe86cda",
+    "content-hash": "af5e571253fccecb2bd2a6d68c122b34",
     "packages": [
         {
             "name": "brick/math",
@@ -3386,22 +3386,22 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/markup-carve/carve-php.git",
-                "reference": "db1624daf966ccfefb5adccf919c05ac89b7af4e"
+                "reference": "14a3fabd4b16069501b8768179a98a447449f36b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/db1624daf966ccfefb5adccf919c05ac89b7af4e",
-                "reference": "db1624daf966ccfefb5adccf919c05ac89b7af4e",
+                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/14a3fabd4b16069501b8768179a98a447449f36b",
+                "reference": "14a3fabd4b16069501b8768179a98a447449f36b",
                 "shasum": ""
             },
             "require": {
+                "league/commonmark": "^2.7",
                 "php": "^8.2",
+                "php-collective/djot": "^0.1.35",
                 "symfony/polyfill-intl-normalizer": "^1.27"
             },
             "require-dev": {
-                "league/commonmark": "^2.7",
                 "php-collective/code-sniffer": "^0.6.8",
-                "php-collective/djot": "^0.1.35",
                 "phpstan/phpstan": "^2.1.32",
                 "phpunit/phpunit": "^11.0 || ^12.0 || ^13.0"
             },
@@ -3413,12 +3413,6 @@
                 "bin/carve"
             ],
             "type": "library",
-            "extra": {
-                "require-dev-notes": {
-                    "league/commonmark": "Benchmark only (bench/bench-engines.php).",
-                    "php-collective/djot": "Benchmark only (bench/bench-engines.php)."
-                }
-            },
             "autoload": {
                 "psr-4": {
                     "MarkupCarve\\Carve\\": "src/"
@@ -3482,7 +3476,7 @@
                     "url": "https://github.com/dereuromark"
                 }
             ],
-            "time": "2026-11-19T01:32:40+00:00"
+            "time": "2026-11-20T01:01:01+00:00"
         },
         {
             "name": "masterminds/html5",

@@ -185,6 +185,7 @@ class CarveRenderer
     public static function write(string $target, string $source): string
     {
         $writers = Carve::writers();
+        $target = $target === 'text' ? 'plain' : $target;
         if (!$writers->has($target)) {
             throw new CarveWriterUnavailable($target);
         }
