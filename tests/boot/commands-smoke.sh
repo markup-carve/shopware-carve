@@ -36,7 +36,12 @@ request() {
     fi
 }
 
-APP_ENV=prod APP_DEBUG=0 php -S "${host}:${port}" -t public public/index.php >/tmp/server-commands.log 2>&1 &
+# PHP 8.3.37's opcache segfaults the built-in server now and then, jumping
+# into its own shared memory (kernel: "segfault ... in dev/zero"). That is an
+# engine crash under php -S, not a plugin defect, so the smoke servers run
+# without opcache.
+php -i | grep -E '^opcache\.(enable|enable_cli|jit|jit_buffer_size) ' || true
+APP_ENV=prod APP_DEBUG=0 php -d opcache.enable_cli=0 -S "${host}:${port}" -t public public/index.php >/tmp/server-commands.log 2>&1 &
 server=$!
 # 139 here means the server segfaulted.
 reap() {
