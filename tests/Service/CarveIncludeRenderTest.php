@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\Carve;
 use MarkupCarve\Shopware\Service\CarveIncludeResult;
 use Shopware\Core\Framework\Context;
 
@@ -170,9 +169,6 @@ class CarveIncludeRenderTest extends CarveIncludeTestCase
 
     public function testUntrustedTextAndMarkdownKeepDirectivesLiteral(): void
     {
-        if (!Carve::writers()->has('text') || !Carve::writers()->has('markdown')) {
-            self::markTestSkipped('Waits for the carve-php 0.2 text and markdown writers, markup-carve/carve-php#5235.');
-        }
         $renderer = $this->makeRenderer($this->makeRoot(['secret.crv' => "SECRET\n"]));
         foreach (['toText', 'toMarkdown'] as $method) {
             $rendered = $renderer->{$method}("{{ secret.crv }}\n");
