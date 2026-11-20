@@ -127,6 +127,17 @@ class CarvePreviewControllerTest extends CarveIncludeTestCase
         self::assertArrayHasKey('diagnostics', $payload['report']);
     }
 
+    public function testMarkdownImportReadsGitHubFlavoredTables(): void
+    {
+        $body = json_encode(['source' => "| a | b |\n|---|--:|\n| 1 | 2 |\n", 'format' => 'markdown'], JSON_THROW_ON_ERROR);
+        $request = new Request(content: $body);
+        $request->headers->set('Content-Type', 'application/json');
+        $response = (new CarvePreviewController($this->makeRenderer(null)))->import($request, $this->cmsOnlyAdmin());
+        $payload = json_decode((string)$response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame("|= a |={>} b |\n| 1 | 2 |\n", $payload['source']);
+        self::assertSame('gfm', $payload['report']['sourceFormat']);
+    }
+
     public function testOversizedPreviewIsRejectedBeforeParsing(): void
     {
         $this->expectException(HttpException::class);

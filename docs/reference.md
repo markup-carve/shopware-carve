@@ -279,7 +279,11 @@ the product placement to *Replace the description* once the copy is reviewed.
 bin/console carve:convert                       # dry run, all three entities
 bin/console carve:convert --entity product --write
 bin/console carve:convert page.html             # convert one file to stdout
+bin/console carve:convert notes.md              # GitHub Flavored Markdown to stdout
 ```
+
+A `.md` file, `--from=markdown` and `--from=gfm` read GitHub Flavored Markdown,
+as the 0.1 command did, so tables, task lists and strikethrough convert.
 
 ### 12 - Lint on save
 

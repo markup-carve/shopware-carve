@@ -36,7 +36,7 @@ class CarveConvertCommand extends Command
     protected function configure(): void
     {
         $this->addArgument('path', InputArgument::OPTIONAL, 'Convert this Markdown or HTML file to stdout instead of the stored descriptions');
-        $this->addOption('from', null, InputOption::VALUE_REQUIRED, 'markdown or html, for a file (guessed from its extension)');
+        $this->addOption('from', null, InputOption::VALUE_REQUIRED, 'markdown (GitHub Flavored), gfm or html, for a file (guessed from its extension)');
         $this->addOption('entity', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Limit to: ' . implode(', ', self::ENTITIES));
         $this->addOption('write', null, InputOption::VALUE_NONE, 'Store the converted Carve (default: dry run)');
         $this->addOption('overwrite', null, InputOption::VALUE_NONE, 'Replace Carve fields that already hold source');
@@ -129,13 +129,14 @@ class CarveConvertCommand extends Command
 
             return Command::FAILURE;
         }
-        if (!in_array($from, ['markdown', 'html'], true)) {
+        if (!in_array($from, ['markdown', 'gfm', 'html'], true)) {
             $output->writeln('<error>Cannot tell the input format. Pass --from=markdown or --from=html.</error>');
 
             return Command::FAILURE;
         }
         try {
-            $result = CarveImport::convert($from, $source);
+            // `markdown` keeps its 0.1 meaning, GitHub Flavored Markdown; the engine's `markdown` is CommonMark only.
+            $result = CarveImport::convert($from === 'html' ? 'html' : 'gfm', $source);
         } catch (RuntimeException $exception) {
             $output->writeln('<error>' . $exception->getMessage() . '</error>');
 

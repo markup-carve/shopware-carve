@@ -82,6 +82,20 @@ class CarveConvertCommandTest extends TestCase
         self::assertStringContainsString('Cannot tell the input format', $tester->getDisplay());
     }
 
+    public function testAMarkdownFileReadsGitHubFlavoredTables(): void
+    {
+        $file = sys_get_temp_dir() . '/carve-convert-' . bin2hex(random_bytes(4)) . '.md';
+        file_put_contents($file, "| a | b |\n|---|--:|\n| 1 | 2 |\n");
+        $tester = new CommandTester(new CarveConvertCommand($this->createStub(CarveStoredSources::class)));
+        $status = $tester->execute(['path' => $file]);
+        $explicit = $tester->execute(['path' => $file, '--from' => 'gfm']);
+        unlink($file);
+
+        self::assertSame(Command::SUCCESS, $status);
+        self::assertSame(Command::SUCCESS, $explicit);
+        self::assertSame("|= a |={>} b |\n| 1 | 2 |\n", $tester->getDisplay());
+    }
+
     public function testAFileConvertsToStdout(): void
     {
         if (!CarveImport::supports('markdown')) {
