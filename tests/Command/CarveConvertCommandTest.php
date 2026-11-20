@@ -74,11 +74,12 @@ class CarveConvertCommandTest extends TestCase
         $file = sys_get_temp_dir() . '/carve-convert-' . bin2hex(random_bytes(4)) . '.md';
         file_put_contents($file, "Some **bold** text.\n");
         $tester = new CommandTester(new CarveConvertCommand($this->createStub(CarveStoredSources::class)));
-        $status = $tester->execute(['path' => $file]);
+        $status = $tester->execute(['path' => $file, '--from' => 'rtf']);
         unlink($file);
 
+        // C2-T-005: importDocument reads markdown, so only a format the engine lacks is refused.
         self::assertSame(Command::FAILURE, $status);
-        self::assertStringContainsString('"markdown" importer is not available', $tester->getDisplay());
+        self::assertStringContainsString('Cannot tell the input format', $tester->getDisplay());
     }
 
     public function testAFileConvertsToStdout(): void

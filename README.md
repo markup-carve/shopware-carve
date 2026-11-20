@@ -45,9 +45,6 @@ development installs, and asset-package details.
 ```
 
 Use `carve` for HTML, `carve_text` for plain text, and `carve_md` for Markdown.
-With carve-php 0.2, `carve_text` and `carve_md` throw "writer not available yet"
-until the engine registers its text and Markdown writers
-([carve-php#5235](https://github.com/markup-carve/carve-php/issues/5235)).
 Content containing `:product[SKU]` references needs the sales-channel-aware
 filter:
 

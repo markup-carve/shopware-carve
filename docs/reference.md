@@ -49,9 +49,8 @@ Markdown variants enable channel reuse (mail, export).
 {{ product.translated.description | carve_md }}
 ```
 
-`|carve_text` and `|carve_md` go through carve-php's writer registry. carve-php 0.2 does not
-register its `text` and `markdown` writers yet ([carve-php#5235](https://github.com/markup-carve/carve-php/issues/5235)),
-so until it does both filters throw `CarveWriterUnavailable` ("writer not available yet").
+`|carve_text` and `|carve_md` go through carve-php's writer registry (the `plain` and `markdown`
+writers). A writer the registry lacks throws `CarveWriterUnavailable`.
 
 For content that contains `:product[SKU]` inline references, use `|carve_ctx(context)` to pass the
 sales channel context so product links resolve correctly (see Surface 8).
