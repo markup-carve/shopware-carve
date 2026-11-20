@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b0ec310240bfd19f7db702f1424257c6",
+    "content-hash": "483f09c1e039ae84560dec0857277dc6",
     "packages": [
         {
             "name": "brick/math",
@@ -3650,12 +3650,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/markup-carve/carve-php.git",
-                "reference": "1ce70376fbcb06d4ac40493efd131becaf957f29"
+                "reference": "6ceebc52181efc1f5dfe6f5e7964b75c43f13a90"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/1ce70376fbcb06d4ac40493efd131becaf957f29",
-                "reference": "1ce70376fbcb06d4ac40493efd131becaf957f29",
+                "url": "https://api.github.com/repos/markup-carve/carve-php/zipball/6ceebc52181efc1f5dfe6f5e7964b75c43f13a90",
+                "reference": "6ceebc52181efc1f5dfe6f5e7964b75c43f13a90",
                 "shasum": ""
             },
             "require": {
@@ -3740,7 +3740,7 @@
                     "url": "https://github.com/dereuromark"
                 }
             ],
-            "time": "2026-11-20T01:01:01+00:00"
+            "time": "2026-11-20T10:04:01+00:00"
         },
         {
             "name": "masterminds/html5",
