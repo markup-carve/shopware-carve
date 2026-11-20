@@ -9,7 +9,8 @@ Deactivation and uninstall restore the standard textarea for fields using the
 Carve editor; reactivation restores the Carve editor. Content stays stored.
 
 The editor provides syntax help, product and media selection, conversion from
-HTML or Markdown, and a server preview. Conversion returns diagnostics and a
+HTML or Markdown (GitHub Flavored: tables, task lists and strikethrough
+convert), and a server preview. Conversion returns diagnostics and a
 candidate source. **Replace with converted source** applies it to the current
 form; save the Shopware entity to persist it.
 

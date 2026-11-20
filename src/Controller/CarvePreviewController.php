@@ -115,11 +115,12 @@ class CarvePreviewController
         $this->authorize($context);
         $source = $this->source($request);
         $format = $request->getPayload()->get('format');
-        if (!in_array($format, ['html', 'markdown'], true)) {
+        if (!in_array($format, ['html', 'markdown', 'gfm'], true)) {
             throw new BadRequestHttpException('Choose HTML or Markdown.');
         }
         try {
-            $conversion = CarveImport::convert($format, $source);
+            // The editor's "Markdown" is GitHub Flavored, as in 0.1; the engine's `markdown` is CommonMark only.
+            $conversion = CarveImport::convert($format === 'html' ? 'html' : 'gfm', $source);
         } catch (RuntimeException $exception) {
             throw new BadRequestHttpException($exception->getMessage(), $exception);
         }
