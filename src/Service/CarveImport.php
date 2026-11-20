@@ -13,6 +13,9 @@ use RuntimeException;
  */
 final class CarveImport
 {
+    /**
+     * @var array
+     */
     private const FORMATS = ['html', 'markdown', 'gfm', 'djot'];
 
     public static function supports(string $format): bool
