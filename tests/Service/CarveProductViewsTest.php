@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Service\CarveCommerce;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\ListPrice;
@@ -66,7 +66,7 @@ class CarveProductViewsTest extends TestCase
         $formatter = $this->createStub(CurrencyFormatter::class);
         $formatter->method('formatCurrencyByLanguage')->willReturnCallback(static fn (float $value): string => number_format($value, 2) . ' EUR');
         $commerce = new CarveCommerce($repository, $seo, $formatter, $this->createStub(TranslatorInterface::class), new Environment(new ArrayLoader()), $this->createStub(EventDispatcherInterface::class));
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $commerce->register($converter, $context);
         $document = $converter->parse(':was-now[SKU] :discount[SKU] :product-image[SKU] :product[SKU]{.card}');
         $commerce->prepare($document, $context);

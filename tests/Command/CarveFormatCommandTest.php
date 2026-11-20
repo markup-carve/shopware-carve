@@ -69,7 +69,9 @@ class CarveFormatCommandTest extends TestCase
         $tester->execute(['paths' => [$file]]);
         unlink($file);
 
-        self::assertSame("|= Size |={>} Load |\n| 6 mm | 320 kg |\n\n***\n\nNext.\n", $tester->getDisplay());
+        // 0.2: `---` is text (U-044) and the glued `|=>` is no alignment (C2-B-171, alignment marks go in braces),
+        // so fmt keeps both; the upgrade tool, not fmt, rewrites 0.1 spellings.
+        self::assertSame("|= Size |= > Load |\n| 6 mm | 320 kg |\n\n---\n\nNext.\n", $tester->getDisplay());
     }
 
     public function testWriteAndCheckAreExclusive(): void

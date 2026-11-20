@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Service\CarveCommerce;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
@@ -45,9 +45,9 @@ class CarvePriceNotesTest extends TestCase
             $this->createStub(EventDispatcherInterface::class),
         );
         $context = $this->context(CartPrice::TAX_STATE_GROSS);
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $commerce->register($converter, $context);
-        $html = $converter->convert(':vat-note[] :price-note[] :shipping-from[50] :shipping-from[-1]');
+        $html = $converter->render(':vat-note[] :price-note[] :shipping-from[50] :shipping-from[-1]');
 
         self::assertStringContainsString('Incl. VAT</span>', $html);
         self::assertStringContainsString('Incl. VAT, plus shipping', $html);
@@ -69,9 +69,9 @@ class CarvePriceNotesTest extends TestCase
                 new Environment(new ArrayLoader()),
                 $this->createStub(EventDispatcherInterface::class),
             );
-            $converter = new CarveConverter();
+            $converter = new CarveSetup();
             $commerce->register($converter, $this->context($state));
-            self::assertStringContainsString($message, $converter->convert(':vat-note[]'));
+            self::assertStringContainsString($message, $converter->render(':vat-note[]'));
         }
     }
 

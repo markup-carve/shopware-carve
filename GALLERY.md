@@ -25,12 +25,12 @@ a `list-table`, a pipe table with column alignment, and an inline
 ![Product carve_body on the storefront](docs/img/03-product-carve-body.png)
 
 ```carve
-# Ethiopia Yirgacheffe --- Washed
+= Ethiopia Yirgacheffe --- Washed
 
 A bright, floral single-origin from the *Gedeo Zone*, grown at 1,900--2,100 m and
 washed at the village station. Expect jasmine on the nose and a clean, tea-like body.
 
-## Tasting notes
+== Tasting notes
 
 /Floral, citric, delicate./ We taste *jasmine*, *bergamot*, and a finish of
 *white peach*.
@@ -40,7 +40,7 @@ This lot shines as a pour-over. Keep the water just off the boil (94 °C) and do
 over-extract --- the florals fade fast.
 :::
 
-## Brew guide
+== Brew guide
 
 {header-rows=1}
 ::: list-table "Recipe by method"
@@ -62,7 +62,7 @@ over-extract --- the florals fade fast.
   - 6:00
 :::
 
-## At a glance
+== At a glance
 
 |= Attribute |={>} Value       |
 | Origin     | Gedeo, Ethiopia |
@@ -96,7 +96,7 @@ admonition, and a bold bullet list.
 ![Category carve_body on the storefront](docs/img/04-category-carve-body.png)
 
 ```carve
-# Single-Origin Coffees
+= Single-Origin Coffees
 
 Coffees from a /single/ farm, washing station, or co-operative --- never blended.
 Each lot tastes of its place: the soil, the altitude, the process.
@@ -124,7 +124,7 @@ with a `tip` admonition and a table.
 ![Carve CMS element on the storefront](docs/img/02-cms-element-storefront.png)
 
 ```carve
-# Our roasting philosophy
+= Our roasting philosophy
 
 We roast /light/ to let origin speak. No dark, no bitter, no hiding behind the
 roast --- only the character of the bean.
@@ -153,7 +153,7 @@ the product page.
 ![Manufacturer carve body in a theme brand card](docs/img/04b-manufacturer-carve-body.png)
 
 ```carve
-## Carve Coffee Roasters
+== Carve Coffee Roasters
 
 We are a small-batch roastery sourcing *traceable, seasonal* lots directly from
 growers. Every coffee is roasted to order on a cast-iron drum and rested before it
@@ -195,7 +195,7 @@ degrades to inert text. In this review:
 The *best* Yirgacheffe I've brewed at home --- super /floral/, exactly the jasmine
 note in the tasting notes. Full brew log here: https://example.com/brewlog
 
-## I tried to sneak in a heading
+== I tried to sneak in a heading
 
 ![and a giant banner image](https://example.com/banner.jpg)
 
@@ -213,7 +213,7 @@ formatting carry into the email body.
 ![Carve-rendered shipping mail in Mailpit](docs/img/06-mail-mailpit.png)
 
 ```carve
-# Your order CARVE-1042 has shipped
+= Your order CARVE-1042 has shipped
 
 Hi *Mara*,
 
@@ -243,11 +243,11 @@ box-drawn table.
 ![CLI ANSI render in a terminal](docs/img/08-cli-terminal.png)
 
 ```carve
-# Pour-Over Brew Guide
+= Pour-Over Brew Guide
 
 A quick reference for a *bright*, balanced cup.
 
-## Ratio
+== Ratio
 
 Use *60 g of coffee per litre* of water --- a 1:16.7 ratio.
 

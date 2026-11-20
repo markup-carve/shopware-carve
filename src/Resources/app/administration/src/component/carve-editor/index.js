@@ -133,7 +133,7 @@ Shopware.Component.register('carve-editor', {
                     source: this.importSource, format: this.importFormat,
                 }, { headers: service.getBasicHeaders() });
                 this.imported = response.data;
-            } catch (error) { this.importError = 'Conversion failed. Check the input size and permissions.'; }
+            } catch (error) { this.importError = error.response?.data?.errors?.[0]?.detail || 'Conversion failed. Check the input size and permissions.'; }
         },
         applyImport() {
             if (this.imported && !this.disabled) {

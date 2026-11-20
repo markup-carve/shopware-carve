@@ -4,14 +4,9 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Service;
 
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Event\RenderEvent;
-use MarkupCarve\Carve\Node\Block\Div;
-use MarkupCarve\Carve\Node\Block\Paragraph;
-use MarkupCarve\Carve\Node\Document;
-use MarkupCarve\Carve\Node\Inline\InlineExtension;
-use MarkupCarve\Carve\Node\Node;
-use MarkupCarve\Carve\Renderer\PlainTextRenderer;
+use MarkupCarve\Carve\Extension\DocumentTransform;
+use MarkupCarve\Carve\Extension\ExtensionDefinition;
+use MarkupCarve\Carve\Node;
 use MarkupCarve\Shopware\Event\CarveAppBlockEvent;
 use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
@@ -40,6 +35,16 @@ use WeakMap;
 
 class CarveCommerce implements ResetInterface
 {
+    /**
+     * @var array<string>
+     */
+    private const PRODUCT_TYPES = ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image', 'variants', 'rating', 'reviews-summary'];
+
+    /**
+     * @var string
+     */
+    private const CARD = 'shopware.product-card';
+
     /**
      * @var \WeakMap<\Shopware\Core\System\SalesChannel\SalesChannelContext, array<string, \Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity|null>>
      */
@@ -80,28 +85,26 @@ class CarveCommerce implements ResetInterface
         $this->reviews = new WeakMap();
     }
 
-    public function prepare(Document $document, SalesChannelContext $context): void
+    public function prepare(Node $document, SalesChannelContext $context): void
     {
         $skus = [];
         $reviewSkus = [];
-        $visit = function (Node $node) use (&$visit, &$skus, &$reviewSkus): void {
-            if ($node instanceof InlineExtension && in_array($node->getExtensionType(), ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image', 'variants', 'rating', 'reviews-summary'], true)) {
+        CarveTree::walk($document, function (Node $found) use (&$skus, &$reviewSkus): void {
+            $node = CarveTree::core($found);
+            $name = (string)($node->f['name'] ?? '');
+            if ($node->type === 'inline_extension' && in_array($name, self::PRODUCT_TYPES, true)) {
                 $skus[] = $this->argument($node);
-                if (in_array($node->getExtensionType(), ['rating', 'reviews-summary'], true)) {
+                if (in_array($name, ['rating', 'reviews-summary'], true)) {
                     $reviewSkus[] = $this->argument($node);
                 }
             }
-            if ($node instanceof Div && ($node->hasClass('specs') || $node->hasClass('product-card'))) {
-                $skus[] = $node->getAttribute('sku') ?? '';
+            if ($node->type === 'div' && (CarveTree::hasClass($node, 'specs') || CarveTree::hasClass($node, 'product-card'))) {
+                $skus[] = CarveTree::attribute($node, 'sku') ?? '';
             }
-            if ($node instanceof Div && $node->hasClass('product-grid')) {
+            if ($node->type === 'div' && CarveTree::hasClass($node, 'product-grid')) {
                 array_push($skus, ...$this->gridSkus($node));
             }
-            foreach ($node->getChildren() as $child) {
-                $visit($child);
-            }
-        };
-        $visit($document);
+        });
         $cached = $this->products[$context] ?? [];
         $missing = array_values(array_filter(array_unique($skus), static fn (string $sku): bool => $sku !== '' && !array_key_exists($sku, $cached)));
         // Bound one document's catalog work independently of the parser's byte limit.
@@ -164,26 +167,18 @@ class CarveCommerce implements ResetInterface
         return $product;
     }
 
-    public function register(CarveConverter $converter, SalesChannelContext $context): void
+    public function register(CarveSetup $setup, SalesChannelContext $context): void
     {
-        $converter->on('render.inline_extension', function (RenderEvent $event) use ($context): void {
-            $node = $event->getNode();
-            if (!$node instanceof InlineExtension) {
-                return;
-            }
-            $type = $node->getExtensionType();
-            $argument = $this->argument($node);
-            if ($type === 'snippet') {
-                $this->cacheTags->dispatch(new AddCacheTagEvent('carve-snippets'));
-                $event->setHtml($this->escape($this->translator->trans($argument)));
+        $setup->on('inline', 'snippet', function (CarveHookCall $call): string {
+            $this->cacheTags->dispatch(new AddCacheTagEvent('carve-snippets'));
 
-                return;
-            }
-            if ($type === 'vat-note' || $type === 'price-note') {
+            return $this->escape($this->translator->trans($call->argument()));
+        });
+        foreach (['vat-note', 'price-note'] as $type) {
+            $setup->on('inline', $type, function (CarveHookCall $call) use ($context, $type): string {
+                $argument = $call->argument();
                 if ($argument !== '') {
-                    $event->setHtml($this->escape($argument));
-
-                    return;
+                    return $this->escape($argument);
                 }
                 $taxKey = match ($context->getTaxState()) {
                     CartPrice::TAX_STATE_GROSS => 'shopware-carve.taxGross',
@@ -195,120 +190,145 @@ class CarveCommerce implements ResetInterface
                 if ($type === 'price-note') {
                     $note .= ', ' . $this->escape($this->translator->trans('shopware-carve.plusShipping'));
                 }
-                $event->setHtml('<span class="carve-price-note">' . $note . '</span>');
 
-                return;
+                return '<span class="carve-price-note">' . $note . '</span>';
+            });
+        }
+        $setup->on('inline', 'shipping-from', function (CarveHookCall $call) use ($context): string {
+            $argument = $call->argument();
+            if (preg_match('/^\d{1,8}(?:\.\d{1,2})?$/D', $argument) !== 1) {
+                return $this->escape($argument);
             }
-            if ($type === 'shipping-from') {
-                if (preg_match('/^\d{1,8}(?:\.\d{1,2})?$/D', $argument) !== 1) {
-                    $event->setHtml($this->escape($argument));
+            $label = $this->escape($this->translator->trans('shopware-carve.shippingFrom'));
 
-                    return;
-                }
-                $label = $this->escape($this->translator->trans('shopware-carve.shippingFrom'));
-                $event->setHtml('<span class="carve-shipping-from">' . $label . ' '
-                    . $this->formatPrice((float)$argument, $context) . '</span>');
-
-                return;
-            }
-            if (!in_array($type, ['product', 'price', 'stock', 'datasheet', 'was-now', 'discount', 'product-image', 'variants', 'rating', 'reviews-summary'], true)) {
-                return;
-            }
-            $product = ($this->products[$context] ?? [])[$argument] ?? null;
-            if ($product === null) {
-                $event->setHtml($this->escape($argument));
-
-                return;
-            }
-            if ($type === 'rating' || $type === 'reviews-summary') {
-                $matrix = ($this->reviews[$context] ?? [])[$product->getId()] ?? null;
-                $event->setHtml($matrix === null ? $this->escape($argument) : $this->reviewSummary($matrix, $type));
-
-                return;
-            }
-            if ($type === 'stock') {
-                $event->setHtml('<span class="carve-stock">' . $this->escape($this->translator->trans(
-                    $product->getAvailable() ? 'shopware-carve.inStock' : 'shopware-carve.outOfStock',
-                )) . '</span>');
-
-                return;
-            }
-            if (!$product->getAvailable()) {
-                $event->setHtml($this->escape($argument));
-
-                return;
-            }
-            $name = (string)($product->getTranslation('name') ?? $product->getName() ?? $argument);
-            $url = $this->seo->generate('frontend.detail.page', ['productId' => $product->getId()]);
-            $html = match ($type) {
-                'price' => $this->price($product, $context),
-                'was-now' => $this->salePrice($product, $context),
-                'discount' => $this->discount($product),
-                'product-image' => $this->productImage($product, $name) ?: $this->escape($argument),
-                'variants' => $this->variants($product, $argument),
-                'datasheet' => $this->datasheet($product, $argument),
-                default => '<a href="' . $this->escape($url) . '">' . $this->escape($name) . '</a>',
-            };
-            if ($type === 'product' && $node->hasClass('card')) {
-                $image = $this->productImage($product, $name);
-                $html = '<span class="carve-product-card">' . $image . '<span class="carve-product-card__body">'
-                    . $html . ' ' . $this->salePrice($product, $context) . '</span></span>';
-            }
-            $event->setHtml($html);
+            return '<span class="carve-shipping-from">' . $label . ' ' . $this->formatPrice((float)$argument, $context) . '</span>';
         });
-        $converter->on('render.paragraph', function (RenderEvent $event) use ($context): void {
-            $node = $event->getNode();
-            if (!$node instanceof Paragraph) {
-                return;
-            }
-            $children = $node->getChildren();
-            if (
-                $node->getAttributes() !== [] || count($children) !== 1 || !$children[0] instanceof InlineExtension
-                || $children[0]->getExtensionType() !== 'product' || !$children[0]->hasClass('card')
-            ) {
-                return;
-            }
-            $sku = $this->argument($children[0]);
-            $product = ($this->products[$context] ?? [])[$sku] ?? null;
-            if ($product !== null && $product->getAvailable()) {
-                $event->setHtml($this->card($product, $context));
-            }
-        });
-        $converter->on('render.div', function (RenderEvent $event) use ($context): void {
-            $node = $event->getNode();
-            if ($node instanceof Div && $node->hasClass('app-block')) {
-                $name = $node->getAttribute('name') ?? '';
-                if (preg_match('/^[A-Za-z][A-Za-z0-9._-]{0,63}$/D', $name) !== 1) {
-                    return;
-                }
-                $block = new CarveAppBlockEvent($name, (string)$event->getChildrenHtml(), $context);
-                $this->cacheTags->dispatch($block);
-                if ($block->getHtml() !== null) {
-                    $event->setHtml($block->getHtml());
-                }
+        foreach (self::PRODUCT_TYPES as $type) {
+            $setup->on('inline', $type, fn (CarveHookCall $call): string => $this->productInline($call, $type, $context));
+        }
+        $setup->addExtension(new ExtensionDefinition(
+            self::CARD,
+            '1',
+            renderer: function (Node $node) use ($context): string {
+                $product = ($this->products[$context] ?? [])[(string)($node->f['props']['sku'] ?? '')] ?? null;
 
-                return;
+                return $product === null ? '' : $this->card($product, $context);
+            },
+        ));
+        $setup->addTransform(new DocumentTransform(self::CARD, function (Node $document) use ($context): Node {
+            if ($this->replaceCardParagraphs($document, $context)) {
+                CarveTree::declare($document, self::CARD, '1');
             }
-            if ($node instanceof Div && ($node->hasClass('specs') || $node->hasClass('product-card'))) {
-                $sku = $node->getAttribute('sku') ?? '';
+
+            return $document;
+        }));
+        $setup->on('div', 'app-block', function (CarveHookCall $call) use ($context): ?string {
+            $name = $call->attribute('name') ?? '';
+            if (preg_match('/^[A-Za-z][A-Za-z0-9._-]{0,63}$/D', $name) !== 1) {
+                return null;
+            }
+            $block = new CarveAppBlockEvent($name, $call->childrenHtml(), $context);
+            $this->cacheTags->dispatch($block);
+
+            return $block->getHtml();
+        });
+        foreach (['specs', 'product-card'] as $kind) {
+            $setup->on('div', $kind, function (CarveHookCall $call) use ($context, $kind): string {
+                $sku = $call->attribute('sku') ?? '';
                 $product = ($this->products[$context] ?? [])[$sku] ?? null;
-                $event->setHtml($product === null ? $this->escape($sku)
-                    : ($node->hasClass('specs') ? $this->specs($product) : ($product->getAvailable() ? $this->card($product, $context) : $this->escape($sku))));
+                if ($product === null) {
+                    return $this->escape($sku);
+                }
 
-                return;
-            }
-            if (!$node instanceof Div || !$node->hasClass('product-grid')) {
-                return;
-            }
+                return $kind === 'specs' ? $this->specs($product) : ($product->getAvailable() ? $this->card($product, $context) : $this->escape($sku));
+            });
+        }
+        $setup->on('div', 'product-grid', function (CarveHookCall $call) use ($context): string {
             $html = '';
-            foreach ($this->gridSkus($node) as $sku) {
+            foreach ($this->gridSkus($call->node) as $sku) {
                 $product = ($this->products[$context] ?? [])[$sku] ?? null;
                 if ($product !== null && $product->getAvailable()) {
                     $html .= '<div class="carve-product-grid__item">' . $this->card($product, $context) . '</div>';
                 }
             }
-            $event->setHtml('<div class="carve-product-grid">' . $html . '</div>');
+
+            return '<div class="carve-product-grid">' . $html . '</div>';
         });
+    }
+
+    private function productInline(CarveHookCall $call, string $type, SalesChannelContext $context): string
+    {
+        $argument = $call->argument();
+        $product = ($this->products[$context] ?? [])[$argument] ?? null;
+        if ($product === null) {
+            return $this->escape($argument);
+        }
+        if ($type === 'rating' || $type === 'reviews-summary') {
+            $matrix = ($this->reviews[$context] ?? [])[$product->getId()] ?? null;
+
+            return $matrix === null ? $this->escape($argument) : $this->reviewSummary($matrix, $type);
+        }
+        if ($type === 'stock') {
+            return '<span class="carve-stock">' . $this->escape($this->translator->trans(
+                $product->getAvailable() ? 'shopware-carve.inStock' : 'shopware-carve.outOfStock',
+            )) . '</span>';
+        }
+        if (!$product->getAvailable()) {
+            return $this->escape($argument);
+        }
+        $name = (string)($product->getTranslation('name') ?? $product->getName() ?? $argument);
+        $url = $this->seo->generate('frontend.detail.page', ['productId' => $product->getId()]);
+        $html = match ($type) {
+            'price' => $this->price($product, $context),
+            'was-now' => $this->salePrice($product, $context),
+            'discount' => $this->discount($product),
+            'product-image' => $this->productImage($product, $name) ?: $this->escape($argument),
+            'variants' => $this->variants($product, $argument),
+            'datasheet' => $this->datasheet($product, $argument),
+            default => '<a href="' . $this->escape($url) . '">' . $this->escape($name) . '</a>',
+        };
+        if ($type === 'product' && $call->hasClass('card')) {
+            $image = $this->productImage($product, $name);
+            $html = '<span class="carve-product-card">' . $image . '<span class="carve-product-card__body">'
+                . $html . ' ' . $this->salePrice($product, $context) . '</span></span>';
+        }
+
+        return $html;
+    }
+
+    /**
+     * A paragraph that holds nothing but `:product[SKU]{.card}` of an available product becomes the block card.
+     */
+    private function replaceCardParagraphs(Node $node, SalesChannelContext $context): bool
+    {
+        $replaced = false;
+        foreach ($node->children ?? [] as $index => $child) {
+            $children = $child->children ?? [];
+            $only = count($children) === 1 ? CarveTree::core($children[0]) : null;
+            if (
+                $child->type === 'paragraph' && !CarveTree::hasAttributes($child) && $only !== null
+                && $only->type === 'inline_extension' && ($only->f['name'] ?? null) === 'product' && CarveTree::hasClass($only, 'card')
+            ) {
+                $sku = $this->argument($only);
+                $product = ($this->products[$context] ?? [])[$sku] ?? null;
+                if ($product !== null && $product->getAvailable()) {
+                    $card = new Node('block_extension', []);
+                    $card->f = ['name' => self::CARD, 'version' => '1', 'slots' => [], 'props' => ['sku' => $sku], 'fallback' => [$child]];
+                    $node->children[$index] = $card;
+                    $replaced = true;
+                }
+
+                continue;
+            }
+            $replaced = $this->replaceCardParagraphs($child, $context) || $replaced;
+            foreach ($child->f['fallback'] ?? [] as $fallback) {
+                if ($fallback instanceof Node) {
+                    $replaced = $this->replaceCardParagraphs($fallback, $context) || $replaced;
+                }
+            }
+        }
+
+        return $replaced;
     }
 
     private function price(SalesChannelProductEntity $product, SalesChannelContext $context): string
@@ -464,19 +484,13 @@ class CarveCommerce implements ResetInterface
 
     private function argument(Node $node): string
     {
-        $document = new Document();
-        // Rendering a temporary document must not reparent the commerce node's children.
-        foreach ($node->getChildren() as $child) {
-            $document->appendChild(clone $child);
-        }
-
-        return trim((new PlainTextRenderer())->render($document));
+        return trim(CarveTree::text($node));
     }
 
     /**
      * @return list<string>
      */
-    private function gridSkus(Div $node): array
+    private function gridSkus(Node $node): array
     {
         return array_slice(array_values(array_filter(array_map('trim', preg_split('/[\s,]+/', $this->argument($node)) ?: []))), 0, 24);
     }

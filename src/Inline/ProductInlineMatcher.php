@@ -5,19 +5,15 @@ declare(strict_types=1);
 namespace MarkupCarve\Shopware\Inline;
 
 use Closure;
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Event\RenderEvent;
-use MarkupCarve\Carve\Node\Inline\InlineExtension;
-use MarkupCarve\Carve\Renderer\HtmlRenderer;
+use MarkupCarve\Shopware\Service\CarveHookCall;
+use MarkupCarve\Shopware\Service\CarveSetup;
 
 /**
  * Resolves the Carve inline extension `:product[SKU]` to a storefront product link.
  *
- * carve-php parses `:type[content]` into an InlineExtension node during parsing
- * (before any custom inline matcher runs), so resolution happens at RENDER time
- * via the `render.inline_extension` event - the same hook pattern the bundled
- * AdmonitionExtension uses for `render.div`. A known SKU becomes an <a> to the
- * product page; an unknown SKU degrades to its inert text (no broken link).
+ * The hook claims `:product[...]` through a carve-php 0.2 inline extension matcher
+ * and renders it at render time. A known SKU becomes an <a> to the product page;
+ * an unknown SKU degrades to its inert text (no broken link).
  *
  * The SKU lookup is injected as a closure so this class stays free of Shopware
  * coupling and is unit-testable in isolation.
@@ -37,34 +33,20 @@ class ProductInlineMatcher
         $this->lookup = Closure::fromCallable($lookup);
     }
 
-    public function register(CarveConverter $converter): void
+    public function register(CarveSetup $setup): void
     {
-        $renderer = $converter->getRenderer();
-        if (!$renderer instanceof HtmlRenderer) {
-            return;
-        }
-
-        $converter->on('render.inline_extension', function (RenderEvent $event): void {
-            $node = $event->getNode();
-            if (!$node instanceof InlineExtension || $node->getExtensionType() !== 'product') {
-                return;
-            }
-
-            $sku = trim(html_entity_decode(strip_tags((string)$event->getChildrenHtml())));
+        $setup->on('inline', 'product', function (CarveHookCall $call): ?string {
+            $sku = $call->argument();
             if ($sku === '') {
-                return;
+                return null;
             }
 
             $product = ($this->lookup)($sku);
             if ($product === null) {
-                $event->setHtml($this->escape($sku));
-
-                return;
+                return $this->escape($sku);
             }
 
-            $event->setHtml(
-                '<a href="' . $this->escape($product['url']) . '">' . $this->escape($product['name']) . '</a>',
-            );
+            return '<a href="' . $this->escape($product['url']) . '">' . $this->escape($product['name']) . '</a>';
         });
     }
 

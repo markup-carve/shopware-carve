@@ -76,6 +76,17 @@ class CarveRenderCommandTest extends TestCase
         }
     }
 
+    public function testASourceOutsideTheIncludeRootReadsNothingFromTheRoot(): void
+    {
+        $root = $this->makeTree(['shared/part.crv' => "ROOT COPY\n", 'outside/part.crv' => "SIBLING\n", 'outside/main.crv' => "{{ part.crv }}\n"]);
+
+        $tester = new CommandTester(new CarveRenderCommand());
+        $tester->execute(['source' => $root . '/outside/main.crv', '--include-root' => $root . '/shared', '--html' => true]);
+
+        self::assertStringNotContainsString('ROOT COPY', $tester->getDisplay());
+        self::assertStringContainsString('{{ part.crv }}', $tester->getDisplay());
+    }
+
     public function testStdinHasNoInferableRootSoDirectivesStayLiteral(): void
     {
         $root = $this->makeTree(['child.crv' => "SECRET\n"]);

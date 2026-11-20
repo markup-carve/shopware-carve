@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Service\CarveResources;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopware\Core\Framework\Context;
@@ -39,9 +39,9 @@ class CarvePublicValuesTest extends TestCase
             $this->createStub(EntityRepository::class),
             $assets,
         );
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $resources->register($converter, $context);
-        $html = $converter->convert(':config[core.shopName] :config[core.secret] :asset[icons/truck.svg] :asset[../secret]');
+        $html = $converter->render(':config[core.shopName] :config[core.secret] :asset[icons/truck.svg] :asset[../secret]');
 
         self::assertStringContainsString('Shop &lt;safe&gt;', $html);
         self::assertStringContainsString('core.secret', $html);
@@ -64,9 +64,9 @@ class CarvePublicValuesTest extends TestCase
             $this->createStub(EntityRepository::class),
             new Packages(),
         );
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $resources->register($converter, $context);
 
-        self::assertStringContainsString('icons/truck.svg', $converter->convert(':asset[icons/truck.svg]'));
+        self::assertStringContainsString('icons/truck.svg', $converter->render(':asset[icons/truck.svg]'));
     }
 }

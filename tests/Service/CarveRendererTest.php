@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Extension\AsciiHeadingIdsExtension;
 use MarkupCarve\Shopware\Service\CarveConverterFactory;
 use MarkupCarve\Shopware\Service\CarveRenderer;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use ReflectionProperty;
@@ -26,7 +25,7 @@ class CarveRendererTest extends TestCase
     {
         $factory = $this->createMock(CarveConverterFactory::class);
         $factory->expects(self::once())->method('create')->with('channel', 'de')
-            ->willReturn((new CarveConverter())->addExtension(new AsciiHeadingIdsExtension()));
+            ->willReturn(new CarveSetup(['headingIds' => 'ascii']));
         $renderer = new CarveRenderer($this->makeConfigMock(null), factory: $factory);
         $warnings = $renderer->lint("# Café\n\n[read](#Cafe)", 'channel', 'de');
         self::assertNotContains('broken-fragment-link', array_map(static fn ($warning): string => $warning->rule, $warnings));
@@ -187,8 +186,10 @@ class CarveRendererTest extends TestCase
         $html = $this->renderer->toHtml("::: warning\nWatch out!\n:::");
 
         self::assertStringContainsString('class="admonition warning"', $html);
-        self::assertStringContainsString('role="alert"', $html);
-        self::assertStringContainsString('class="admonition-title"', $html);
+        // 0.2 (C2-H-154): an admonition is an <aside> named by its kind label; it has no role="alert"
+        // and writes <p class="admonition-title"> only for a title on the opener.
+        self::assertStringContainsString('<aside class="admonition warning" aria-label="Warning">', $html);
+        self::assertStringContainsString('class="admonition-title"', $this->renderer->toHtml("::: warning \"Careful\"\nWatch out!\n:::"));
     }
 
     public function testListTableRendersAsTable(): void

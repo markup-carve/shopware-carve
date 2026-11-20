@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 
 class CarveMediaRowsTest extends TestCase
@@ -13,7 +13,7 @@ class CarveMediaRowsTest extends TestCase
     {
         $source = "::: trust-badges\n:media[one]{alt=\"Payment\"}\n\n:media[two]{alt=\"Shipping\"}\n:::"
             . "\n\n::: gallery\n:media[three]{alt=\"Front\"}\n\n:media[four]{alt=\"Side\"}\n:::";
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $html = $converter->render($converter->parse($source));
 
         self::assertStringContainsString('<div class="trust-badges">', $html);

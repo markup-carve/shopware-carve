@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Service;
 
-use MarkupCarve\Carve\Node\Document;
+use MarkupCarve\Carve\Node;
 use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopware\Core\System\Locale\LanguageLocaleCodeProvider;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -34,11 +34,11 @@ class CarveContextRenderer
             return new CarveIncludeResult('');
         }
         $locale = $this->locales->getLocaleForLanguageId($context->getLanguageId());
-        // Each converter's hooks hold exactly one context and die after this render.
-        $converter = $this->factory->create($context->getSalesChannelId(), $locale);
-        $this->commerce->register($converter, $context);
-        $this->resources->register($converter, $context);
-        $prepare = fn (Document $document) => $this->commerce->prepare($document, $context);
+        // Each setup's hooks hold exactly one context and die after this render.
+        $setup = $this->factory->create($context->getSalesChannelId(), $locale);
+        $this->commerce->register($setup, $context);
+        $this->resources->register($setup, $context);
+        $prepare = fn (Node $document) => $this->commerce->prepare($document, $context);
         if ($includes) {
             $result = $this->renderer->toHtmlWithIncludes(
                 $source,
@@ -46,16 +46,16 @@ class CarveContextRenderer
                 $context->getSalesChannelId(),
                 $locale,
                 $namespace,
-                $converter,
+                $setup,
                 $prepare,
             );
 
             return $this->resolveUrls($result, $context);
         }
-        $document = $converter->parse($source);
+        $document = $setup->parse($source);
         $prepare($document);
 
-        return $this->resolveUrls(new CarveIncludeResult(FragmentNamespace::apply($converter->render($document), $namespace)), $context);
+        return $this->resolveUrls(new CarveIncludeResult(FragmentNamespace::apply($setup->render($document), $namespace)), $context);
     }
 
     private function resolveUrls(CarveIncludeResult $result, SalesChannelContext $context): CarveIncludeResult
