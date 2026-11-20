@@ -24,7 +24,11 @@ request() {
     curl "$@" || status=$?
     if [ "${status}" != '0' ]; then
         {
-            kill -0 "${server}" 2>/dev/null && echo '--- php -S is still running' || echo '--- php -S has exited'
+            sleep 3
+            echo '--- php -S process'
+            ps -o pid,stat,etime,rss,cmd -p "${server}" || echo 'php -S has exited'
+            echo '--- kernel log'
+            sudo -n dmesg 2>/dev/null | tail -n 5 || true
             tail -n 50 /tmp/server-commands.log
             echo "::error::curl ${*: -1} failed with status ${status}"
         } >&2
