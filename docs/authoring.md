@@ -9,8 +9,7 @@ Deactivation and uninstall restore the standard textarea for fields using the
 Carve editor; reactivation restores the Carve editor. Content stays stored.
 
 The editor provides syntax help, product and media selection, conversion from
-HTML, and a server preview. Markdown conversion returns an error: carve-php 0.2
-has no Markdown importer. Conversion returns diagnostics and a
+HTML or Markdown, and a server preview. Conversion returns diagnostics and a
 candidate source. **Replace with converted source** applies it to the current
 form; save the Shopware entity to persist it.
 
