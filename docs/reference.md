@@ -362,9 +362,9 @@ repository and no local clone.
 
 #### PHP dependency: carve-php
 
-Pulled in by the plugin's own `composer.json`. Until carve-php 0.2 is released, the `next2` line
-pins the engine's `next2` branch by commit through a VCS repository
-(`markup-carve/carve-php: dev-next2#<sha>`):
+Pulled in by the plugin's own `composer.json`. Until carve-php 0.2 is released, the plugin
+pins an engine `main` commit through a VCS repository
+(`markup-carve/carve-php: dev-main#<sha>`):
 
 ```bash
 composer require markup-carve/shopware-carve
