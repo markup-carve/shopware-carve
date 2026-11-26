@@ -12,7 +12,9 @@
     "require": {
         "php": "^8.2",
         "shopware/core": "~6.6.0 || ~6.7.0",
-        "markup-carve/carve-php": "dev-next2#0f547121adf666fda67828ab37a6d9e2fd70d418"
+        "markup-carve/carve-php": "dev-next2#0f547121adf666fda67828ab37a6d9e2fd70d418",
+        "league/commonmark": "^2.9.2",
+        "php-collective/djot": "^0.1.35"
     },
     "require-dev": {
         "php-collective/code-sniffer": "^0.6.0",

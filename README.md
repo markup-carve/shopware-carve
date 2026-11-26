@@ -15,9 +15,9 @@ newer. The package uses the `MarkupCarve\Shopware\` namespace and the MIT
 license.
 
 > This package is pre-1.0. Syntax and output may change before 1.0. Pin
-> versions and review the carve-php changelog before upgrading. The `next2`
-> branch targets Carve 0.2 and pins the unreleased carve-php `next2` engine by
-> commit.
+> versions and review the carve-php changelog before upgrading. `main` targets
+> Carve 0.2 and pins an unreleased carve-php commit. Carve 0.1 users stay on
+> the `0.1` branch.
 
 ## Install
 

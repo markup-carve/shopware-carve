@@ -11,9 +11,9 @@ env:
 
 on:
   pull_request:
-    branches: [main, next2]
+    branches: [main]
   push:
-    branches: [main, next2]
+    branches: [main]
 
 # Every job declares timeout-minutes so a hung step fails in minutes rather
 # than inheriting the 360-minute GitHub default. A boot leg is the slowest job
