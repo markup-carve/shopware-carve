@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Service\CarvePreviewLinter;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -14,7 +14,7 @@ class CarvePreviewLinterTest extends TestCase
     #[DataProvider('fragmentCases')]
     public function testFragmentWarningsMatchTheVisiblePreview(string $source, string $html, bool $broken): void
     {
-        $warnings = (new CarvePreviewLinter())->lint($source, new CarveConverter(), $html);
+        $warnings = (new CarvePreviewLinter())->lint($source, new CarveSetup(), $html);
         self::assertSame($broken, in_array('broken-fragment-link', array_column($warnings, 'rule'), true));
     }
 
@@ -43,7 +43,7 @@ class CarvePreviewLinterTest extends TestCase
     public function testUnicodeBeforeTheLinkKeepsItsSourceByteRange(): void
     {
         $source = 'é [go](#missing)';
-        $warnings = (new CarvePreviewLinter())->lint($source, new CarveConverter(), '<p>é <a href="#missing">go</a></p>');
+        $warnings = (new CarvePreviewLinter())->lint($source, new CarveSetup(), '<p>é <a href="#missing">go</a></p>');
         $warning = array_values(array_filter($warnings, static fn ($warning): bool => $warning->rule === 'broken-fragment-link'))[0];
         self::assertSame(1, $warning->line);
         self::assertSame(3, $warning->column);
@@ -53,14 +53,15 @@ class CarvePreviewLinterTest extends TestCase
     public function testThePreviewRunsEveryDocumentLinterRule(): void
     {
         $source = "- item\n\n  text\n - x\n";
-        $warnings = (new CarvePreviewLinter())->lint($source, new CarveConverter(), (new CarveConverter())->convert($source));
-        self::assertContains('list-marker-below-content-column', array_column($warnings, 'rule'));
+        $warnings = (new CarvePreviewLinter())->lint($source, new CarveSetup(), (new CarveSetup())->render($source));
+        // 0.2 (C2-B-025, C2-B-027): ` - x` below the item's content column is item body, reported by the new rule.
+        self::assertContains('list-item-body-below-content-column', array_column($warnings, 'rule'));
     }
 
     public function testDeprecatedSpellingsAreReported(): void
     {
         $source = "|= Size |=> Load |\n| 6 mm | 320 kg |\n\n---\n\nNext.\n";
-        $warnings = (new CarvePreviewLinter())->lint($source, new CarveConverter(), (new CarveConverter())->convert($source));
+        $warnings = (new CarvePreviewLinter())->lint($source, new CarveSetup(), (new CarveSetup())->render($source));
         $rules = array_column($warnings, 'rule');
         self::assertContains('deprecated-cell-alignment', $rules);
         self::assertContains('thematic-break-spelling', $rules);
@@ -69,9 +70,9 @@ class CarvePreviewLinterTest extends TestCase
     public function testResolvedIncludesSuppressOnlyReferenceFindings(): void
     {
         $source = "[x][missing] and **bold**\n";
-        $html = (new CarveConverter())->convert($source);
-        $checked = array_column((new CarvePreviewLinter())->lint($source, new CarveConverter(), $html), 'rule');
-        $unchecked = array_column((new CarvePreviewLinter())->lint($source, new CarveConverter(), $html, false), 'rule');
+        $html = (new CarveSetup())->render($source);
+        $checked = array_column((new CarvePreviewLinter())->lint($source, new CarveSetup(), $html), 'rule');
+        $unchecked = array_column((new CarvePreviewLinter())->lint($source, new CarveSetup(), $html, false), 'rule');
         self::assertContains('unresolved-reference-link', $checked);
         self::assertNotContains('unresolved-reference-link', $unchecked);
         self::assertContains('markdown-strong-double-star', $unchecked);

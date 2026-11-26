@@ -23,8 +23,8 @@ class CarveConverterFactoryTest extends TestCase
             };
         });
         $factory = new CarveConverterFactory($config);
-        $de = $factory->create('de-shop', 'de-DE')->convert(':brand: "Hallo" [link](https://example.com)');
-        $en = $factory->create('en-shop', 'en-GB')->convert(':brand: "Hello"');
+        $de = $factory->create('de-shop', 'de-DE')->render(':brand: "Hallo" [link](https://example.com)');
+        $en = $factory->create('en-shop', 'en-GB')->render(':brand: "Hello"');
         self::assertStringContainsString('Deutsch', $de);
         self::assertStringContainsString('„Hallo“', $de);
         self::assertStringContainsString('English', $en);

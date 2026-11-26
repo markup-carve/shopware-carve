@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Tests\Service;
 
-use MarkupCarve\Carve\CarveConverter;
 use MarkupCarve\Shopware\Service\CarveResources;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Cms\CmsPageCollection;
 use Shopware\Core\Content\Cms\CmsPageEntity;
@@ -40,7 +40,8 @@ class CarveResourcesTest extends TestCase
 
     public function testLegalLinkStaysTextWithoutAConfiguredLayout(): void
     {
-        self::assertSame("<p>privacy unknown</p>\n", $this->render(':legal[privacy] :legal[unknown]', [], []));
+        // 0.2 (C2-H-001): the HTML fragment ends without a line feed after the last block.
+        self::assertSame('<p>privacy unknown</p>', $this->render(':legal[privacy] :legal[unknown]', [], []));
     }
 
     /**
@@ -80,7 +81,7 @@ class CarveResourcesTest extends TestCase
             $this->createStub(EventDispatcherInterface::class),
             $cmsPages,
         );
-        $converter = new CarveConverter();
+        $converter = new CarveSetup();
         $resources->register($converter, $context);
 
         return $converter->render($converter->parse($source));

@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace MarkupCarve\Shopware\Controller;
 
 use FilesystemIterator;
-use MarkupCarve\Carve\Converter\HtmlToCarve;
-use MarkupCarve\Carve\Converter\MarkdownToCarve;
 use MarkupCarve\Shopware\Service\CarveContextRenderer;
+use MarkupCarve\Shopware\Service\CarveImport;
 use MarkupCarve\Shopware\Service\CarveIncludeGate;
 use MarkupCarve\Shopware\Service\CarveIncludeResult;
 use MarkupCarve\Shopware\Service\CarveRenderer;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use Shopware\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopware\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopware\Core\Framework\Context;
@@ -115,13 +115,17 @@ class CarvePreviewController
         $this->authorize($context);
         $source = $this->source($request);
         $format = $request->getPayload()->get('format');
-        if (!in_array($format, ['html', 'markdown'], true)) {
+        if (!in_array($format, ['html', 'markdown', 'gfm'], true)) {
             throw new BadRequestHttpException('Choose HTML or Markdown.');
         }
-        $conversion = $format === 'html' ? (new HtmlToCarve())->convertWithFidelityReport($source)
-            : (new MarkdownToCarve())->convertWithFidelityReport($source);
+        try {
+            // The editor's "Markdown" is GitHub Flavored, as in 0.1; the engine's `markdown` is CommonMark only.
+            $conversion = CarveImport::convert($format === 'html' ? 'html' : 'gfm', $source);
+        } catch (RuntimeException $exception) {
+            throw new BadRequestHttpException($exception->getMessage(), $exception);
+        }
 
-        return new JsonResponse(['source' => $conversion->value, 'report' => $conversion->report()]);
+        return new JsonResponse(['source' => $conversion['source'], 'report' => $conversion['report']]);
     }
 
     #[Route(path: '/api/_action/carve/includes', name: 'api.action.carve.includes', methods: ['GET'])]

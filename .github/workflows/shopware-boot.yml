@@ -11,9 +11,9 @@ env:
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, next2]
   push:
-    branches: [main]
+    branches: [main, next2]
 
 # Every job declares timeout-minutes so a hung step fails in minutes rather
 # than inheriting the 360-minute GitHub default. A boot leg is the slowest job
@@ -110,6 +110,16 @@ jobs:
           set -euo pipefail
           composer config repositories.shopware-carve \
             '{"type":"path","url":"../plugin","options":{"symlink":false}}'
+          # The plugin pins an unreleased engine commit (dev-next2#<sha>). Composer
+          # only accepts a dev reference from the root package, so the project
+          # requires the same pin itself.
+          engine="$(php -r '$c = json_decode(file_get_contents("../plugin/composer.json"), true); echo $c["require"]["markup-carve/carve-php"];')"
+          case "${engine}" in
+            dev-*)
+              composer config repositories.carve-php '{"type":"vcs","url":"https://github.com/markup-carve/carve-php"}'
+              composer require "markup-carve/carve-php:${engine}" --no-update --no-interaction
+              ;;
+          esac
           composer require markup-carve/shopware-carve:'*' --no-interaction --no-progress
           installed='vendor/markup-carve/shopware-carve/src/ShopwareCarve.php'
           if [ ! -f "${installed}" ]; then

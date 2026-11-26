@@ -49,7 +49,7 @@ ddev exec bin/console plugin:install --activate ShopwareCarve
 ddev exec bin/console database:migrate --all ShopwareCarve
 
 # carve-php must resolve -> bool(true)
-ddev exec php -r "require 'vendor/autoload.php'; var_dump(class_exists('Carve\\CarveConverter'));"
+ddev exec php -r "require 'vendor/autoload.php'; var_dump(class_exists('MarkupCarve\\Carve\\Carve'));"
 ```
 
 ## 3. Admin (carve-js live preview) + storefront build

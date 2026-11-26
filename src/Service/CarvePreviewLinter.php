@@ -7,50 +7,45 @@ namespace MarkupCarve\Shopware\Service;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Lint\DocumentLinter;
-use MarkupCarve\Carve\Lint\LintWarning;
-use MarkupCarve\Carve\Lint\ReferenceLinter;
-use MarkupCarve\Carve\Lint\SourceOffsets;
-use MarkupCarve\Carve\Node\Inline\Link;
+use MarkupCarve\Carve\Carve;
+use MarkupCarve\Carve\Node;
 
 class CarvePreviewLinter
 {
     /**
-     * @return list<\MarkupCarve\Carve\Lint\LintWarning>
+     * Rules whose findings an included file can answer, so they are dropped when reference checks are off.
+     *
+     * @var array<string>
      */
-    public function lint(string $source, CarveConverter $converter, string $html, bool $referenceChecks = true): array
+    private const REFERENCE_RULES = [
+        'broken-crossref', 'duplicate-footnote-definition', 'duplicate-heading-id', 'empty-reference-definition',
+        'footnote-labels-differ-only-in-whitespace', 'unresolved-footnote', 'unresolved-reference-link',
+        'unused-footnote-definition', 'unused-link-reference-definition',
+    ];
+
+    /**
+     * @return list<\MarkupCarve\Shopware\Service\CarveLintWarning>
+     */
+    public function lint(string $source, CarveSetup $setup, string $html, bool $referenceChecks = true): array
     {
-        $options = ['extensions' => array_values($converter->getExtensions())];
-        // Included files can define what the editor's source references, so those findings are dropped then.
-        $skip = [];
-        if (!$referenceChecks) {
-            foreach ((new ReferenceLinter())->lint($source, $options) as $warning) {
-                $skip[self::key($warning)] = true;
-            }
-        }
         $warnings = [];
-        foreach ((new DocumentLinter())->lint($source, $options) as $warning) {
+        foreach (Carve::lint($source, $setup->parseOptions()) as $diagnostic) {
             // The preview checks fragments against its own rendered ids below.
-            if ($warning->rule !== 'broken-fragment-link' && !isset($skip[self::key($warning)])) {
-                $warnings[] = $warning;
+            if ($diagnostic->code === 'broken-fragment-link' || (!$referenceChecks && in_array($diagnostic->code, self::REFERENCE_RULES, true))) {
+                continue;
             }
+            $warnings[] = CarveLintWarning::fromDiagnostic($diagnostic, $source);
         }
-        array_push($warnings, ...$this->fragmentWarnings($source, $converter, $html));
-        usort($warnings, static fn (LintWarning $a, LintWarning $b): int => [$a->line, $a->column] <=> [$b->line, $b->column]);
+        array_push($warnings, ...$this->fragmentWarnings($source, $setup, $html));
+        usort($warnings, static fn (CarveLintWarning $a, CarveLintWarning $b): int => [$a->line, $a->column] <=> [$b->line, $b->column]);
 
         return $warnings;
     }
 
-    private static function key(LintWarning $warning): string
-    {
-        return $warning->line . ':' . $warning->column . ':' . $warning->rule . ':' . $warning->message;
-    }
-
     /**
-     * @return list<\MarkupCarve\Carve\Lint\LintWarning>
+     * @return list<\MarkupCarve\Shopware\Service\CarveLintWarning>
      */
-    private function fragmentWarnings(string $source, CarveConverter $converter, string $html): array
+    private function fragmentWarnings(string $source, CarveSetup $setup, string $html): array
     {
         if (!str_contains($source, '#')) {
             return [];
@@ -80,40 +75,25 @@ class CarvePreviewLinter
                 $hrefs[$element->getAttribute('href')] = true;
             }
         }
-        $converter->getParser()->enablePositionTracking();
-        $ast = $converter->parse($source);
-        $converter->render($ast);
-        $pending = [$ast];
         $warnings = [];
-        $map = SourceOffsets::map($source);
-        $length = strlen($source);
-        while ($pending !== []) {
-            $node = array_pop($pending);
-            array_push($pending, ...$node->getChildren());
-            if (!$node instanceof Link) {
-                continue;
-            }
-            $href = $node->getDestination() ?? '';
-            if (!str_starts_with($href, '#') || !isset($hrefs[$href])) {
-                continue;
+        CarveTree::walk($setup->parse($source), static function (Node $node) use ($hrefs, $ids, $source, &$warnings): void {
+            $href = $node->f['href'] ?? null;
+            if ($node->type !== 'link' || !is_string($href) || !str_starts_with($href, '#') || !isset($hrefs[$href]) || $node->start < 0) {
+                return;
             }
             $fragment = explode(':~:', substr($href, 1), 2)[0];
             $decoded = rawurldecode($fragment);
             if ($fragment === '' || strtolower($decoded) === 'top' || isset($ids[$fragment]) || isset($ids[$decoded])) {
-                continue;
+                return;
             }
-            $pos = $node->getPos();
-            if ($pos !== null) {
-                $warnings[] = new LintWarning(
-                    $pos->startLine,
-                    $pos->startColumn,
-                    'broken-fragment-link',
-                    'Link to "' . $href . '" matches no id in this preview.',
-                    SourceOffsets::toByte($pos->startOffset, $map, $length),
-                    SourceOffsets::toByte($pos->endOffset, $map, $length),
-                );
-            }
-        }
+            $warnings[] = CarveLintWarning::at(
+                $source,
+                $node->start,
+                $node->end,
+                'broken-fragment-link',
+                'Link to "' . $href . '" matches no id in this preview.',
+            );
+        });
 
         return $warnings;
     }

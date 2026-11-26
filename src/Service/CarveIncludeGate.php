@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace MarkupCarve\Shopware\Service;
 
-use MarkupCarve\Carve\Transform\FilesystemIncludeResolver;
+use MarkupCarve\Carve\Include\FileResolver;
+use MarkupCarve\Carve\Include\IncludeResolver;
+use MarkupCarve\Carve\OptionError;
 use RuntimeException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
@@ -36,7 +38,7 @@ class CarveIncludeGate
 
     private bool $built = false;
 
-    private ?FilesystemIncludeResolver $resolver = null;
+    private ?IncludeResolver $resolver = null;
 
     private ?string $root = null;
 
@@ -52,7 +54,7 @@ class CarveIncludeGate
     /**
      * The configured resolver, or null while inclusion is disabled.
      */
-    public function resolver(): ?FilesystemIncludeResolver
+    public function resolver(): ?IncludeResolver
     {
         $this->build();
 
@@ -112,8 +114,8 @@ class CarveIncludeGate
         // a value it refuses never reaches a render. Naming the setting here is
         // the only thing added.
         try {
-            $this->resolver = new FilesystemIncludeResolver($configured);
-        } catch (RuntimeException $exception) {
+            $this->resolver = FileResolver::forRoot($configured);
+        } catch (OptionError $exception) {
             throw new RuntimeException(self::CONFIG_KEY . ': ' . $exception->getMessage(), 0, $exception);
         }
         $this->root = rtrim((string)realpath($configured), DIRECTORY_SEPARATOR);

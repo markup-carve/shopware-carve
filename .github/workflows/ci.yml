@@ -5,9 +5,9 @@ env:
 
 on:
   push:
-    branches: [main]
+    branches: [main, next2]
   pull_request:
-    branches: [main]
+    branches: [main, next2]
 
 # Resolve 6.6 here and 6.7 in shopware-67.yml. Each lane verifies the
 # installed line. The locked-install lane checks reproducibility separately.
@@ -270,14 +270,14 @@ jobs:
 
       # The artifact, not the version string. A version that matches the lock says
       # nothing about what the engine DOES; this renders one document through the
-      # converter `src/Service/CarveRenderer.php` builds on. Mirrors the render
+      # engine API `src/Service/CarveSetup.php` builds on. Mirrors the render
       # step the admin-js job runs for the npm engine.
       - name: Render one document through the installed engine
         run: |
           set -euo pipefail
           php -r '
             require "vendor/autoload.php";
-            $html = (new MarkupCarve\Carve\CarveConverter())->convert("*bold* and /italic/");
+            $html = MarkupCarve\Carve\Carve::render("*bold* and /italic/");
             echo $html, PHP_EOL;
             if (!str_contains($html, "<strong>bold</strong>") || !str_contains($html, "<em>italic</em>")) {
               fwrite(STDERR, "::error::the installed engine did not render Carve emphasis as expected: " . $html . PHP_EOL);

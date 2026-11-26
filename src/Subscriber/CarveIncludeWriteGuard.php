@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace MarkupCarve\Shopware\Subscriber;
 
 use Doctrine\DBAL\Connection;
-use MarkupCarve\Carve\CarveConverter;
-use MarkupCarve\Carve\Transform\IncludeContext;
-use MarkupCarve\Carve\Transform\IncludeExpander;
-use MarkupCarve\Carve\Transform\IncludeResolverInterface;
-use MarkupCarve\Carve\Transform\ResolvedInclude;
+use MarkupCarve\Carve\Carve;
 use MarkupCarve\Shopware\Service\CarveConverterFactory;
 use MarkupCarve\Shopware\Service\CarveIncludeGate;
+use MarkupCarve\Shopware\Service\CarveSetup;
 use Shopware\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\JsonUpdateCommand;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
@@ -108,25 +105,13 @@ class CarveIncludeWriteGuard implements EventSubscriberInterface
         }
     }
 
-    public static function hasIncludes(string $source, ?CarveConverter $converter = null): bool
+    public static function hasIncludes(string $source, ?CarveSetup $setup = null): bool
     {
         if (!str_contains($source, '{{')) {
             return false;
         }
-        $probe = new class implements IncludeResolverInterface {
-            public bool $found = false;
 
-            public function resolve(string $path, IncludeContext $context): ResolvedInclude|string|null
-            {
-                $this->found = true;
-
-                return null;
-            }
-        };
-        $converter ??= new CarveConverter();
-        $converter->transform($converter->parse($source), new IncludeExpander(resolver: $probe, source: $source));
-
-        return $probe->found;
+        return Carve::includeDependencies(Carve::parse($source, $setup?->parseOptions() ?? [])) !== [];
     }
 
     /**

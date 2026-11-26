@@ -16,9 +16,43 @@ fail() {
     exit 1
 }
 
-APP_ENV=prod APP_DEBUG=0 php -S "${host}:${port}" -t public public/index.php >/tmp/server-commands.log 2>&1 &
+# curl exits non-zero when the server drops the request, which under `set -e`
+# would end the script before anyone sees why the server went away. Callers
+# capture stdout, so the diagnosis goes to stderr.
+request() {
+    local status=0
+    curl "$@" || status=$?
+    if [ "${status}" != '0' ]; then
+        {
+            sleep 3
+            echo '--- php -S process'
+            ps -o pid,stat,etime,rss,cmd -p "${server}" || echo 'php -S has exited'
+            echo '--- kernel log'
+            sudo -n dmesg 2>/dev/null | tail -n 5 || true
+            tail -n 50 /tmp/server-commands.log
+            echo "::error::curl ${*: -1} failed with status ${status}"
+        } >&2
+        exit 1
+    fi
+}
+
+# setup-php turns the opcache JIT on, and php -S (SAPI cli-server, so
+# opcache.enable rather than enable_cli applies) segfaulted with it on PHP
+# 8.3.37 now and then, jumping into opcache shared memory. That is an engine
+# crash, not a plugin defect, so the smoke servers run without the JIT.
+APP_ENV=prod APP_DEBUG=0 php -d opcache.jit=disable -S "${host}:${port}" -t public public/index.php >/tmp/server-commands.log 2>&1 &
 server=$!
-trap 'kill "${server}" 2>/dev/null || true' EXIT
+# 139 here means the server segfaulted.
+reap() {
+    if kill -0 "${server}" 2>/dev/null; then
+        kill "${server}" 2>/dev/null || true
+        return
+    fi
+    local status=0
+    wait "${server}" 2>/dev/null || status=$?
+    echo "php -S had exited with status ${status}" >&2
+}
+trap reap EXIT
 for _ in $(seq 1 60); do
     code="$(curl -s -o /dev/null -w '%{http_code}' "${base}/api/_info/version" || true)"
     [ "${code}" = '401' ] || [ "${code}" = '200' ] && break
@@ -31,7 +65,7 @@ token="$(curl -sf -X POST "${base}/api/oauth/token" \
 [ -n "${token}" ] || { cat /tmp/server-commands.log; fail 'no admin API token'; }
 
 id="$(php -r 'echo bin2hex(random_bytes(16));')"
-code="$(curl -s -o /tmp/manufacturer.json -w '%{http_code}' -X POST "${base}/api/product-manufacturer" \
+code="$(request -s -o /tmp/manufacturer.json -w '%{http_code}' -X POST "${base}/api/product-manufacturer" \
     -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json' \
     -d "{\"id\":\"${id}\",\"name\":\"Carve smoke\",\"description\":\"<p>Hi <b>there</b></p>\"}")"
 [ "${code}" = '204' ] || { cat /tmp/manufacturer.json; fail "creating a manufacturer answered ${code}"; }
@@ -54,7 +88,7 @@ formatted="$(php bin/console carve:fmt --align-tables /tmp/smoke-table.crv)"
 case "${formatted}" in *'| cc | d    |'*) ;; *) echo "${formatted}"; fail 'carve:fmt --align-tables did not align' ;; esac
 
 php bin/console system:config:set ShopwareCarve.config.lintOnSave true
-code="$(curl -s -o /tmp/gate.json -w '%{http_code}' -X PATCH "${base}/api/product-manufacturer/${id}" \
+code="$(request -s -o /tmp/gate.json -w '%{http_code}' -X PATCH "${base}/api/product-manufacturer/${id}" \
     -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json' \
     -d '{"customFields":{"carve_manufacturer_body":"**bold**"}}')"
 head -c 1000 /tmp/gate.json; echo
