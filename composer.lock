@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "56d39d71e85160d16f6456acf47d266d",
+    "content-hash": "3e8ebd01daa24faf538d512fd2862b4a",
     "packages": [
         {
             "name": "brick/math",
@@ -3646,7 +3646,7 @@
         },
         {
             "name": "markup-carve/carve-php",
-            "version": "dev-main",
+            "version": "dev-next2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/markup-carve/carve-php.git",
@@ -3731,7 +3731,7 @@
                 "parser"
             ],
             "support": {
-                "source": "https://github.com/markup-carve/carve-php/tree/main",
+                "source": "https://github.com/markup-carve/carve-php/tree/next2",
                 "issues": "https://github.com/markup-carve/carve-php/issues"
             },
             "funding": [

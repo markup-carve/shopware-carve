@@ -110,7 +110,7 @@ jobs:
           set -euo pipefail
           composer config repositories.shopware-carve \
             '{"type":"path","url":"../plugin","options":{"symlink":false}}'
-          # The plugin pins an unreleased engine commit (dev-main#<sha>). Composer
+          # The plugin pins an unreleased engine commit (dev-next2#<sha>). Composer
           # only accepts a dev reference from the root package, so the project
           # requires the same pin itself.
           engine="$(php -r '$c = json_decode(file_get_contents("../plugin/composer.json"), true); echo $c["require"]["markup-carve/carve-php"];')"
