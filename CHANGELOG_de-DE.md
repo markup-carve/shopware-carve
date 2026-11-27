@@ -1,3 +1,10 @@
+# 0.2.0
+- Erfordert carve-php 0.2. Gespeichertes Carve folgt der Syntax von 0.2: Vorhandene Inhalte vor dem Update mit dem Upgrade-Werkzeug von 0.2 umschreiben.
+- Die HTML-Ausgabe folgt Carve 0.2, zum Beispiel werden Hinweisblöcke als <aside> ausgegeben.
+- Nackte URLs werden nicht mehr verlinkt; <https://...> schreiben. Die Inhaltsverzeichnis-Erweiterung und eigene PHP-Profile entfallen.
+- Lint-Befunde und Include-Diagnosen verwenden die Regelnamen von Carve 0.2.
+- Markdown, GitHub Flavored Markdown und Djot werden über die Engine importiert, sodass Tabellen, Aufgabenlisten und Durchstreichungen übernommen werden.
+
 # 0.1.10
 - Erfordert carve-php 0.1.17.
 - carve:fmt schreibt native Tabellenköpfe, *** als thematischen Umbruch und die Tabellenausrichtung in geschweiften Klammern wie |={>}. Die alte Schreibweise |=> wird weiterhin gelesen.
