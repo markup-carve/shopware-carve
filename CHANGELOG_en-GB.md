@@ -1,3 +1,10 @@
+# 0.2.0
+- Requires carve-php 0.2. Stored Carve follows the 0.2 syntax: run the 0.2 upgrade tool on existing content before updating.
+- HTML output follows Carve 0.2, for example admonitions render as <aside>.
+- Bare URLs are no longer linked; write <https://...>. The table of contents extension and custom PHP profiles are gone.
+- Lint findings and include diagnostics use the Carve 0.2 rule names.
+- Markdown, GitHub Flavored Markdown and Djot import through the engine, so tables, task lists and strikethrough convert.
+
 # 0.1.10
 - Requires carve-php 0.1.17.
 - carve:fmt writes native table headers, *** thematic breaks and braced table alignment such as |={>}. The old |=> spelling is still read.
